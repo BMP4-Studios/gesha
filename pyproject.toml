@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gesha"
+version = "0.1.0"
+description = "Local-first specialty coffee discovery and cart optimization CLI."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{name = "bmp4 Studios"}]
+dependencies = [
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "typer[all]>=0.10.0",
+    "rich>=13.0.0",
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.8.0",
+    "playwright>=1.40.0",
+]
+
+[project.scripts]
+gesha = "gesha.cli.main:app"
