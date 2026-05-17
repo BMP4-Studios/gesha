@@ -10,6 +10,7 @@ from rich.console import Console
 from gesha.db.session import get_session, init_db
 from gesha.scrapers.demello import DeMelloScraper
 from gesha.scrapers.hatch import HatchScraper
+from gesha.scrapers.traffic import TrafficScraper
 from gesha.services.coffee_service import CoffeeService
 
 app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
@@ -50,7 +51,7 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, demello, or all.")) -> None:
+def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, demello, traffic, or all.")) -> None:
     """Scrape coffees from supported roasters."""
     init_db()
     with get_session() as session:
@@ -60,9 +61,11 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, deme
             scrapers.append(HatchScraper())
         if source in ("all", "demello"):
             scrapers.append(DeMelloScraper())
+        if source in ("all", "traffic"):
+            scrapers.append(TrafficScraper())
 
         if not scrapers:
-            raise typer.BadParameter("Unsupported source. Use 'hatch', 'demello', or 'all'.")
+            raise typer.BadParameter("Unsupported source. Use 'hatch', 'demello', 'traffic', or 'all'.")
 
         for scraper in scrapers:
             console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
@@ -84,6 +87,8 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, deme
             roaster_filter = "Hatch Coffee"
         elif source == "demello":
             roaster_filter = "De Mello Coffee"
+        elif source == "traffic":
+            roaster_filter = "Traffic Coffee"
 
         console.print("[blue]Listing imported coffees...[/blue]")
         coffees = service.list_coffees(roaster_name=roaster_filter)
