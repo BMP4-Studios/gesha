@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 from typing import Optional
 
 import requests
@@ -21,6 +22,7 @@ def _print_coffees(coffees: list) -> None:
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
     table.add_column("Name")
+    table.add_column("Size")
     table.add_column("Process")
     table.add_column("Origin")
     table.add_column("Price")
@@ -34,6 +36,7 @@ def _print_coffees(coffees: list) -> None:
             str(coffee.id),
             coffee.roaster.name,
             coffee.name,
+            coffee.bag_size or "n/a",
             coffee.process or "n/a",
             coffee.origin or "n/a",
             price,
@@ -53,32 +56,29 @@ def _refresh_catalog(source: str) -> None:
         scrapers = get_scrapers(source)
         refreshed_roaster_names = []
 
-        for scraper in scrapers:
+        def run_scraper(scraper):
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
-            try:
-                scraped_coffees = scraper.scrape()
-            except requests.exceptions.RequestException as exc:
-                console.print(f"[red]Network error while scraping {scraper.SOURCE_NAME}: {exc}[/red]")
-                raise typer.Exit(code=1)
-            except Exception as exc:
-                console.print(f"[red]Scraper failed: {exc}[/red]")
-                raise typer.Exit(code=1)
+            return scraper.SOURCE_NAME, scraper.ROASTER_NAME, scraper.scrape()
 
-            for coffee in scraped_coffees:
-                service.create_or_update_coffee(coffee)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
+            future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
+            for future in concurrent.futures.as_completed(future_to_scraper):
+                source_name, roaster_name, scraped_coffees = future.result()
 
-            if scraped_coffees:
-                refreshed_roaster_names.append(scraper.ROASTER_NAME)
-                removed_count = service.delete_stale_coffees(
-                    scraper.ROASTER_NAME,
-                    [coffee.url for coffee in scraped_coffees if coffee.url],
-                )
-            else:
-                removed_count = 0
-                console.print(f"[yellow]No coffees returned for {scraper.ROASTER_NAME}; skipped stale cleanup for this roaster.[/yellow]")
-            console.print(f"[green]Imported {len(scraped_coffees)} coffees. Removed {removed_count} stale coffees.[/green]")
+                for coffee in scraped_coffees:
+                    service.create_or_update_coffee(coffee)
 
-        roaster_filter = scrapers[0].ROASTER_NAME if source != "all" and refreshed_roaster_names else None
+                if scraped_coffees:
+                    refreshed_roaster_names.append(roaster_name)
+                    removed_count = service.delete_stale_coffees(
+                        roaster_name,
+                        [c.url for c in scraped_coffees if c.url],
+                    )
+                else:
+                    removed_count = 0
+                    console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
+                console.print(f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]")
+
         console.print("[blue]Listing cleaned coffees...[/blue]")
         if source == "all":
             coffees = [
@@ -87,7 +87,8 @@ def _refresh_catalog(source: str) -> None:
                 if coffee.roaster.name in refreshed_roaster_names
             ]
         elif refreshed_roaster_names:
-            coffees = service.list_coffees(roaster_name=roaster_filter)
+            # If we scraped a single specific source, filter to its roaster name
+            coffees = service.list_coffees(roaster_name=refreshed_roaster_names[0])
         else:
             coffees = []
         _print_coffees(coffees)
