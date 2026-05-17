@@ -44,7 +44,7 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     INCLUDE_PRODUCT_TYPES: tuple[str, ...] = ()
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
-    EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ()
+    EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
 
     def extract_product_urls(self, html: str) -> List[str]:
         soup = BeautifulSoup(html, "html.parser")
@@ -79,11 +79,13 @@ class ShopifyScraper(BaseScraper):
 
     def _is_coffee_product(self, product_data: dict[str, Any]) -> bool:
         handle = str(product_data.get("handle") or "").lower()
-        if any(keyword in handle for keyword in self.EXCLUDE_HANDLE_KEYWORDS):
-            return False
-
-        product_type = str(product_data.get("type") or "").strip().lower()
         tags = {str(tag).strip().lower() for tag in product_data.get("tags") or []}
+
+        # Exclude handles or tags containing subscription keywords
+        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or \
+           any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
+            return False
+        product_type = str(product_data.get("type") or "").strip().lower()
 
         if self.INCLUDE_PRODUCT_TYPES and product_type in {value.lower() for value in self.INCLUDE_PRODUCT_TYPES}:
             return True
@@ -98,9 +100,8 @@ class ShopifyScraper(BaseScraper):
 
         # Fallback to title parsing if description labels are missing
         title_details = self._extract_details_from_title(title)
-        origin = details.get("origin") or title_details.get("origin")
-        process = details.get("process") or title_details.get("process")
-
+        origin = details.get("origin") or title_details.get("origin") or title
+        process = details.get("process") or title_details.get("process") or title
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
@@ -134,7 +135,6 @@ class ShopifyScraper(BaseScraper):
     def _extract_details_from_title(self, title: str) -> dict[str, Optional[str]]:
         """Try to extract origin and process from common title patterns like 'Country - Name | Process'."""
         details = {"origin": None, "process": None}
-
         # Split by pipe first (highest confidence for process)
         if "|" in title:
             pipe_parts = [p.strip() for p in title.split("|")]
@@ -142,7 +142,6 @@ class ShopifyScraper(BaseScraper):
             if len(pipe_parts) >= 2:
                 # If there are 3+ parts (Origin | Name | Process), use the last
                 details["process"] = pipe_parts[-1]
-
         # Refine origin if it was set or try dash split
         if details["origin"]:
             dash_parts = re.split(r"\s*[−–—-]\s*", details["origin"])
@@ -184,8 +183,19 @@ class ShopifyScraper(BaseScraper):
         return int(price) if isinstance(price, int) else None
 
     def _extract_bag_size(self, product_data: dict[str, Any]) -> Optional[str]:
-        for variant in product_data.get("variants") or []:
-            title = str(variant.get("title") or "")
+        variants = product_data.get("variants") or []
+        if not variants:
+            return None
+        # Check first variant for weight info
+        variant = variants[0]
+        weight = variant.get("weight")
+        unit = variant.get("weight_unit")
+        if weight and unit:
+            return f"{int(weight)}{unit}"
+
+        # Fallback to variant title regex
+        for v in variants:
+            title = str(v.get("title") or "")
             match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", title, re.IGNORECASE)
             if match:
                 return match.group(0)
