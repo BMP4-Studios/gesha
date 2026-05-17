@@ -1,4 +1,4 @@
-"""Command-line interface package for the coffee project."""
+"""Command-line interface package for Gesha."""
 
 from .main import app
 

@@ -8,9 +8,7 @@ from rich.table import Table
 from rich.console import Console
 
 from gesha.db.session import get_session, init_db
-from gesha.scrapers.demello import DeMelloScraper
-from gesha.scrapers.hatch import HatchScraper
-from gesha.scrapers.traffic import TrafficScraper
+from gesha.scrapers import get_scrapers, supported_sources
 from gesha.services.coffee_service import CoffeeService
 
 app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
@@ -56,16 +54,10 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, deme
     init_db()
     with get_session() as session:
         service = CoffeeService(session)
-        scrapers = []
-        if source in ("all", "hatch"):
-            scrapers.append(HatchScraper())
-        if source in ("all", "demello"):
-            scrapers.append(DeMelloScraper())
-        if source in ("all", "traffic"):
-            scrapers.append(TrafficScraper())
-
-        if not scrapers:
-            raise typer.BadParameter("Unsupported source. Use 'hatch', 'demello', 'traffic', or 'all'.")
+        if source not in supported_sources():
+            supported = "', '".join(supported_sources())
+            raise typer.BadParameter(f"Unsupported source. Use '{supported}'.")
+        scrapers = get_scrapers(source)
 
         for scraper in scrapers:
             console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
@@ -82,13 +74,7 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, deme
                 service.create_or_update_coffee(coffee)
             console.print(f"[green]Imported {len(coffees)} coffees.[/green]")
 
-        roaster_filter = None
-        if source == "hatch":
-            roaster_filter = "Hatch Coffee"
-        elif source == "demello":
-            roaster_filter = "De Mello Coffee"
-        elif source == "traffic":
-            roaster_filter = "Traffic Coffee"
+        roaster_filter = scrapers[0].ROASTER_NAME if source != "all" else None
 
         console.print("[blue]Listing imported coffees...[/blue]")
         coffees = service.list_coffees(roaster_name=roaster_filter)

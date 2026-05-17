@@ -3,53 +3,24 @@ from __future__ import annotations
 import json
 import re
 from typing import List, Optional
-from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/products/[^/?#]+$")
 
 
 def parse_demello_collection(html: str, base_url: str) -> List[str]:
     soup = BeautifulSoup(html, "html.parser")
-    urls: List[str] = []
-
-    for element in soup.select("[data-url]"):
-        href = element.get("data-url")
-        if not href:
-            continue
-        href = href.strip()
-        if PRODUCT_URL_PATTERN.match(href):
-            urls.append(urljoin(base_url, href))
-
-    for anchor in soup.select("a[href^='/products/']"):
-        href = anchor.get("href")
-        if not href:
-            continue
-        href = href.strip()
-        if PRODUCT_URL_PATTERN.match(href):
-            urls.append(urljoin(base_url, href))
+    urls = [
+        *extract_matching_urls(soup, selector="[data-url]", attribute="data-url", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
+        *extract_matching_urls(soup, selector="a[href^='/products/']", attribute="href", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
+    ]
 
     return sorted(dict.fromkeys(urls))
-
-
-def _extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
-    if element is None:
-        return None
-    text = element.get_text(separator=" ", strip=True)
-    return text if text else None
-
-
-def _parse_price(value: Optional[str]) -> Optional[int]:
-    if not value:
-        return None
-    match = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
-    if not match:
-        return None
-    return int(float(match.group(1)) * 100)
 
 
 def _extract_json_ld_description(soup: BeautifulSoup) -> Optional[str]:
@@ -109,15 +80,15 @@ def _parse_demello_details(text: str) -> dict[str, Optional[str]]:
 
 def parse_demello_product(html: str, url: str) -> CoffeeData:
     soup = BeautifulSoup(html, "html.parser")
-    title = _extract_text(soup.select_one("h1.product__title, h1")) or "Unknown coffee"
-    price = _extract_text(soup.select_one("span.price-item.price-item--regular"))
+    title = extract_text(soup.select_one("h1.product__title, h1")) or "Unknown coffee"
+    price = extract_text(soup.select_one("span.price-item.price-item--regular"))
     if price is None:
-        price = _extract_text(soup.select_one("meta[property='og:price:amount']"))
-    price_cents = _parse_price(price)
+        price = extract_text(soup.select_one("meta[property='og:price:amount']"))
+    price_cents = parse_price(price)
 
     description = _extract_json_ld_description(soup)
     if not description:
-        description = _extract_text(soup.select_one("div.product__description__content p")) or ""
+        description = extract_text(soup.select_one("div.product__description__content p")) or ""
 
     details_block = _find_details_block(soup)
     details = _parse_demello_details(details_block)

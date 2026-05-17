@@ -2,45 +2,27 @@ from __future__ import annotations
 
 import re
 from typing import List, Optional
-from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/collections/coffee/products/[^/?#]+$")
 
 
 def parse_traffic_collection(html: str, base_url: str) -> List[str]:
     soup = BeautifulSoup(html, "html.parser")
-    urls: List[str] = []
-
-    for anchor in soup.select("a[href*='/products/']"):
-        href = anchor.get("href")
-        if not href:
-            continue
-        href = href.strip()
-        if PRODUCT_URL_PATTERN.match(href):
-            urls.append(urljoin(base_url, href))
+    urls = extract_matching_urls(
+        soup,
+        selector="a[href*='/products/']",
+        attribute="href",
+        base_url=base_url,
+        pattern=PRODUCT_URL_PATTERN,
+    )
 
     return sorted(dict.fromkeys(urls))
-
-
-def _extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
-    if element is None:
-        return None
-    text = element.get_text(separator=" ", strip=True)
-    return text if text else None
-
-
-def _parse_price(value: Optional[str]) -> Optional[int]:
-    if not value:
-        return None
-    match = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
-    if not match:
-        return None
-    return int(float(match.group(1)) * 100)
 
 
 def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
@@ -84,13 +66,13 @@ def _extract_tasting_notes(text: str) -> List[str]:
 
 def parse_traffic_product(html: str, url: str) -> CoffeeData:
     soup = BeautifulSoup(html, "html.parser")
-    title = _extract_text(soup.select_one("h1")) or "Unknown coffee"
+    title = extract_text(soup.select_one("h1")) or "Unknown coffee"
 
-    price_text = _extract_text(soup.select_one("span[class*='price']"))
-    price_cents = _parse_price(price_text)
+    price_text = extract_text(soup.select_one("span[class*='price']"))
+    price_cents = parse_price(price_text)
 
     desc_div = soup.select_one("div.product-block-description")
-    description = _extract_text(desc_div) if desc_div else ""
+    description = extract_text(desc_div) if desc_div else ""
 
     details = _parse_traffic_details(description)
     tasting_notes = _extract_tasting_notes(description)

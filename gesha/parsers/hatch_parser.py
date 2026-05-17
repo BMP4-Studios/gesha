@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.parsers.common import extract_text, parse_price
 
 PRODUCT_LINK_PATTERN = re.compile(r"^/shop/[^/]+$")
 EXCLUDE_PATHS = (
@@ -44,24 +45,6 @@ def parse_hatch_collection(html: str, base_url: str) -> List[str]:
             continue
         urls.append(urljoin(base_url, href))
     return sorted(set(urls))
-
-
-def _extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
-    if element is None:
-        return None
-    text = element.get_text(separator=" ", strip=True)
-    return text if text else None
-
-
-def _parse_price(value: str | None) -> Optional[int]:
-    if not value:
-        return None
-    match = re.search(r"CA\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
-    if not match:
-        match = re.search(r"\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
-    if not match:
-        return None
-    return int(float(match.group(1)) * 100)
 
 
 def _decode_embedded_html(html: str) -> Optional[str]:
@@ -128,7 +111,7 @@ def _extract_availability(html: str) -> bool:
 
 def parse_hatch_product(html: str, url: str) -> CoffeeData:
     soup = BeautifulSoup(html, "html.parser")
-    title = _extract_text(soup.select_one("h1")) or "Unknown coffee"
+    title = extract_text(soup.select_one("h1")) or "Unknown coffee"
 
     embedded_html = _decode_embedded_html(html)
     details_html = embedded_html if embedded_html else html
@@ -138,7 +121,7 @@ def parse_hatch_product(html: str, url: str) -> CoffeeData:
     if price_text is None:
         price_text = soup.find(text=re.compile(r"CA\$\s*[0-9]+(?:\.[0-9]{1,2})?"))
     price = price_text.strip() if price_text else None
-    price_cents = _parse_price(price)
+    price_cents = parse_price(price)
 
     description = _extract_description(detail_soup)
     if not description:

@@ -1,1 +1,1 @@
-"""Root package for the coffee discovery CLI."""
+"""Root package for the Gesha CLI."""
