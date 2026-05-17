@@ -55,6 +55,12 @@ Scrape De Mello Coffee:
 gesha scrape demello
 ```
 
+Scrape Traffic Coffee:
+
+```bash
+gesha scrape traffic
+```
+
 Scrape all supported roasters (default):
 
 ```bash

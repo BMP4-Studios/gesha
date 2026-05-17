@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 from typing import List
 
 import requests
 
 from gesha.models.coffee import CoffeeData
 from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
+
+
+logger = logging.getLogger(__name__)
 
 
 class TrafficScraper:
@@ -29,11 +33,21 @@ class TrafficScraper:
 
         coffees: list[CoffeeData] = []
         for product_url in product_urls:
-            product_response = self.session.get(product_url, timeout=15)
-            if product_response.status_code == 404:
+            try:
+                product_response = self.session.get(product_url, timeout=15)
+                if product_response.status_code == 404:
+                    continue
+                product_response.raise_for_status()
+            except requests.exceptions.RequestException as exc:
+                logger.warning("Skipping Traffic product URL because it failed: %s (%s)", product_url, exc)
                 continue
-            product_response.raise_for_status()
-            coffee = parse_traffic_product(product_response.text, product_url)
+
+            try:
+                coffee = parse_traffic_product(product_response.text, product_url)
+            except Exception as exc:
+                logger.warning("Skipping Traffic product URL because parsing failed: %s (%s)", product_url, exc)
+                continue
+
             coffees.append(coffee)
 
         return coffees
