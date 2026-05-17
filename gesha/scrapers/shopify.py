@@ -135,7 +135,6 @@ class ShopifyScraper(BaseScraper):
     def _extract_details_from_title(self, title: str) -> dict[str, Optional[str]]:
         """Try to extract origin and process from common title patterns like 'Country - Name | Process'."""
         details = {"origin": None, "process": None}
-
         # Split by pipe first (highest confidence for process)
         if "|" in title:
             pipe_parts = [p.strip() for p in title.split("|")]
