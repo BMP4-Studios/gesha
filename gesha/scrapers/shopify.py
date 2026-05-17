@@ -98,8 +98,8 @@ class ShopifyScraper(BaseScraper):
 
         # Fallback to title parsing if description labels are missing
         title_details = self._extract_details_from_title(title)
-        origin = details.get("origin") or title_details.get("origin")
-        process = details.get("process") or title_details.get("process")
+        origin = details.get("origin") or title_details.get("origin") or title
+        process = details.get("process") or title_details.get("process") or title
 
         return CoffeeData(
             roaster=self.ROASTER_NAME,

@@ -17,7 +17,8 @@ console = Console()
 
 def _print_coffees(coffees: list) -> None:
     table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("ID", style="dim")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
     table.add_column("Name")
     table.add_column("Process")
@@ -25,10 +26,11 @@ def _print_coffees(coffees: list) -> None:
     table.add_column("Price")
     table.add_column("Notes")
 
-    for coffee in coffees:
+    for i, coffee in enumerate(coffees, 1):
         notes = ", ".join(note.name for note in coffee.tasting_notes)
         price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a"
         table.add_row(
+            str(i),
             str(coffee.id),
             coffee.roaster.name,
             coffee.name,
@@ -52,11 +54,11 @@ def _refresh_catalog(source: str) -> None:
         refreshed_roaster_names = []
 
         for scraper in scrapers:
-            console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
+            console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
             try:
                 scraped_coffees = scraper.scrape()
             except requests.exceptions.RequestException as exc:
-                console.print(f"[red]Network error while scraping {scraper.__class__.__name__}: {exc}[/red]")
+                console.print(f"[red]Network error while scraping {scraper.SOURCE_NAME}: {exc}[/red]")
                 raise typer.Exit(code=1)
             except Exception as exc:
                 console.print(f"[red]Scraper failed: {exc}[/red]")
