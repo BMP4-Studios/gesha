@@ -34,6 +34,11 @@ gesha init
 
 This creates the SQLite schema for roasters, coffees, and tasting notes.
 
+## Requirements
+
+- Internet access is required for scraping remote roaster pages.
+- If `gesha scrape` fails with a DNS or network error, verify your connection and retry.
+
 ## Basic usage
 
 Scrape Hatch Coffee:

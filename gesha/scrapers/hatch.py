@@ -9,8 +9,8 @@ from gesha.parsers.hatch_parser import parse_hatch_collection, parse_hatch_produ
 
 
 class HatchScraper:
-    BASE_URL = "https://www.hatchcoffeeco.com"
-    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    BASE_URL = "https://hatchcrafted.com"
+    COLLECTION_URL = f"{BASE_URL}/shop"
     USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36"
 
     def __init__(self) -> None:

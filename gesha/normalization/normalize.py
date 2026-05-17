@@ -42,8 +42,15 @@ def normalize_process(value: str | None) -> str | None:
 def normalize_country(value: str | None) -> str | None:
     if not value:
         return None
-    normalized = value.strip().lower()
-    return COUNTRY_MAP.get(normalized, value.strip())
+    normalized = value.strip()
+    parts = [part.strip() for part in normalized.split(",") if part.strip()]
+    candidate = parts[-1].lower() if len(parts) > 1 else normalized.lower()
+    if candidate in COUNTRY_MAP:
+        return COUNTRY_MAP[candidate]
+    for alias, canonical in COUNTRY_MAP.items():
+        if alias in normalized.lower():
+            return canonical
+    return normalized
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+import requests
 import typer
 from rich.table import Table
 from rich.console import Console
@@ -35,7 +36,15 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch or al
 
         for scraper in scrapers:
             console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
-            coffees = scraper.scrape()
+            try:
+                coffees = scraper.scrape()
+            except requests.exceptions.RequestException as exc:
+                console.print(f"[red]Network error while scraping {scraper.__class__.__name__}: {exc}[/red]")
+                raise typer.Exit(code=1)
+            except Exception as exc:
+                console.print(f"[red]Scraper failed: {exc}[/red]")
+                raise typer.Exit(code=1)
+
             for coffee in coffees:
                 service.create_or_update_coffee(coffee)
             console.print(f"[green]Imported {len(coffees)} coffees.[/green]")
