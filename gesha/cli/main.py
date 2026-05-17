@@ -41,6 +41,63 @@ def _print_coffees(coffees: list) -> None:
     console.print(table)
 
 
+def _refresh_catalog(source: str) -> None:
+    init_db()
+    with get_session() as session:
+        service = CoffeeService(session)
+        if source not in supported_sources():
+            supported = "', '".join(supported_sources())
+            raise typer.BadParameter(f"Unsupported source. Use '{supported}'.")
+        scrapers = get_scrapers(source)
+        refreshed_roaster_names = []
+
+        for scraper in scrapers:
+            console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
+            try:
+                scraped_coffees = scraper.scrape()
+            except requests.exceptions.RequestException as exc:
+                console.print(f"[red]Network error while scraping {scraper.__class__.__name__}: {exc}[/red]")
+                raise typer.Exit(code=1)
+            except Exception as exc:
+                console.print(f"[red]Scraper failed: {exc}[/red]")
+                raise typer.Exit(code=1)
+
+            for coffee in scraped_coffees:
+                service.create_or_update_coffee(coffee)
+
+            if scraped_coffees:
+                refreshed_roaster_names.append(scraper.ROASTER_NAME)
+                removed_count = service.delete_stale_coffees(
+                    scraper.ROASTER_NAME,
+                    [coffee.url for coffee in scraped_coffees if coffee.url],
+                )
+            else:
+                removed_count = 0
+                console.print(f"[yellow]No coffees returned for {scraper.ROASTER_NAME}; skipped stale cleanup for this roaster.[/yellow]")
+            console.print(f"[green]Imported {len(scraped_coffees)} coffees. Removed {removed_count} stale coffees.[/green]")
+
+        roaster_filter = scrapers[0].ROASTER_NAME if source != "all" and refreshed_roaster_names else None
+        console.print("[blue]Listing cleaned coffees...[/blue]")
+        if source == "all":
+            coffees = [
+                coffee
+                for coffee in service.list_coffees()
+                if coffee.roaster.name in refreshed_roaster_names
+            ]
+        elif refreshed_roaster_names:
+            coffees = service.list_coffees(roaster_name=roaster_filter)
+        else:
+            coffees = []
+        _print_coffees(coffees)
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context) -> None:
+    """Refresh and list the Gesha catalog when no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        _refresh_catalog("all")
+
+
 @app.command()
 def init() -> None:
     """Create local SQLite database tables."""
@@ -49,36 +106,9 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, demello, traffic, or all.")) -> None:
-    """Scrape coffees from supported roasters."""
-    init_db()
-    with get_session() as session:
-        service = CoffeeService(session)
-        if source not in supported_sources():
-            supported = "', '".join(supported_sources())
-            raise typer.BadParameter(f"Unsupported source. Use '{supported}'.")
-        scrapers = get_scrapers(source)
-
-        for scraper in scrapers:
-            console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
-            try:
-                coffees = scraper.scrape()
-            except requests.exceptions.RequestException as exc:
-                console.print(f"[red]Network error while scraping {scraper.__class__.__name__}: {exc}[/red]")
-                raise typer.Exit(code=1)
-            except Exception as exc:
-                console.print(f"[red]Scraper failed: {exc}[/red]")
-                raise typer.Exit(code=1)
-
-            for coffee in coffees:
-                service.create_or_update_coffee(coffee)
-            console.print(f"[green]Imported {len(coffees)} coffees.[/green]")
-
-        roaster_filter = scrapers[0].ROASTER_NAME if source != "all" else None
-
-        console.print("[blue]Listing imported coffees...[/blue]")
-        coffees = service.list_coffees(roaster_name=roaster_filter)
-        _print_coffees(coffees)
+def scrape(source: str = typer.Argument("all", help="Scraper to run: demello, traffic, portebleue, colorfull, angry, hatch, or all.")) -> None:
+    """Refresh coffees from supported roasters and clean stale rows."""
+    _refresh_catalog(source)
 
 
 @app.command()

@@ -7,6 +7,7 @@ from typing import TypeAlias
 from gesha.scrapers.base import BaseScraper
 from gesha.scrapers.demello import DeMelloScraper
 from gesha.scrapers.hatch import HatchScraper
+from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
 from gesha.scrapers.traffic import TrafficScraper
 
 ScraperClass: TypeAlias = type[BaseScraper]
@@ -15,7 +16,11 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "hatch": HatchScraper,
     "demello": DeMelloScraper,
     "traffic": TrafficScraper,
+    "portebleue": PorteBleueScraper,
+    "colorfull": ColorfullScraper,
+    "angry": AngryRoasterScraper,
 }
+DEFAULT_SOURCES = ("demello", "traffic", "portebleue", "colorfull", "angry")
 
 
 def get_scraper(source: str) -> BaseScraper:
@@ -26,7 +31,7 @@ def get_scraper(source: str) -> BaseScraper:
 def get_scrapers(source: str = "all") -> list[BaseScraper]:
     """Return scraper instances for one source or every supported source."""
     if source == "all":
-        return [scraper_class() for scraper_class in SCRAPER_REGISTRY.values()]
+        return [SCRAPER_REGISTRY[name]() for name in DEFAULT_SOURCES]
     return [get_scraper(source)]
 
 

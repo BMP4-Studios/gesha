@@ -46,3 +46,23 @@ def test_parse_traffic_product() -> None:
     assert coffee.price_cents == 2400
     assert coffee.bag_size == "250g"
     assert coffee.tasting_notes == ["caramel", "floral", "orange"]
+
+
+def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
+    html = (
+        "<h1>Yellow Diamond</h1>"
+        '<span class="product-price">$27.00</span>'
+        '<div class="product-block-description">'
+        "Origin: Kenya "
+        "Process: Natural "
+        "In the cup: apple cider, honey cake, flowers "
+        "ABOUT Habil moved his family and this long story should not be notes."
+        "</div>"
+    )
+
+    coffee = parse_traffic_product(
+        html,
+        "https://www.trafficcoffee.com/collections/coffee/products/yellow-diamond",
+    )
+
+    assert coffee.tasting_notes == ["apple cider", "flowers", "honey cake"]

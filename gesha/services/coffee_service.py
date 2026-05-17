@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from gesha.db.models import Coffee, Roaster, TastingNote
@@ -81,3 +81,24 @@ class CoffeeService:
 
     def get_coffee_by_id(self, coffee_id: int) -> Optional[Coffee]:
         return self.session.get(Coffee, coffee_id)
+
+    def delete_stale_coffees(self, roaster_name: str, current_urls: Iterable[str]) -> int:
+        urls = {url for url in current_urls if url}
+        if not urls:
+            return 0
+
+        roaster = self.session.scalar(select(Roaster).where(Roaster.name == roaster_name))
+        if roaster is None:
+            return 0
+
+        stale_coffees = self.session.scalars(
+            select(Coffee)
+            .where(Coffee.roaster_id == roaster.id)
+            .where(or_(Coffee.url.is_(None), Coffee.url.not_in(urls)))
+        ).all()
+
+        for coffee in stale_coffees:
+            self.session.delete(coffee)
+
+        self.session.commit()
+        return len(stale_coffees)

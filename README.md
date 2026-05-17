@@ -34,31 +34,31 @@ gesha init
 
 This creates the SQLite schema for roasters, coffees, and tasting notes.
 
-`gesha scrape` will now automatically initialize the database schema if needed.
+Running `gesha` or `gesha scrape` will automatically initialize the database schema if needed.
 
 ## Requirements
 
 - Internet access is required for scraping remote roaster pages.
-- If `gesha scrape` fails with a DNS or network error, verify your connection and retry.
+- If `gesha` fails with a DNS or network error, verify your connection and retry.
 
 ## Basic usage
 
-Scrape Hatch Coffee:
+Refresh every supported roaster, remove stale local rows, and list the cleaned catalog:
 
 ```bash
-gesha scrape hatch
+gesha
 ```
 
-Scrape De Mello Coffee:
-
-```bash
-gesha scrape demello
-```
-
-Scrape Traffic Coffee:
+Scrape a single supported roaster:
 
 ```bash
 gesha scrape traffic
+```
+
+Supported default roasters are De Mello, Traffic, Porte Bleue, Colorfull, and The Angry Roaster. Hatch is available as an explicit custom scraper, but is not part of the default refresh because its site is less Shopify-like and less reliable:
+
+```bash
+gesha scrape hatch
 ```
 
 Scrape all supported roasters (default):
@@ -67,7 +67,7 @@ Scrape all supported roasters (default):
 gesha scrape
 ```
 
-After scraping, the CLI will automatically display the newly imported coffees.
+After scraping, the CLI will automatically display the cleaned local catalog.
 
 List coffees:
 

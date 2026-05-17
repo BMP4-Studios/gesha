@@ -7,9 +7,21 @@ from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
+from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value, extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/collections/coffee/products/[^/?#]+$")
+DETAIL_LABELS = [
+    "Farmer",
+    "Origin",
+    "Process",
+    "Varietal",
+    "Altitude",
+    "Roast level",
+    "Size",
+    "In the cup",
+    "About",
+    "ABOUT",
+]
 
 
 def parse_traffic_collection(html: str, base_url: str) -> List[str]:
@@ -37,15 +49,7 @@ def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
     }
 
     def value_for(key: str) -> Optional[str]:
-        # Match key, colon/dash, then capture until the next known key or end
-        pattern = rf"{re.escape(key)}\s*[:\-]\s*(.*?)(?=(?:Farmer|Origin|Process|Varietal|Altitude|Roast level|Size|In the cup|$))"
-        match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-        if match:
-            value = match.group(1).strip()
-            # Remove line breaks and extra spaces
-            value = re.sub(r"\s+", " ", value)
-            return value if value else None
-        return None
+        return extract_labeled_value(text, [key], DETAIL_LABELS)
 
     details["origin"] = value_for("Origin")
     details["producer"] = value_for("Farmer")
@@ -58,10 +62,10 @@ def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
 
 
 def _extract_tasting_notes(text: str) -> List[str]:
-    match = re.search(r"In the cup\s*:\s*(.*?)(?:\s+(?:In|ABOUT)|$)", text, re.IGNORECASE | re.DOTALL)
-    if match:
-        return normalize_tasting_notes(re.split(r"[,;/]\s*", match.group(1)))
-    return []
+    value = extract_labeled_value(text, ["In the cup"], DETAIL_LABELS)
+    if not value:
+        return []
+    return normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[,;/]|\s+-\s+", value)))
 
 
 def parse_traffic_product(html: str, url: str) -> CoffeeData:

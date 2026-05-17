@@ -44,3 +44,106 @@ def parse_price(value: str | None) -> Optional[int]:
     if not match:
         return None
     return int(float(match.group(1)) * 100)
+
+
+def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> Optional[str]:
+    label_pattern = "|".join(re.escape(label) for label in labels)
+    stop_pattern = "|".join(re.escape(label) for label in stop_labels)
+    pattern = rf"(?:{label_pattern})\s*[:\-]\s*(.*?)(?=\n|(?:{stop_pattern})(?:\s*[:\-]|\b)|$)"
+    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return None
+    value = re.sub(r"\s+", " ", match.group(1)).strip()
+    for label in labels:
+        value = re.sub(rf"^{re.escape(label)}\s*[:\-]\s*", "", value, flags=re.IGNORECASE).strip()
+    return value if value else None
+
+
+def clean_tasting_note_candidates(values: list[str]) -> list[str]:
+    notes: list[str] = []
+    prose_words = {
+        "a",
+        "an",
+        "around",
+        "but",
+        "can",
+        "for",
+        "from",
+        "if",
+        "in",
+        "it",
+        "it's",
+        "of",
+        "on",
+        "or",
+        "our",
+        "should",
+        "shouldn't",
+        "that",
+        "the",
+        "this",
+        "throughout",
+        "to",
+        "very",
+        "we",
+        "with",
+        "you",
+        "your",
+    }
+    noisy_fragments = (
+        "{",
+        "}",
+        "[",
+        "]",
+        '"',
+        "$",
+        "amount:",
+        "createdat",
+        "updatedat",
+        "metadata",
+        "price",
+        "variant",
+        "shipping",
+        "description:",
+        "order details",
+        "producer:",
+        "origin:",
+        "process:",
+        "variety:",
+        "varietal:",
+        "altitude:",
+        "afford",
+        "amp",
+        "coffee.",
+        "delicious coffee",
+        "family",
+        "farmer:",
+        "rewarding",
+        "seasons",
+        "year",
+    )
+    noisy_exact = {
+        "go",
+        "santa bárbara",
+    }
+    for value in values:
+        note = re.sub(r"\s+", " ", value).strip(" .")
+        note = re.sub(r"^and\s+", "", note, flags=re.IGNORECASE).strip()
+        lowered = note.lower()
+        if not note:
+            continue
+        if lowered in noisy_exact:
+            continue
+        words = re.findall(r"[a-z']+", lowered)
+        if len(note) > 48 or len(note.split()) > 4:
+            continue
+        if note[0] in "),.:;!?":
+            continue
+        if any(char in note for char in ".!?"):
+            continue
+        if any(word.replace("’", "'") in prose_words for word in words):
+            continue
+        if any(fragment in lowered for fragment in noisy_fragments):
+            continue
+        notes.append(note)
+    return notes

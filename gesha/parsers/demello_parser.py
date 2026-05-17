@@ -11,6 +11,10 @@ from gesha.normalization.normalize import normalize_country, normalize_process, 
 from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/products/[^/?#]+$")
+EXCLUDE_SLUG_KEYWORDS = (
+    "starter-kit",
+    "instant-coffee",
+)
 
 
 def parse_demello_collection(html: str, base_url: str) -> List[str]:
@@ -19,6 +23,7 @@ def parse_demello_collection(html: str, base_url: str) -> List[str]:
         *extract_matching_urls(soup, selector="[data-url]", attribute="data-url", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
         *extract_matching_urls(soup, selector="a[href^='/products/']", attribute="href", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
     ]
+    urls = [url for url in urls if not any(keyword in url.rsplit("/", 1)[-1].lower() for keyword in EXCLUDE_SLUG_KEYWORDS)]
 
     return sorted(dict.fromkeys(urls))
 
