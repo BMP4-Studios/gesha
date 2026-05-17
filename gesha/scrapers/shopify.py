@@ -16,6 +16,7 @@ from gesha.scrapers.base import BaseScraper
 SHOPIFY_DETAIL_LABELS = [
     "Country",
     "Origin",
+    "Origins",
     "Region",
     "Place",
     "Producer",
@@ -55,32 +56,18 @@ class ShopifyScraper(BaseScraper):
             urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
         return sorted(dict.fromkeys(urls))
 
-    def scrape(self) -> List[CoffeeData]:
-        response = self.session.get(self.COLLECTION_URL, timeout=15)
+    def scrape_product(self, url: str) -> Optional[CoffeeData]:
+        """Shopify-specific product scraping using the .js AJAX endpoint."""
+        response = self.session.get(f"{url}.js", timeout=15)
+        if response.status_code == 404:
+            return None
         response.raise_for_status()
-        product_urls = self.extract_product_urls(response.text)
-        coffees: list[CoffeeData] = []
+        product_data = response.json()
 
-        for product_url in product_urls:
-            try:
-                product_response = self.session.get(f"{product_url}.js", timeout=15)
-                if product_response.status_code == 404:
-                    continue
-                product_response.raise_for_status()
-                product_data = product_response.json()
-            except (requests.exceptions.RequestException, ValueError) as exc:
-                self.logger.warning("Skipping %s product JSON because it failed: %s (%s)", self.SOURCE_NAME, product_url, exc)
-                continue
+        if not self._is_coffee_product(product_data):
+            return None
 
-            if not self._is_coffee_product(product_data):
-                continue
-
-            try:
-                coffees.append(self._coffee_from_product(product_data, product_url))
-            except Exception as exc:
-                self.logger.warning("Skipping %s product JSON because parsing failed: %s (%s)", self.SOURCE_NAME, product_url, exc)
-
-        return coffees
+        return self._coffee_from_product(product_data, url)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         raise NotImplementedError("ShopifyScraper parses product JSON instead of product HTML.")
@@ -107,13 +94,19 @@ class ShopifyScraper(BaseScraper):
     def _coffee_from_product(self, product_data: dict[str, Any], url: str) -> CoffeeData:
         description = self._description_text(product_data)
         details = self._extract_details(description)
+        title = str(product_data.get("title") or "Unknown coffee")
+
+        # Fallback to title parsing if description labels are missing
+        title_details = self._extract_details_from_title(title)
+        origin = details.get("origin") or title_details.get("origin")
+        process = details.get("process") or title_details.get("process")
 
         return CoffeeData(
             roaster=self.ROASTER_NAME,
-            name=str(product_data.get("title") or "Unknown coffee"),
-            origin=normalize_country(details.get("origin")),
+            name=title,
+            origin=normalize_country(origin),
             producer=details.get("producer"),
-            process=normalize_process(details.get("process")),
+            process=normalize_process(process),
             varietal=details.get("varietal"),
             altitude=details.get("altitude"),
             tasting_notes=self._extract_tasting_notes(description),
@@ -137,6 +130,33 @@ class ShopifyScraper(BaseScraper):
             "altitude": extract_labeled_value(description, ["Altitude", "Elevation"], SHOPIFY_DETAIL_LABELS),
             "bag_size": extract_labeled_value(description, ["Amount", "Size"], SHOPIFY_DETAIL_LABELS),
         }
+
+    def _extract_details_from_title(self, title: str) -> dict[str, Optional[str]]:
+        """Try to extract origin and process from common title patterns like 'Country - Name | Process'."""
+        details = {"origin": None, "process": None}
+
+        # Split by pipe first (highest confidence for process)
+        if "|" in title:
+            pipe_parts = [p.strip() for p in title.split("|")]
+            details["origin"] = pipe_parts[0]
+            if len(pipe_parts) >= 2:
+                # If there are 3+ parts (Origin | Name | Process), use the last
+                details["process"] = pipe_parts[-1]
+
+        # Refine origin if it was set or try dash split
+        if details["origin"]:
+            dash_parts = re.split(r"\s*[−–—-]\s*", details["origin"])
+            if dash_parts:
+                details["origin"] = dash_parts[0]
+        else:
+            # No pipe, fallback to dash split
+            dash_parts = re.split(r"\s*[−–—-]\s*", title)
+            if len(dash_parts) >= 2:
+                details["origin"] = dash_parts[0]
+                if len(dash_parts) >= 3:
+                    details["process"] = dash_parts[-1]
+
+        return details
 
     def _extract_tasting_notes(self, description: str) -> list[str]:
         value = extract_labeled_value(description, ["Tasting Notes", "Notes", "In the cup"], SHOPIFY_DETAIL_LABELS)
@@ -195,3 +215,19 @@ class AngryRoasterScraper(ShopifyScraper):
     SOURCE_NAME = "The Angry Roaster"
     ROASTER_NAME = "The Angry Roaster"
     INCLUDE_PRODUCT_TYPES = ("coffee",)
+
+
+class RogueWaveScraper(ShopifyScraper):
+    BASE_URL = "https://www.roguewavecoffee.ca"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "Rogue Wave"
+    ROASTER_NAME = "Rogue Wave Coffee"
+    INCLUDE_TAGS = ("coffee",)
+
+
+class HouseOfFunkScraper(ShopifyScraper):
+    BASE_URL = "https://www.houseoffunkbrewing.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "House of Funk"
+    ROASTER_NAME = "House of Funk"
+    INCLUDE_TAGS = ("coffee",)

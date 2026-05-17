@@ -3,20 +3,61 @@ from __future__ import annotations
 import re
 from typing import Iterable, List
 
-PROCESS_MAP = {
-    "fully washed": "washed",
-    "washed": "washed",
-    "wet process": "washed",
-    "natural": "natural",
-    "honey": "honey",
-    "pulped natural": "honey",
-    "anaerobic": "anaerobic",
+# Processes that are correct as-is
+VALID_PROCESSES = {
+    "washed",
+    "natural",
+    "honey",
+    "anaerobic",
+    "co-ferment",
+    "carbonic maceration",
+    "experimental",
+    "decaf",
+    "blend",
 }
 
-COUNTRY_MAP = {
-    "canada": "Canada",
-    "costa rica": "Costa Rica",
-    "ethiopia": "Ethiopia",
+# Non-standard terms that should map to a valid process
+PROCESS_ALIASES = {
+    "fully washed": "washed",
+    "wet process": "washed",
+    "pulped natural": "honey",
+    "various": "blend",
+}
+
+# Countries/Origins that are correct as-is
+VALID_COUNTRIES = {
+    "Bolivia",
+    "Brazil",
+    "Burundi",
+    "Canada",
+    "Colombia",
+    "Costa Rica",
+    "Dominican Republic",
+    "Ecuador",
+    "El Salvador",
+    "Ethiopia",
+    "Guatemala",
+    "Honduras",
+    "India",
+    "Indonesia",
+    "Kenya",
+    "Mexico",
+    "Myanmar",
+    "Nicaragua",
+    "Panama",
+    "Papua New Guinea",
+    "Peru",
+    "Rwanda",
+    "Tanzania",
+    "Thailand",
+    "Uganda",
+    "Vietnam",
+    "Yemen",
+}
+
+# Common abbreviations or misspellings for countries
+COUNTRY_ALIASES = {
+    "png": "Papua New Guinea",
 }
 
 NOTE_TAGS = [
@@ -36,21 +77,51 @@ def normalize_process(value: str | None) -> str | None:
     if not value:
         return None
     normalized = value.strip().lower()
-    return PROCESS_MAP.get(normalized, normalized)
+
+    # 1. Check direct aliases
+    if normalized in PROCESS_ALIASES:
+        return PROCESS_ALIASES[normalized]
+
+    # 2. Check if it's already a valid process
+    if normalized in VALID_PROCESSES:
+        return normalized
+
+    # 3. Keyword fallback
+    for valid in VALID_PROCESSES:
+        if valid in normalized:
+            return valid
+    for alias, canonical in PROCESS_ALIASES.items():
+        if alias in normalized:
+            return canonical
+    return None
 
 
 def normalize_country(value: str | None) -> str | None:
     if not value:
         return None
     normalized = value.strip()
+    lowered = normalized.lower()
+
+    # 1. Check direct aliases
+    if lowered in COUNTRY_ALIASES:
+        return COUNTRY_ALIASES[lowered]
+
+    # 2. Check if it's a known valid country (case-insensitive check)
+    for valid in VALID_COUNTRIES:
+        if valid.lower() == lowered:
+            return valid
+
+    # 3. Substring check (e.g., "Western Ethiopia" -> "Ethiopia")
+    for valid in VALID_COUNTRIES:
+        if valid.lower() in lowered:
+            return valid
+
+    # Fallback to last part if comma-separated
     parts = [part.strip() for part in normalized.split(",") if part.strip()]
-    candidate = parts[-1].lower() if len(parts) > 1 else normalized.lower()
-    if candidate in COUNTRY_MAP:
-        return COUNTRY_MAP[candidate]
-    for alias, canonical in COUNTRY_MAP.items():
-        if alias in normalized.lower():
-            return canonical
-    return normalized
+    if len(parts) > 1:
+        return normalize_country(parts[-1])
+
+    return None
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:

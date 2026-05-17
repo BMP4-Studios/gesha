@@ -7,7 +7,13 @@ from typing import TypeAlias
 from gesha.scrapers.base import BaseScraper
 from gesha.scrapers.demello import DeMelloScraper
 from gesha.scrapers.hatch import HatchScraper
-from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
+from gesha.scrapers.shopify import (
+    AngryRoasterScraper,
+    ColorfullScraper,
+    HouseOfFunkScraper,
+    PorteBleueScraper,
+    RogueWaveScraper,
+)
 from gesha.scrapers.traffic import TrafficScraper
 
 ScraperClass: TypeAlias = type[BaseScraper]
@@ -19,8 +25,18 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "portebleue": PorteBleueScraper,
     "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
+    "roguewave": RogueWaveScraper,
+    "houseoffunk": HouseOfFunkScraper,
 }
-DEFAULT_SOURCES = ("demello", "traffic", "portebleue", "colorfull", "angry")
+DEFAULT_SOURCES = (
+    "demello",
+    "traffic",
+    "portebleue",
+    "colorfull",
+    "angry",
+    "roguewave",
+    "houseoffunk",
+)
 
 
 def get_scraper(source: str) -> BaseScraper:

@@ -101,9 +101,9 @@ def parse_demello_product(html: str, url: str) -> CoffeeData:
     return CoffeeData(
         roaster="De Mello Coffee",
         name=title,
-        origin=normalize_country(details.get("origin")),
+        origin=normalize_country(details.get("origin")) or normalize_country(title),
         producer=details.get("producer"),
-        process=normalize_process(details.get("process")),
+        process=normalize_process(details.get("process")) or normalize_process(title),
         varietal=details.get("varietal"),
         altitude=details.get("altitude"),
         tasting_notes=_extract_tasting_notes(description),

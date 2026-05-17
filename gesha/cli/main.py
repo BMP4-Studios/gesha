@@ -122,22 +122,7 @@ def list(
     with get_session() as session:
         service = CoffeeService(session)
         coffees = service.list_coffees(process=process, flavor=flavor, roaster_name=roaster, available=available)
-
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("ID", style="dim")
-        table.add_column("Roaster")
-        table.add_column("Name")
-        table.add_column("Process")
-        table.add_column("Origin")
-        table.add_column("Price")
-        table.add_column("Notes")
-
-        for coffee in coffees:
-            notes = ", ".join(note.name for note in coffee.tasting_notes)
-            price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a"
-            table.add_row(str(coffee.id), coffee.roaster.name, coffee.name, coffee.process or "n/a", coffee.origin or "n/a", price, notes)
-
-        console.print(table)
+        _print_coffees(coffees)
 
 
 @app.command()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import List
+from typing import List, Optional
 
 import requests
 
@@ -35,33 +35,25 @@ class BaseScraper(ABC):
 
         for product_url in product_urls:
             try:
-                product_response = self.session.get(product_url, timeout=15)
-                if product_response.status_code == 404:
-                    continue
-                product_response.raise_for_status()
-            except requests.exceptions.RequestException as exc:
-                self.logger.warning(
-                    "Skipping %s product URL because it failed: %s (%s)",
-                    self.SOURCE_NAME,
-                    product_url,
-                    exc,
-                )
-                continue
-
-            try:
-                coffee = self.parse_product(product_response.text, product_url)
+                coffee = self.scrape_product(product_url)
+                if coffee:
+                    coffees.append(coffee)
             except Exception as exc:
                 self.logger.warning(
-                    "Skipping %s product URL because parsing failed: %s (%s)",
+                    "Skipping %s product URL because processing failed: %s (%s)",
                     self.SOURCE_NAME,
                     product_url,
                     exc,
                 )
-                continue
-
-            coffees.append(coffee)
-
         return coffees
+
+    def scrape_product(self, url: str) -> Optional[CoffeeData]:
+        """Fetch and parse a single product URL. Defaults to HTML-based parsing."""
+        response = self.session.get(url, timeout=15)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return self.parse_product(response.text, url)
 
     @abstractmethod
     def extract_product_urls(self, html: str) -> List[str]:
