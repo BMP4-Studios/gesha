@@ -8,11 +8,38 @@ from rich.table import Table
 from rich.console import Console
 
 from gesha.db.session import get_session, init_db
+from gesha.scrapers.demello import DeMelloScraper
 from gesha.scrapers.hatch import HatchScraper
 from gesha.services.coffee_service import CoffeeService
 
 app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
 console = Console()
+
+
+def _print_coffees(coffees: list) -> None:
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("ID", style="dim")
+    table.add_column("Roaster")
+    table.add_column("Name")
+    table.add_column("Process")
+    table.add_column("Origin")
+    table.add_column("Price")
+    table.add_column("Notes")
+
+    for coffee in coffees:
+        notes = ", ".join(note.name for note in coffee.tasting_notes)
+        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a"
+        table.add_row(
+            str(coffee.id),
+            coffee.roaster.name,
+            coffee.name,
+            coffee.process or "n/a",
+            coffee.origin or "n/a",
+            price,
+            notes,
+        )
+
+    console.print(table)
 
 
 @app.command()
@@ -23,16 +50,19 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch or all.")) -> None:
+def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch, demello, or all.")) -> None:
     """Scrape coffees from supported roasters."""
+    init_db()
     with get_session() as session:
         service = CoffeeService(session)
         scrapers = []
         if source in ("all", "hatch"):
             scrapers.append(HatchScraper())
+        if source in ("all", "demello"):
+            scrapers.append(DeMelloScraper())
 
         if not scrapers:
-            raise typer.BadParameter("Unsupported source. Use 'hatch' or 'all'.")
+            raise typer.BadParameter("Unsupported source. Use 'hatch', 'demello', or 'all'.")
 
         for scraper in scrapers:
             console.print(f"[blue]Scraping {scraper.__class__.__name__}...[/blue]")
@@ -48,6 +78,16 @@ def scrape(source: str = typer.Argument("all", help="Scraper to run: hatch or al
             for coffee in coffees:
                 service.create_or_update_coffee(coffee)
             console.print(f"[green]Imported {len(coffees)} coffees.[/green]")
+
+        roaster_filter = None
+        if source == "hatch":
+            roaster_filter = "Hatch Coffee"
+        elif source == "demello":
+            roaster_filter = "De Mello Coffee"
+
+        console.print("[blue]Listing imported coffees...[/blue]")
+        coffees = service.list_coffees(roaster_name=roaster_filter)
+        _print_coffees(coffees)
 
 
 @app.command()

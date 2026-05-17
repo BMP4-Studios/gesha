@@ -34,6 +34,8 @@ gesha init
 
 This creates the SQLite schema for roasters, coffees, and tasting notes.
 
+`gesha scrape` will now automatically initialize the database schema if needed.
+
 ## Requirements
 
 - Internet access is required for scraping remote roaster pages.
@@ -47,11 +49,19 @@ Scrape Hatch Coffee:
 gesha scrape hatch
 ```
 
-Scrape all supported roasters:
+Scrape De Mello Coffee:
 
 ```bash
-gesha scrape all
+gesha scrape demello
 ```
+
+Scrape all supported roasters (default):
+
+```bash
+gesha scrape
+```
+
+After scraping, the CLI will automatically display the newly imported coffees.
 
 List coffees:
 
