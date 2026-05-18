@@ -1,4 +1,4 @@
-from gesha.normalization.normalize import normalize_process, normalize_country, normalize_tasting_notes
+from gesha.normalization.normalize import normalize_process, normalize_country, normalize_tasting_notes, remove_emojis
 
 
 def test_normalize_process_variants() -> None:
@@ -15,3 +15,8 @@ def test_normalize_country_aliases() -> None:
 def test_normalize_tasting_notes_from_string() -> None:
     assert normalize_tasting_notes("berry; chocolate; floral") == ["berry", "chocolate", "floral"]
     assert normalize_tasting_notes("Maple, spice") == ["maple", "spice"]
+
+
+def test_remove_emojis() -> None:
+    assert remove_emojis("LOVEBUZZ 😵‍💫 💙") == "LOVEBUZZ"
+    assert remove_emojis("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". Bouquet. blossomed edition"

@@ -1,6 +1,6 @@
 # Gesha
 
-# <img src="assets/gesha.png" alt="Gesha Logo" width="300">
+# <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
 Gesha is a local-first specialty coffee discovery and cart optimization CLI tool focused on scraping Canadian roasters, normalizing coffee metadata, and storing it in a local SQLite database.
 

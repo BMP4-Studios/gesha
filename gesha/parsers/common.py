@@ -5,6 +5,7 @@ from typing import Optional
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+from gesha.normalization.normalize import remove_emojis
 
 
 def extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
@@ -13,9 +14,11 @@ def extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
     if element.name == "meta":
         content = element.get("content")
         if isinstance(content, str) and content.strip():
-            return content.strip()
+            return remove_emojis(content.strip()) or None
     text = element.get_text(separator=" ", strip=True)
-    return text if text else None
+    if not text:
+        return None
+    return remove_emojis(text) or None
 
 
 def extract_matching_urls(

@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
 from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value
 from gesha.scrapers.base import BaseScraper
 
@@ -96,7 +96,7 @@ class ShopifyScraper(BaseScraper):
     def _coffee_from_product(self, product_data: dict[str, Any], url: str) -> CoffeeData:
         description = self._description_text(product_data)
         details = self._extract_details(description)
-        title = str(product_data.get("title") or "Unknown coffee")
+        title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
 
         # Fallback to title parsing if description labels are missing
         title_details = self._extract_details_from_title(title)

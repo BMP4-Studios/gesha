@@ -34,6 +34,7 @@ class CoffeeService:
             coffee = Coffee(roaster_id=roaster.id, name=data.name)
             self.session.add(coffee)
 
+        coffee.name = data.name
         coffee.origin = data.origin
         coffee.producer = data.producer
         coffee.process = data.process
