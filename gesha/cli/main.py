@@ -174,7 +174,7 @@ def show(coffee_id: int) -> None:
 
 @app.command()
 def debug(coffee_id: int) -> None:
-    """Fetch and print the raw content of a coffee's product page for debugging."""
+    """Dump all raw web data for a coffee (HTML and JSON) into a single debug file."""
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
@@ -184,9 +184,23 @@ def debug(coffee_id: int) -> None:
         if not coffee.url:
             console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
             raise typer.Exit(code=1)
-        response = requests.get(coffee.url, timeout=15)
-        response.raise_for_status()
-        console.print(response.text)
+        filename = f"debug_{coffee_id}.txt"
+        output = []
+        # 1. Fetch JSON (Shopify AJAX)
+        json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
+        res_json = requests.get(json_url, timeout=15)
+        if res_json.status_code == 200:
+            output.append("=== RAW JSON DATA ===\n")
+            output.append(res_json.text)
+            output.append("\n\n")
+        # 2. Fetch HTML
+        res_html = requests.get(coffee.url, timeout=15)
+        res_html.raise_for_status()
+        output.append("=== RAW HTML DATA ===\n")
+        output.append(res_html.text)
+        with open(filename, "w", encoding="utf-8") as f:
+            f.writelines(output)
+        console.print(f"[green]Full raw data dumped to {filename}[/green]")
 
 
 if __name__ == "__main__":

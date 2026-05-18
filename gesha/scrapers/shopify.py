@@ -63,8 +63,15 @@ class ShopifyScraper(BaseScraper):
 
         if not self._is_coffee_product(product_data):
             return None
+        
+        # If the JSON description is missing notes, fetch HTML as a fallback
+        html_fallback = None
+        if not self._extract_tasting_notes(self._description_text(product_data)):
+            res_html = self.session.get(url, timeout=15)
+            if res_html.status_code == 200:
+                html_fallback = res_html.text
 
-        return self._coffee_from_product(product_data, url)
+        return self._coffee_from_product(product_data, url, html_fallback=html_fallback)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         raise NotImplementedError("ShopifyScraper parses product JSON instead of product HTML.")
@@ -90,7 +97,7 @@ class ShopifyScraper(BaseScraper):
             return True
         return not self.INCLUDE_PRODUCT_TYPES and not self.INCLUDE_TAGS
 
-    def _coffee_from_product(self, product_data: dict[str, Any], url: str) -> CoffeeData:
+    def _coffee_from_product(self, product_data: dict[str, Any], url: str, html_fallback: str = None) -> CoffeeData:
         description = self._description_text(product_data)
         details = self._extract_details(description)
         title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
@@ -99,6 +106,10 @@ class ShopifyScraper(BaseScraper):
         title_details = self._extract_details_from_title(title)
         origin = details.get("origin") or title_details.get("origin") or title
         process = details.get("process") or title_details.get("process") or title
+        
+        # Use HTML fallback for notes if JSON was empty
+        notes_source = html_fallback if html_fallback and not details.get("notes") else description
+
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
@@ -107,7 +118,7 @@ class ShopifyScraper(BaseScraper):
             process=normalize_process(process),
             varietal=details.get("varietal"),
             altitude=details.get("altitude"),
-            tasting_notes=self._extract_tasting_notes(description),
+            tasting_notes=self._extract_tasting_notes(notes_source),
             roast_style=self._extract_roast_style(product_data),
             price_cents=self._extract_price(product_data),
             bag_size=details.get("bag_size") or self._extract_bag_size(product_data),
