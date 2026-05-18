@@ -144,7 +144,7 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:
     if values is None:
         return []
     if isinstance(values, str):
-        values = re.split(r"[;,\n]", values)
+        values = re.split(r"[;,\n•·|]|\.\s+", values)
     normalized: list[str] = []
     for note in values:
         candidate = remove_emojis(note.strip().lower())

@@ -13,7 +13,15 @@ from gesha.scrapers import get_scrapers, supported_sources
 from gesha.services.coffee_service import CoffeeService
 from gesha.normalization.normalize import NA_LABEL
 
-app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
+app = typer.Typer(
+    help=(
+        "Gesha: A local-first specialty coffee discovery tool.\n\n"
+        "This CLI scrapes supported Canadian roasters, normalizes their metadata "
+        "(origin, process, tasting notes, etc.), and stores the results in a local "
+        "SQLite database for fast querying and inspection."
+    ),
+    rich_markup_mode="rich",
+)
 console = Console()
 
 
@@ -41,7 +49,7 @@ def _print_coffees(coffees: list) -> None:
             coffee.process or NA_LABEL,
             coffee.origin or NA_LABEL,
             price,
-            notes,
+            notes or NA_LABEL,
         )
 
     console.print(table)
@@ -111,7 +119,11 @@ def init() -> None:
 
 @app.command()
 def scrape(source: str = typer.Argument("all", help="Scraper to run: demello, traffic, portebleue, colorfull, angry, hatch, or all.")) -> None:
-    """Refresh coffees from supported roasters and clean stale rows."""
+    """
+    Refresh the local database by scraping roaster websites.
+    
+    This command fetches product data, normalizes it, updates existing records, 
+    and deletes coffees that are no longer available on the roaster's site."""
     _refresh_catalog(source)
 
 
@@ -122,7 +134,10 @@ def list(
     roaster: Optional[str] = typer.Option(None, help="Filter by roaster name."),
     available: Optional[bool] = typer.Option(None, help="Show only available coffees."),
 ) -> None:
-    """List coffees in the local database."""
+    """
+    List and filter coffees currently stored in the local database.
+    
+    Use the options below to narrow down the catalog by process, flavor notes, or availability."""
     with get_session() as session:
         service = CoffeeService(session)
         coffees = service.list_coffees(process=process, flavor=flavor, roaster_name=roaster, available=available)
@@ -155,6 +170,23 @@ def show(coffee_id: int) -> None:
         table.add_row("URL", coffee.url or NA_LABEL)
         table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or NA_LABEL)
         console.print(table)
+
+
+@app.command()
+def debug(coffee_id: int) -> None:
+    """Fetch and print the raw content of a coffee's product page for debugging."""
+    with get_session() as session:
+        service = CoffeeService(session)
+        coffee = service.get_coffee_by_id(coffee_id)
+        if coffee is None:
+            console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
+            raise typer.Exit(code=1)
+        if not coffee.url:
+            console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
+            raise typer.Exit(code=1)
+        response = requests.get(coffee.url, timeout=15)
+        response.raise_for_status()
+        console.print(response.text)
 
 
 if __name__ == "__main__":

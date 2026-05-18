@@ -166,8 +166,19 @@ class ShopifyScraper(BaseScraper):
                     value = match.group(1)
                     break
         if not value:
+            # Fallback to the very first line of the description if no label is found
+            lines = [l.strip() for l in description.splitlines() if l.strip()]
+            # Try to find a line that actually looks like a note list (using special separators)
+            for line in lines:
+                if any(sep in line for sep in ("•", "·", "|")):
+                    value = line
+                    break
+            if lines:
+                value = value or lines[0]
+        if not value:
             return []
-        parts = re.split(r"[,;/]|&|\s+-\s+", value)
+        # Support standard separators plus bullets, middle dots, and period-space
+        parts = re.split(r"[,;/]|&|\s+-\s+|[•·|]|\.\s+", value)
         return normalize_tasting_notes(clean_tasting_note_candidates(parts))
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> Optional[str]:
