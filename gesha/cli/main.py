@@ -11,6 +11,7 @@ from rich.console import Console
 from gesha.db.session import get_session, init_db
 from gesha.scrapers import get_scrapers, supported_sources
 from gesha.services.coffee_service import CoffeeService
+from gesha.normalization.normalize import NA_LABEL
 
 app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
 console = Console()
@@ -30,15 +31,15 @@ def _print_coffees(coffees: list) -> None:
 
     for i, coffee in enumerate(coffees, 1):
         notes = ", ".join(note.name for note in coffee.tasting_notes)
-        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a"
+        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
         table.add_row(
             str(i),
             str(coffee.id),
             coffee.roaster.name,
             coffee.name,
-            coffee.bag_size or "n/a",
-            coffee.process or "n/a",
-            coffee.origin or "n/a",
+            coffee.bag_size or NA_LABEL,
+            coffee.process or NA_LABEL,
+            coffee.origin or NA_LABEL,
             price,
             notes,
         )
@@ -142,17 +143,17 @@ def show(coffee_id: int) -> None:
         table.add_row("ID", str(coffee.id))
         table.add_row("Roaster", coffee.roaster.name)
         table.add_row("Name", coffee.name)
-        table.add_row("Origin", coffee.origin or "n/a")
-        table.add_row("Producer", coffee.producer or "n/a")
-        table.add_row("Process", coffee.process or "n/a")
-        table.add_row("Varietal", coffee.varietal or "n/a")
-        table.add_row("Altitude", coffee.altitude or "n/a")
-        table.add_row("Roast style", coffee.roast_style or "n/a")
-        table.add_row("Bag size", coffee.bag_size or "n/a")
-        table.add_row("Price", f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a")
+        table.add_row("Origin", coffee.origin or NA_LABEL)
+        table.add_row("Producer", coffee.producer or NA_LABEL)
+        table.add_row("Process", coffee.process or NA_LABEL)
+        table.add_row("Varietal", coffee.varietal or NA_LABEL)
+        table.add_row("Altitude", coffee.altitude or NA_LABEL)
+        table.add_row("Roast style", coffee.roast_style or NA_LABEL)
+        table.add_row("Bag size", coffee.bag_size or NA_LABEL)
+        table.add_row("Price", f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL)
         table.add_row("Availability", "yes" if coffee.availability else "no")
-        table.add_row("URL", coffee.url or "n/a")
-        table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or "n/a")
+        table.add_row("URL", coffee.url or NA_LABEL)
+        table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or NA_LABEL)
         console.print(table)
 
 

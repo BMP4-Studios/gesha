@@ -4,6 +4,7 @@ from datetime import date
 from typing import Iterable, List, Optional
 
 from pydantic import BaseModel, Field, validator
+from gesha.normalization.normalize import NA_LABEL
 
 
 class CoffeeData(BaseModel):
@@ -33,4 +34,4 @@ class CoffeeData(BaseModel):
         return [note.strip().lower() for note in value if isinstance(note, str) and note.strip()]
 
     def get_price_display(self) -> str:
-        return f"${self.price_cents / 100:.2f}" if self.price_cents is not None else "n/a"
+        return f"${self.price_cents / 100:.2f}" if self.price_cents is not None else NA_LABEL
