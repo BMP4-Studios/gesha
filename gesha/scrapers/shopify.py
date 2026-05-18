@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
-from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value
+from gesha.parsers.common import COMMON_TASTING_NOTE_LABELS, clean_tasting_note_candidates, extract_labeled_value
 from gesha.scrapers.base import BaseScraper
 
 
@@ -30,13 +30,10 @@ SHOPIFY_DETAIL_LABELS = [
     "Method",
     "Altitude",
     "Elevation",
-    "Notes",
-    "Tasting Notes",
-    "In the cup",
     "Amount",
     "Size",
     "Specs",
-]
+] + COMMON_TASTING_NOTE_LABELS
 
 
 class ShopifyScraper(BaseScraper):
@@ -158,7 +155,7 @@ class ShopifyScraper(BaseScraper):
         return details
 
     def _extract_tasting_notes(self, description: str) -> list[str]:
-        value = extract_labeled_value(description, ["Tasting Notes", "Notes", "In the cup"], SHOPIFY_DETAIL_LABELS)
+        value = extract_labeled_value(description, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
         if not value:
             for pattern in (
                 r"in the cup (?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",

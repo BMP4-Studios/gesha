@@ -81,8 +81,8 @@ def remove_emojis(text: str) -> str:
     # 1. Normalize to NFKC form to handle mathematical script (e.g. blossomed) and full-width characters.
     normalized_text = unicodedata.normalize("NFKC", text)
     # 2. Remove characters that are not alphanumeric, whitespace, or common punctuation.
-    # This regex keeps letters, numbers, spaces, and the following punctuation: . , ! ? ' " - #
-    cleaned_text = re.sub(r'[^\w\s.,!?"\'#-]', '', normalized_text)
+    # This regex keeps letters, numbers, spaces, and the following punctuation: . , ! ? ' " - # : ; /
+    cleaned_text = re.sub(r'[^\w\s.,!?"\'#\-:;/]', '', normalized_text)
     # Collapse multiple spaces resulting from removal
     return re.sub(r"\s+", " ", cleaned_text).strip()
 

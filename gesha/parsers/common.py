@@ -7,6 +7,16 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from gesha.normalization.normalize import remove_emojis
 
+COMMON_TASTING_NOTE_LABELS = [
+    "Notes",
+    "Tasting Notes",
+    "In the cup",
+    "Reminds us of",
+    "Flavor Profile",
+    "Profile",
+    "Aroma",
+]
+
 
 def extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
     if element is None:
