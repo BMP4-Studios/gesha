@@ -64,14 +64,17 @@ class ShopifyScraper(BaseScraper):
         if not self._is_coffee_product(product_data):
             return None
         
-        # If the JSON description is missing notes, fetch HTML as a fallback and clean it
+        # If the JSON description is missing key details, fetch HTML as a fallback
         html_soup = None
-        if not self._extract_tasting_notes(self._description_text(product_data)):
+        # We check for tasting notes as a proxy for whether the JSON description is sufficient
+        if not self._extract_tasting_notes(self._description_text(product_data)): 
             res_html = self.session.get(url, timeout=15)
             if res_html.status_code == 200:
                 html_soup = BeautifulSoup(res_html.text, "html.parser")
 
         # Convert fallback soup to clean text if we have it
+        # This is used for general labeled value extraction if specific selectors fail
+        # and also passed to _extract_tasting_notes
         html_text = None
         if html_soup:
             html_text = html_soup.get_text("\n", strip=True)
@@ -115,20 +118,33 @@ class ShopifyScraper(BaseScraper):
 
         # Fallback to title parsing if description labels are missing
         title_details = self._extract_details_from_title(title)
-        origin = details.get("origin") or title_details.get("origin") or title
-        process = details.get("process") or title_details.get("process") or title
-        
-        # Determine best source for notes
-        tasting_notes = self._extract_tasting_notes(description, html_soup=html_soup, html_text=html_text)
+
+        # Extract details from specific HTML block (like accordions) if available
+        html_block_details = self._extract_details_from_html_block(html_soup) if html_soup else {}
+
+        # Prioritize details from HTML block, then JSON description, then title
+        origin = html_block_details.get("origin") or details.get("origin") or title_details.get("origin") or title
+        producer = html_block_details.get("producer") or details.get("producer")
+        process = html_block_details.get("process") or details.get("process") or title_details.get("process") or title
+        varietal = html_block_details.get("varietal") or details.get("varietal")
+        altitude = html_block_details.get("altitude") or details.get("altitude")
+
+        # Tasting notes can come from multiple places, prioritize specific HTML block if found
+        tasting_notes = self._extract_tasting_notes(
+            description, 
+            html_soup=html_soup, 
+            html_text=html_text,
+            html_block_notes_raw=html_block_details.get("tasting_notes_raw")
+        )
         
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
             origin=normalize_country(origin),
-            producer=details.get("producer"),
+            producer=producer,
             process=normalize_process(process),
-            varietal=details.get("varietal"),
-            altitude=details.get("altitude"),
+            varietal=varietal,
+            altitude=altitude,
             tasting_notes=tasting_notes,
             roast_style=self._extract_roast_style(product_data),
             price_cents=self._extract_price(product_data),
@@ -180,8 +196,15 @@ class ShopifyScraper(BaseScraper):
         self, 
         description: str, 
         html_soup: BeautifulSoup = None, 
-        html_text: str = None
+        html_text: str = None,
+        html_block_notes_raw: str = None
     ) -> list[str]:
+        # Prioritize notes from the specific HTML block if provided
+        if html_block_notes_raw:
+            notes = normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[;,\n•·|]|\.\s+", html_block_notes_raw)))
+            if notes:
+                return notes
+
         # 1. Try Porte Bleue / common theme "subtitle" notes pattern in the HTML soup
         if html_soup:
             # This targets the specific paragraph under the title found on Porte Bleue and others
@@ -247,6 +270,29 @@ class ShopifyScraper(BaseScraper):
             if match:
                 return match.group(0)
         return None
+
+    def _extract_details_from_html_block(self, html_soup: BeautifulSoup) -> dict[str, Optional[str]]:
+        """
+        Extracts details from a specific HTML block like the one found in Porte Bleue's accordion.
+        This targets <p><strong>Label: </strong>Value<br/>...</p> patterns.
+        """
+        details = {}
+        accordion_content_p = html_soup.select_one("div.accordion__content.rte p")
+        if accordion_content_p:
+            # Get the raw HTML content of the <p> tag
+            raw_html_content = str(accordion_content_p)
+            # Replace <br/> with newlines to make it easier for extract_labeled_value
+            text_block = raw_html_content.replace("<br/>", "\n")
+            # Use BeautifulSoup to get clean text from the modified block
+            clean_text_block = BeautifulSoup(text_block, "html.parser").get_text("\n", strip=True)
+
+            details["origin"] = extract_labeled_value(clean_text_block, ["Country"], SHOPIFY_DETAIL_LABELS)
+            details["producer"] = extract_labeled_value(clean_text_block, ["Producer"], SHOPIFY_DETAIL_LABELS)
+            details["process"] = extract_labeled_value(clean_text_block, ["Process"], SHOPIFY_DETAIL_LABELS)
+            details["varietal"] = extract_labeled_value(clean_text_block, ["Variety"], SHOPIFY_DETAIL_LABELS)
+            details["altitude"] = extract_labeled_value(clean_text_block, ["Altitude"], SHOPIFY_DETAIL_LABELS)
+            details["tasting_notes_raw"] = extract_labeled_value(clean_text_block, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
+        return details
 
 
 class PorteBleueScraper(ShopifyScraper):

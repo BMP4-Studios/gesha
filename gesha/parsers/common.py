@@ -133,6 +133,7 @@ def clean_tasting_note_candidates(values: list[str]) -> list[str]:
         "farm",
         "farmer:",
         "grown",
+        "growing",
         "history",
         "experience",
         "shading",
