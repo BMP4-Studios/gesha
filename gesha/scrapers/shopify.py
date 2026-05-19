@@ -64,14 +64,19 @@ class ShopifyScraper(BaseScraper):
         if not self._is_coffee_product(product_data):
             return None
         
-        # If the JSON description is missing notes, fetch HTML as a fallback
-        html_fallback = None
+        # If the JSON description is missing notes, fetch HTML as a fallback and clean it
+        html_soup = None
         if not self._extract_tasting_notes(self._description_text(product_data)):
             res_html = self.session.get(url, timeout=15)
             if res_html.status_code == 200:
-                html_fallback = res_html.text
+                html_soup = BeautifulSoup(res_html.text, "html.parser")
 
-        return self._coffee_from_product(product_data, url, html_fallback=html_fallback)
+        # Convert fallback soup to clean text if we have it
+        html_text = None
+        if html_soup:
+            html_text = html_soup.get_text("\n", strip=True)
+
+        return self._coffee_from_product(product_data, url, html_text=html_text, html_soup=html_soup)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         raise NotImplementedError("ShopifyScraper parses product JSON instead of product HTML.")
@@ -97,7 +102,13 @@ class ShopifyScraper(BaseScraper):
             return True
         return not self.INCLUDE_PRODUCT_TYPES and not self.INCLUDE_TAGS
 
-    def _coffee_from_product(self, product_data: dict[str, Any], url: str, html_fallback: str = None) -> CoffeeData:
+    def _coffee_from_product(
+        self, 
+        product_data: dict[str, Any], 
+        url: str, 
+        html_text: str = None, 
+        html_soup: BeautifulSoup = None
+    ) -> CoffeeData:
         description = self._description_text(product_data)
         details = self._extract_details(description)
         title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
@@ -107,9 +118,9 @@ class ShopifyScraper(BaseScraper):
         origin = details.get("origin") or title_details.get("origin") or title
         process = details.get("process") or title_details.get("process") or title
         
-        # Use HTML fallback for notes if JSON was empty
-        notes_source = html_fallback if html_fallback and not details.get("notes") else description
-
+        # Determine best source for notes
+        tasting_notes = self._extract_tasting_notes(description, html_soup=html_soup, html_text=html_text)
+        
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
@@ -118,7 +129,7 @@ class ShopifyScraper(BaseScraper):
             process=normalize_process(process),
             varietal=details.get("varietal"),
             altitude=details.get("altitude"),
-            tasting_notes=self._extract_tasting_notes(notes_source),
+            tasting_notes=tasting_notes,
             roast_style=self._extract_roast_style(product_data),
             price_cents=self._extract_price(product_data),
             bag_size=details.get("bag_size") or self._extract_bag_size(product_data),
@@ -165,8 +176,25 @@ class ShopifyScraper(BaseScraper):
 
         return details
 
-    def _extract_tasting_notes(self, description: str) -> list[str]:
-        value = extract_labeled_value(description, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
+    def _extract_tasting_notes(
+        self, 
+        description: str, 
+        html_soup: BeautifulSoup = None, 
+        html_text: str = None
+    ) -> list[str]:
+        # 1. Try Porte Bleue / common theme "subtitle" notes pattern in the HTML soup
+        if html_soup:
+            # This targets the specific paragraph under the title found on Porte Bleue and others
+            target = html_soup.select_one("p.product__text.inline-richtext.caption-with-letter-spacing")
+            if target and target.get_text():
+                notes = normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[•·|]", target.get_text())))
+                if notes:
+                    return notes
+
+        # 2. Try labeled extraction on description (JSON text) or fallback text (HTML cleaned to text)
+        source = html_text if (html_text and not description.strip()) else description
+        value = extract_labeled_value(source, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
+        
         if not value:
             for pattern in (
                 r"in the cup (?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",

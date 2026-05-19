@@ -60,8 +60,13 @@ def _refresh_catalog(source: str) -> None:
     with get_session() as session:
         service = CoffeeService(session)
         if source not in supported_sources():
-            supported = "', '".join(supported_sources())
-            raise typer.BadParameter(f"Unsupported source. Use '{supported}'.")
+            valid_sources = sorted([s for s in supported_sources() if s != "all"])
+            console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
+            console.print("\n[bold]Available roasters:[/bold]")
+            for s in valid_sources:
+                console.print(f" - {s}")
+            console.print(" - all")
+            raise typer.Exit(code=1)
         scrapers = get_scrapers(source)
         refreshed_roaster_names = []
 
@@ -118,7 +123,12 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: demello, traffic, portebleue, colorfull, angry, hatch, or all.")) -> None:
+def scrape(
+    source: str = typer.Argument(
+        "all", 
+        help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog."
+    )
+) -> None:
     """
     Refresh the local database by scraping roaster websites.
     

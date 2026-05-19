@@ -4,7 +4,7 @@ import re
 import unicodedata
 from typing import Iterable, List
 
-NA_LABEL = "NONE"
+NA_LABEL = "*** NONE ***"
 
 # Processes that are correct as-is
 VALID_PROCESSES = {
