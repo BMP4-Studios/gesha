@@ -55,7 +55,10 @@ class ShopifyScraper(BaseScraper):
 
     def scrape_product(self, url: str) -> Optional[CoffeeData]:
         """Shopify-specific product scraping using the .js AJAX endpoint."""
-        response = self.session.get(f"{url}.js", timeout=15)
+        # Add Referer header to make the .js request look more legitimate
+        headers = self.session.headers.copy()
+        headers["Referer"] = url # The HTML product page is the referer for the .js endpoint
+        response = self.session.get(f"{url}.js", headers=headers, timeout=15)
         if response.status_code == 404:
             return None
         response.raise_for_status()

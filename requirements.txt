@@ -6,3 +6,4 @@ sqlalchemy>=2.0.0
 pydantic>=2.8.0
 playwright>=1.40.0
 pytest>=8.0.0
+curl-cffi>=0.7.0

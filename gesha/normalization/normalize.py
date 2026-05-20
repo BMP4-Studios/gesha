@@ -19,6 +19,8 @@ VALID_PROCESSES = {
     "blend",
 }
 
+VALID_PROCESSES_LOWER = {p.lower(): p for p in VALID_PROCESSES}
+
 # Non-standard terms that should map to a valid process
 PROCESS_ALIASES = {
     "fully washed": "washed",
@@ -58,6 +60,8 @@ VALID_COUNTRIES = {
     "Yemen",
 }
 
+VALID_COUNTRIES_LOWER = {c.lower(): c for c in VALID_COUNTRIES}
+
 # Common abbreviations or misspellings for countries
 COUNTRY_ALIASES = {
     "png": "Papua New Guinea",
@@ -94,13 +98,12 @@ def normalize_process(value: str | None) -> str | None:
         return None
     normalized = value.strip().lower()
 
-    # 1. Check direct aliases
+    # 1. Check if it's already a valid process (case-insensitive check)
+    if normalized in VALID_PROCESSES_LOWER:
+        return VALID_PROCESSES_LOWER[normalized]
+
     if normalized in PROCESS_ALIASES:
         return PROCESS_ALIASES[normalized]
-
-    # 2. Check if it's already a valid process
-    if normalized in VALID_PROCESSES:
-        return normalized
 
     # 3. Keyword fallback
     for valid in VALID_PROCESSES:
@@ -123,9 +126,8 @@ def normalize_country(value: str | None) -> str | None:
         return COUNTRY_ALIASES[lowered]
 
     # 2. Check if it's a known valid country (case-insensitive check)
-    for valid in VALID_COUNTRIES:
-        if valid.lower() == lowered:
-            return valid
+    if lowered in VALID_COUNTRIES_LOWER:
+        return VALID_COUNTRIES_LOWER[lowered]
 
     # 3. Substring check (e.g., "Western Ethiopia" -> "Ethiopia")
     for valid in VALID_COUNTRIES:
