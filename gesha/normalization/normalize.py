@@ -46,4 +46,4 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:
         if not candidate:
             continue
         normalized.append(candidate)
-    return sorted(dict.fromkeys(normalized))
+    return list(dict.fromkeys(normalized))
