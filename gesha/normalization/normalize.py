@@ -6,67 +6,6 @@ from typing import Iterable, List
 
 NA_LABEL = "*** NONE ***"
 
-# Processes that are correct as-is
-VALID_PROCESSES = {
-    "washed",
-    "natural",
-    "honey",
-    "anaerobic",
-    "co-ferment",
-    "carbonic maceration",
-    "experimental",
-    "decaf",
-    "blend",
-}
-
-VALID_PROCESSES_LOWER = {p.lower(): p for p in VALID_PROCESSES}
-
-# Non-standard terms that should map to a valid process
-PROCESS_ALIASES = {
-    "fully washed": "washed",
-    "wet process": "washed",
-    "pulped natural": "honey",
-    "various": "blend",
-}
-
-# Countries/Origins that are correct as-is
-VALID_COUNTRIES = {
-    "Bolivia",
-    "Brazil",
-    "Burundi",
-    "Canada",
-    "Colombia",
-    "Costa Rica",
-    "Dominican Republic",
-    "Ecuador",
-    "El Salvador",
-    "Ethiopia",
-    "Guatemala",
-    "Honduras",
-    "India",
-    "Indonesia",
-    "Kenya",
-    "Mexico",
-    "Myanmar",
-    "Nicaragua",
-    "Panama",
-    "Papua New Guinea",
-    "Peru",
-    "Rwanda",
-    "Tanzania",
-    "Thailand",
-    "Uganda",
-    "Vietnam",
-    "Yemen",
-}
-
-VALID_COUNTRIES_LOWER = {c.lower(): c for c in VALID_COUNTRIES}
-
-# Common abbreviations or misspellings for countries
-COUNTRY_ALIASES = {
-    "png": "Papua New Guinea",
-}
-
 def remove_emojis(text: str) -> str:
     """Remove emojis, symbols, and non-standard decorative characters from text."""
     if not text:
@@ -81,59 +20,26 @@ def remove_emojis(text: str) -> str:
 
 
 def normalize_process(value: str | None) -> str | None:
+    """Bare minimum normalization: lowercase and strip."""
     if not value:
         return None
-    normalized = value.strip().lower()
-
-    # 1. Check if it's already a valid process (case-insensitive check)
-    if normalized in VALID_PROCESSES_LOWER:
-        return VALID_PROCESSES_LOWER[normalized]
-
-    if normalized in PROCESS_ALIASES:
-        return PROCESS_ALIASES[normalized]
-
-    # 3. Keyword fallback
-    for valid in VALID_PROCESSES:
-        if valid in normalized:
-            return valid
-    for alias, canonical in PROCESS_ALIASES.items():
-        if alias in normalized:
-            return canonical
-    return None
+    return remove_emojis(value).lower().strip()
 
 
 def normalize_country(value: str | None) -> str | None:
+    """Bare minimum normalization: lowercase and strip."""
     if not value:
         return None
-    normalized = value.strip()
-    lowered = normalized.lower()
-
-    # 1. Check direct aliases
-    if lowered in COUNTRY_ALIASES:
-        return COUNTRY_ALIASES[lowered]
-
-    # 2. Check if it's a known valid country (case-insensitive check)
-    if lowered in VALID_COUNTRIES_LOWER:
-        return VALID_COUNTRIES_LOWER[lowered]
-
-    # 3. Substring check (e.g., "Western Ethiopia" -> "Ethiopia")
-    for valid in VALID_COUNTRIES:
-        if valid.lower() in lowered:
-            return valid
-
-    # Fallback to last part if comma-separated
-    parts = [part.strip() for part in normalized.split(",") if part.strip()]
-    if len(parts) > 1:
-        return normalize_country(parts[-1])
-
-    return None
+    return remove_emojis(value).lower().strip()
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:
+    """Split by common delimiters and lowercase each note."""
     if values is None:
         return []
     if isinstance(values, str):
-        values = re.split(r"[;,\n•·|]|\.\s+", values)
+        # Support standard separators plus bullets, middle dots, and "and/&"
+        values = re.split(r"[,;/]|&|\s+and\s+|\s+-\s+|[•·|]|\.\s+", values, flags=re.IGNORECASE)
     normalized: list[str] = []
     for note in values:
         candidate = remove_emojis(note.strip().lower())
