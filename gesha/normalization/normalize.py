@@ -67,19 +67,6 @@ COUNTRY_ALIASES = {
     "png": "Papua New Guinea",
 }
 
-NOTE_TAGS = [
-    "berry",
-    "chocolate",
-    "citrus",
-    "floral",
-    "caramel",
-    "nutty",
-    "tropical",
-    "spice",
-    "vanilla",
-]
-
-
 def remove_emojis(text: str) -> str:
     """Remove emojis, symbols, and non-standard decorative characters from text."""
     if not text:
@@ -152,10 +139,5 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> List[str]:
         candidate = remove_emojis(note.strip().lower())
         if not candidate:
             continue
-        for tag in NOTE_TAGS:
-            if tag in candidate:
-                normalized.append(tag)
-                break
-        else:
-            normalized.append(candidate)
+        normalized.append(candidate)
     return sorted(dict.fromkeys(normalized))

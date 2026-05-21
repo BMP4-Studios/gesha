@@ -249,7 +249,7 @@ class ShopifyScraper(BaseScraper):
         if not value:
             return []
         # Support standard separators plus bullets, middle dots, and period-space
-        parts = re.split(r"[,;/]|&|\s+-\s+|[•·|]|\.\s+", value)
+        parts = re.split(r"[,;/]|&|\s+and\s+|\s+-\s+|[•·|]|\.\s+", value, flags=re.IGNORECASE)
         return normalize_tasting_notes(clean_tasting_note_candidates(parts))
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> Optional[str]:
