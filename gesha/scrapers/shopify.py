@@ -4,7 +4,6 @@ import re
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
-import requests
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData

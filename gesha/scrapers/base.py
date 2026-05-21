@@ -3,10 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import logging
 from typing import List, Optional
-import time
-import random
-
-import requests
 
 from gesha.models.coffee import CoffeeData
 from curl_cffi.requests import Session

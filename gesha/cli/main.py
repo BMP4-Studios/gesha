@@ -40,11 +40,12 @@ def _print_coffees(coffees: list) -> None:
     for i, coffee in enumerate(coffees, 1):
         notes = ", ".join(note.name for note in coffee.tasting_notes)
         price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
+        name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
         table.add_row(
             str(i),
             str(coffee.id),
             coffee.roaster.name,
-            coffee.name,
+            name_display,
             coffee.bag_size or NA_LABEL,
             coffee.process or NA_LABEL,
             coffee.origin or NA_LABEL,
@@ -167,7 +168,8 @@ def show(coffee_id: int) -> None:
         table = Table(show_header=False)
         table.add_row("ID", str(coffee.id))
         table.add_row("Roaster", coffee.roaster.name)
-        table.add_row("Name", coffee.name)
+        name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
+        table.add_row("Name", name_display)
         table.add_row("Origin", coffee.origin or NA_LABEL)
         table.add_row("Producer", coffee.producer or NA_LABEL)
         table.add_row("Process", coffee.process or NA_LABEL)
