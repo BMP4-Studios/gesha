@@ -32,6 +32,9 @@ SHOPIFY_DETAIL_LABELS = [
     "Amount",
     "Size",
     "Specs",
+    "Roast Level",
+    "Roast Style",
+    "Roast",
 ] + COMMON_TASTING_NOTE_LABELS
 
 
@@ -68,8 +71,14 @@ class ShopifyScraper(BaseScraper):
         
         # If the JSON description is missing key details, fetch HTML as a fallback
         html_soup = None
-        # We check for tasting notes as a proxy for whether the JSON description is sufficient
-        if not self._extract_tasting_notes(self._description_text(product_data)): 
+        description_text = self._description_text(product_data)
+        
+        # Heuristic: fetch HTML if JSON lacks structured labels for origin or notes.
+        # Narrative descriptions (like Porte Bleue's) often don't match labeled extraction.
+        has_structured_origin = bool(self._extract_details(description_text).get("origin"))
+        has_structured_notes = bool(self._extract_tasting_notes(description_text))
+
+        if not (has_structured_origin and has_structured_notes):
             res_html = self.session.get(url, timeout=15)
             if res_html.status_code == 200:
                 html_soup = BeautifulSoup(res_html.text, "html.parser")
@@ -130,6 +139,7 @@ class ShopifyScraper(BaseScraper):
         process = html_block_details.get("process") or details.get("process") or title_details.get("process") or title
         varietal = html_block_details.get("varietal") or details.get("varietal")
         altitude = html_block_details.get("altitude") or details.get("altitude")
+        roast_style = html_block_details.get("roast_style") or details.get("roast_style") or self._extract_roast_style(product_data)
 
         # Tasting notes can come from multiple places, prioritize specific HTML block if found
         tasting_notes = self._extract_tasting_notes(
@@ -148,7 +158,7 @@ class ShopifyScraper(BaseScraper):
             varietal=varietal,
             altitude=altitude,
             tasting_notes=tasting_notes,
-            roast_style=self._extract_roast_style(product_data),
+            roast_style=roast_style,
             price_cents=self._extract_price(product_data),
             bag_size=details.get("bag_size") or self._extract_bag_size(product_data),
             url=url,
@@ -161,12 +171,13 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_details(self, description: str) -> dict[str, Optional[str]]:
         return {
-            "origin": extract_labeled_value(description, ["Origin", "Country", "Region"], SHOPIFY_DETAIL_LABELS),
-            "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers"], SHOPIFY_DETAIL_LABELS),
+            "origin": extract_labeled_value(description, ["Origin", "Country", "Region", "Place"], SHOPIFY_DETAIL_LABELS),
+            "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers", "Farm"], SHOPIFY_DETAIL_LABELS),
             "process": extract_labeled_value(description, ["Process", "Method"], SHOPIFY_DETAIL_LABELS),
             "varietal": extract_labeled_value(description, ["Variety", "Varieties", "Cultivar"], SHOPIFY_DETAIL_LABELS),
             "altitude": extract_labeled_value(description, ["Altitude", "Elevation"], SHOPIFY_DETAIL_LABELS),
-            "bag_size": extract_labeled_value(description, ["Amount", "Size"], SHOPIFY_DETAIL_LABELS),
+            "bag_size": extract_labeled_value(description, ["Amount", "Size", "Specs"], SHOPIFY_DETAIL_LABELS),
+            "roast_style": extract_labeled_value(description, ["Roast Level", "Roast Style", "Roast"], SHOPIFY_DETAIL_LABELS),
         }
 
     def _extract_details_from_title(self, title: str) -> dict[str, Optional[str]]:
@@ -222,23 +233,19 @@ class ShopifyScraper(BaseScraper):
         
         if not value:
             for pattern in (
-                r"in the cup (?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",
-                r"(?:notes of|profile of)\s+(.+?)(?:\.|$)",
+                r"(?:in the cup|we taste|tastes like|notes of|profile of|flavor profile is)\s*(?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",
             ):
                 match = re.search(pattern, description, re.IGNORECASE | re.DOTALL)
                 if match:
                     value = match.group(1)
                     break
         if not value:
-            # Fallback to the very first line of the description if no label is found
+            # Fallback to the first line only if it looks like a list (short and has separators)
             lines = [l.strip() for l in description.splitlines() if l.strip()]
-            # Try to find a line that actually looks like a note list (using special separators)
-            for line in lines:
-                if any(sep in line for sep in ("•", "·", "|")):
-                    value = line
-                    break
             if lines:
-                value = value or lines[0]
+                first_line = lines[0]
+                if len(first_line) < 100 and any(sep in first_line for sep in ("•", "·", "|", ",", ";")):
+                    value = first_line
         if not value:
             return []
         # Support standard separators plus bullets, middle dots, and period-space
@@ -288,11 +295,7 @@ class ShopifyScraper(BaseScraper):
             # Use BeautifulSoup to get clean text from the modified block
             clean_text_block = BeautifulSoup(text_block, "html.parser").get_text("\n", strip=True)
 
-            details["origin"] = extract_labeled_value(clean_text_block, ["Country"], SHOPIFY_DETAIL_LABELS)
-            details["producer"] = extract_labeled_value(clean_text_block, ["Producer"], SHOPIFY_DETAIL_LABELS)
-            details["process"] = extract_labeled_value(clean_text_block, ["Process"], SHOPIFY_DETAIL_LABELS)
-            details["varietal"] = extract_labeled_value(clean_text_block, ["Variety"], SHOPIFY_DETAIL_LABELS)
-            details["altitude"] = extract_labeled_value(clean_text_block, ["Altitude"], SHOPIFY_DETAIL_LABELS)
+            details = self._extract_details(clean_text_block)
             details["tasting_notes_raw"] = extract_labeled_value(clean_text_block, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
         return details
 
