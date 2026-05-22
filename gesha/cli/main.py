@@ -11,8 +11,17 @@ from rich.console import Console
 from gesha.db.session import get_session, init_db
 from gesha.scrapers import get_scrapers, supported_sources
 from gesha.services.coffee_service import CoffeeService
+from gesha.normalization.normalize import NA_LABEL
 
-app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
+app = typer.Typer(
+    help=(
+        "Gesha: A local-first specialty coffee discovery tool.\n\n"
+        "This CLI scrapes supported Canadian roasters, normalizes their metadata "
+        "(origin, process, tasting notes, etc.), and stores the results in a local "
+        "SQLite database for fast querying and inspection."
+    ),
+    rich_markup_mode="rich",
+)
 console = Console()
 
 
@@ -30,17 +39,18 @@ def _print_coffees(coffees: list) -> None:
 
     for i, coffee in enumerate(coffees, 1):
         notes = ", ".join(note.name for note in coffee.tasting_notes)
-        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a"
+        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
+        name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
         table.add_row(
             str(i),
             str(coffee.id),
             coffee.roaster.name,
-            coffee.name,
-            coffee.bag_size or "n/a",
-            coffee.process or "n/a",
-            coffee.origin or "n/a",
+            name_display,
+            coffee.bag_size or NA_LABEL,
+            coffee.process or NA_LABEL,
+            coffee.origin or NA_LABEL,
             price,
-            notes,
+            notes or NA_LABEL,
         )
 
     console.print(table)
@@ -51,8 +61,13 @@ def _refresh_catalog(source: str) -> None:
     with get_session() as session:
         service = CoffeeService(session)
         if source not in supported_sources():
-            supported = "', '".join(supported_sources())
-            raise typer.BadParameter(f"Unsupported source. Use '{supported}'.")
+            valid_sources = sorted([s for s in supported_sources() if s != "all"])
+            console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
+            console.print("\n[bold]Available roasters:[/bold]")
+            for s in valid_sources:
+                console.print(f" - {s}")
+            console.print(" - all")
+            raise typer.Exit(code=1)
         scrapers = get_scrapers(source)
         refreshed_roaster_names = []
 
@@ -109,8 +124,17 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: demello, traffic, portebleue, colorfull, angry, hatch, or all.")) -> None:
-    """Refresh coffees from supported roasters and clean stale rows."""
+def scrape(
+    source: str = typer.Argument(
+        "all", 
+        help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog."
+    )
+) -> None:
+    """
+    Refresh the local database by scraping roaster websites.
+    
+    This command fetches product data, normalizes it, updates existing records, 
+    and deletes coffees that are no longer available on the roaster's site."""
     _refresh_catalog(source)
 
 
@@ -121,7 +145,10 @@ def list(
     roaster: Optional[str] = typer.Option(None, help="Filter by roaster name."),
     available: Optional[bool] = typer.Option(None, help="Show only available coffees."),
 ) -> None:
-    """List coffees in the local database."""
+    """
+    List and filter coffees currently stored in the local database.
+    
+    Use the options below to narrow down the catalog by process, flavor notes, or availability."""
     with get_session() as session:
         service = CoffeeService(session)
         coffees = service.list_coffees(process=process, flavor=flavor, roaster_name=roaster, available=available)
@@ -141,19 +168,51 @@ def show(coffee_id: int) -> None:
         table = Table(show_header=False)
         table.add_row("ID", str(coffee.id))
         table.add_row("Roaster", coffee.roaster.name)
-        table.add_row("Name", coffee.name)
-        table.add_row("Origin", coffee.origin or "n/a")
-        table.add_row("Producer", coffee.producer or "n/a")
-        table.add_row("Process", coffee.process or "n/a")
-        table.add_row("Varietal", coffee.varietal or "n/a")
-        table.add_row("Altitude", coffee.altitude or "n/a")
-        table.add_row("Roast style", coffee.roast_style or "n/a")
-        table.add_row("Bag size", coffee.bag_size or "n/a")
-        table.add_row("Price", f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else "n/a")
+        name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
+        table.add_row("Name", name_display)
+        table.add_row("Origin", coffee.origin or NA_LABEL)
+        table.add_row("Producer", coffee.producer or NA_LABEL)
+        table.add_row("Process", coffee.process or NA_LABEL)
+        table.add_row("Varietal", coffee.varietal or NA_LABEL)
+        table.add_row("Altitude", coffee.altitude or NA_LABEL)
+        table.add_row("Roast style", coffee.roast_style or NA_LABEL)
+        table.add_row("Bag size", coffee.bag_size or NA_LABEL)
+        table.add_row("Price", f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL)
         table.add_row("Availability", "yes" if coffee.availability else "no")
-        table.add_row("URL", coffee.url or "n/a")
-        table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or "n/a")
+        table.add_row("URL", coffee.url or NA_LABEL)
+        table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or NA_LABEL)
         console.print(table)
+
+
+@app.command()
+def debug(coffee_id: int) -> None:
+    """Dump all raw web data for a coffee (HTML and JSON) into a single debug file."""
+    with get_session() as session:
+        service = CoffeeService(session)
+        coffee = service.get_coffee_by_id(coffee_id)
+        if coffee is None:
+            console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
+            raise typer.Exit(code=1)
+        if not coffee.url:
+            console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
+            raise typer.Exit(code=1)
+        filename = f"debug_{coffee_id}.txt"
+        output = []
+        # 1. Fetch JSON (Shopify AJAX)
+        json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
+        res_json = requests.get(json_url, timeout=15)
+        if res_json.status_code == 200:
+            output.append("=== RAW JSON DATA ===\n")
+            output.append(res_json.text)
+            output.append("\n\n")
+        # 2. Fetch HTML
+        res_html = requests.get(coffee.url, timeout=15)
+        res_html.raise_for_status()
+        output.append("=== RAW HTML DATA ===\n")
+        output.append(res_html.text)
+        with open(filename, "w", encoding="utf-8") as f:
+            f.writelines(output)
+        console.print(f"[green]Full raw data dumped to {filename}[/green]")
 
 
 if __name__ == "__main__":

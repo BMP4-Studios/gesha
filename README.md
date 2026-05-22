@@ -1,6 +1,6 @@
 # Gesha
 
-# <img src="assets/gesha.png" alt="Gesha Logo" width="300">
+# <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
 Gesha is a local-first specialty coffee discovery and cart optimization CLI tool focused on scraping Canadian roasters, normalizing coffee metadata, and storing it in a local SQLite database.
 
@@ -13,16 +13,30 @@ Gesha is a local-first specialty coffee discovery and cart optimization CLI tool
 
 ## Install
 
-Create and activate a Python virtual environment, then install dependencies:
+Create and activate a Python virtual environment, then install dependencies.
+
+**macOS/Linux:**
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+```
+
+**Windows (Git Bash):**
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate
+```
+
+Install dependencies:
+
+```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Optionally install the package in editable mode so the `gesha` CLI is available directly:
+Optionally install the package in editable mode so the `gesha` CLI (or `gesha.exe` on Windows) is available directly:
 
 ```bash
 python -m pip install -e .

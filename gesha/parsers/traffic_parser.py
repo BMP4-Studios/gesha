@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value, extract_matching_urls, extract_text, parse_price
+from gesha.parsers.common import COMMON_TASTING_NOTE_LABELS, clean_tasting_note_candidates, extract_labeled_value, extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/collections/coffee/products/[^/?#]+$")
 DETAIL_LABELS = [
@@ -18,10 +18,9 @@ DETAIL_LABELS = [
     "Altitude",
     "Roast level",
     "Size",
-    "In the cup",
     "About",
     "ABOUT",
-]
+] + COMMON_TASTING_NOTE_LABELS
 
 
 def parse_traffic_collection(html: str, base_url: str) -> List[str]:
@@ -62,7 +61,7 @@ def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
 
 
 def _extract_tasting_notes(text: str) -> List[str]:
-    value = extract_labeled_value(text, ["In the cup"], DETAIL_LABELS)
+    value = extract_labeled_value(text, COMMON_TASTING_NOTE_LABELS, DETAIL_LABELS)
     if not value:
         return []
     return normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[,;/]|\s+-\s+", value)))
