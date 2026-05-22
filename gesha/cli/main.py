@@ -36,7 +36,7 @@ def _print_coffees(coffees: list) -> None:
     table.add_column("Price")
     table.add_column("Notes")
 
-    for i, coffee in enumerate(coffees, 1):
+    for coffee in coffees:
         notes = ", ".join(note.name for note in coffee.tasting_notes)
         price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
         name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name

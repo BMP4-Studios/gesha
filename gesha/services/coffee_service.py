@@ -23,6 +23,7 @@ class CoffeeService:
         coffee = None
         if data.url:
             coffee = self.session.scalar(select(Coffee).where(Coffee.url == data.url))
+
         if coffee is None:
             coffee = self.session.scalar(
                 select(Coffee)
