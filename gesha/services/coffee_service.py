@@ -69,16 +69,10 @@ class CoffeeService:
             query = query.where(Coffee.process.ilike(f"%{process}%"))
         if available is not None:
             query = query.where(Coffee.availability == available)
-        coffees = self.session.scalars(query).all()
-
         if flavor:
-            matches: list[Coffee] = []
-            for coffee in coffees:
-                if any(flavor.lower() in note.name.lower() for note in coffee.tasting_notes):
-                    matches.append(coffee)
-            coffees = matches
+            query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavor}%")).distinct()
 
-        return coffees
+        return list(self.session.scalars(query).all())
 
     def get_coffee_by_id(self, coffee_id: int) -> Optional[Coffee]:
         return self.session.get(Coffee, coffee_id)

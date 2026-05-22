@@ -4,7 +4,7 @@ import re
 import unicodedata
 from typing import Iterable, List
 
-NA_LABEL = "*** NONE ***"
+NA_LABEL = "[red]NONE[/red]"
 
 def remove_emojis(text: str) -> str:
     """Remove emojis, symbols, and non-standard decorative characters from text."""

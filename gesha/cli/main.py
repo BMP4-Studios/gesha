@@ -55,17 +55,23 @@ def _print_coffees(coffees: list) -> None:
 
 
 def _refresh_catalog(source: str) -> None:
+    # create the database if it doesn't already exist
     init_db()
+
     with get_session() as session:
         service = CoffeeService(session)
+
         if source not in supported_sources():
             valid_sources = sorted([s for s in supported_sources() if s != "all"])
             console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
             console.print("\n[bold]Available roasters:[/bold]")
+
             for s in valid_sources:
                 console.print(f" - {s}")
+
             console.print(" - all")
             raise typer.Exit(code=1)
+
         scrapers = get_scrapers(source)
         refreshed_roaster_names = []
 
@@ -83,13 +89,11 @@ def _refresh_catalog(source: str) -> None:
 
                 if scraped_coffees:
                     refreshed_roaster_names.append(roaster_name)
-                    removed_count = service.delete_stale_coffees(
-                        roaster_name,
-                        [c.url for c in scraped_coffees if c.url],
-                    )
+                    removed_count = service.delete_stale_coffees( roaster_name, [c.url for c in scraped_coffees if c.url],)
                 else:
                     removed_count = 0
                     console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
+
                 console.print(f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]")
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
