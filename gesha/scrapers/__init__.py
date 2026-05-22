@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from gesha.scrapers.base import BaseScraper
-from gesha.scrapers.demello import DeMelloScraper
 from gesha.scrapers.hatch import HatchScraper
 from gesha.scrapers.shopify import (
     AngryRoasterScraper,
@@ -13,8 +12,9 @@ from gesha.scrapers.shopify import (
     HouseOfFunkScraper,
     PorteBleueScraper,
     RogueWaveScraper,
+    DeMelloScraper,
+    TrafficScraper,
 )
-from gesha.scrapers.traffic import TrafficScraper
 
 ScraperClass: TypeAlias = type[BaseScraper]
 

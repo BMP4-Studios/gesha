@@ -41,7 +41,6 @@ SHOPIFY_DETAIL_LABELS = [
 class ShopifyScraper(BaseScraper):
     COLLECTION_PATH = "/collections/coffee"
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
-    INCLUDE_PRODUCT_TYPES: tuple[str, ...] = ()
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
 
@@ -100,9 +99,15 @@ class ShopifyScraper(BaseScraper):
         handle = parsed.path.rstrip("/").rsplit("/", 1)[-1]
         return urljoin(self.BASE_URL, f"/products/{handle}")
 
+    def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
+        raw_tags = product_data.get("tags") or []
+        if isinstance(raw_tags, str):
+            raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
+        return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
+
     def _is_coffee_product(self, product_data: dict[str, Any]) -> bool:
         handle = str(product_data.get("handle") or "").lower()
-        tags = {str(tag).strip().lower() for tag in product_data.get("tags") or []}
+        tags = self._normalize_tags(product_data)
 
         # Exclude handles or tags containing subscription keywords
         if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or \
@@ -110,11 +115,10 @@ class ShopifyScraper(BaseScraper):
             return False
         product_type = str(product_data.get("type") or "").strip().lower()
 
-        if self.INCLUDE_PRODUCT_TYPES and product_type in {value.lower() for value in self.INCLUDE_PRODUCT_TYPES}:
-            return True
         if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
             return True
-        return not self.INCLUDE_PRODUCT_TYPES and not self.INCLUDE_TAGS
+
+        return not self.INCLUDE_TAGS
 
     def _coffee_from_product(
         self, 
@@ -253,7 +257,7 @@ class ShopifyScraper(BaseScraper):
         return normalize_tasting_notes(clean_tasting_note_candidates(parts))
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> Optional[str]:
-        tags = {str(tag).strip().lower() for tag in product_data.get("tags") or []}
+        tags = self._normalize_tags(product_data)
         styles = [style for style in ("filter", "espresso") if style in tags]
         return ", ".join(styles) if styles else None
 
@@ -322,7 +326,7 @@ class AngryRoasterScraper(ShopifyScraper):
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "The Angry Roaster"
     ROASTER_NAME = "The Angry Roaster"
-    INCLUDE_PRODUCT_TYPES = ("coffee",)
+    INCLUDE_TAGS = ("coffee",)
 
 
 class RogueWaveScraper(ShopifyScraper):
@@ -339,3 +343,30 @@ class HouseOfFunkScraper(ShopifyScraper):
     SOURCE_NAME = "House of Funk"
     ROASTER_NAME = "House of Funk"
     INCLUDE_TAGS = ("coffee",)
+
+from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
+class TrafficScraper(BaseScraper):
+    BASE_URL = "https://www.trafficcoffee.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "Traffic"
+    ROASTER_NAME = "Traffic Coffee"
+    INCLUDE_TAGS = ("coffee",)
+    def extract_product_urls(self, html: str) -> List[str]:
+        return parse_traffic_collection(html, base_url=self.BASE_URL)
+
+    def parse_product(self, html: str, url: str) -> CoffeeData:
+        return parse_traffic_product(html, url)
+
+
+from gesha.parsers.demello_parser import parse_demello_collection, parse_demello_product
+class DeMelloScraper(BaseScraper):
+    BASE_URL = "https://hellodemello.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
+    SOURCE_NAME = "De Mello"
+    ROASTER_NAME = "De Mello Coffee"
+    INCLUDE_TAGS = ("coffee",)
+    def extract_product_urls(self, html: str) -> List[str]:
+        return parse_demello_collection(html, base_url=self.BASE_URL)
+
+    def parse_product(self, html: str, url: str) -> CoffeeData:
+        return parse_demello_product(html, url)
