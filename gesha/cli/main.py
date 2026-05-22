@@ -27,7 +27,6 @@ console = Console()
 
 def _print_coffees(coffees: list) -> None:
     table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("#", style="dim", width=4)
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
     table.add_column("Name")
@@ -42,7 +41,6 @@ def _print_coffees(coffees: list) -> None:
         price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
         name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
         table.add_row(
-            str(i),
             str(coffee.id),
             coffee.roaster.name,
             name_display,
