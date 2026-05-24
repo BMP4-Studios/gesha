@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
+from typing import Any
 
 from gesha.models.coffee import CoffeeData
 from curl_cffi.requests import Session
@@ -27,7 +28,7 @@ class BaseScraper(ABC):
     }
 
     def __init__(self) -> None:
-        self.session = Session(impersonate="chrome")
+        self.session: Session[Any] = Session(impersonate="chrome")
         self.session.headers.update(self.DEFAULT_HEADERS)
         self.logger = logging.getLogger(self.__class__.__module__)
 

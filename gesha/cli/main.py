@@ -76,7 +76,7 @@ def _refresh_catalog(source: str) -> None:
             raise typer.Exit(code=1)
 
         scrapers = get_scrapers(source)
-        refreshed_roaster_names = []
+        refreshed_roaster_names: list[str] = []
 
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
@@ -207,7 +207,7 @@ def debug(coffee_id: int) -> None:
             raise typer.Exit(code=1)
 
         filename = f"debug/debug_{coffee_id}.txt"
-        output = []
+        output : list[str] = []
 
         # 1. Fetch JSON (Shopify AJAX)
         json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
