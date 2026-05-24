@@ -3,7 +3,7 @@ from __future__ import annotations
 import requests
 
 from gesha.models.coffee import CoffeeData
-from gesha.scrapers.traffic import TrafficScraper
+from gesha.scrapers import TrafficScraper
 
 
 class FakeResponse:
@@ -45,7 +45,7 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
 
     scraper = TrafficScraper()
     monkeypatch.setattr(scraper.session, "get", lambda url, timeout: fake_get(url, timeout))
-    monkeypatch.setattr("gesha.scrapers.traffic.parse_traffic_product", fake_parse)
+    monkeypatch.setattr("gesha.scrapers.shopify.parse_traffic_product", fake_parse)
 
     coffees = scraper.scrape()
 

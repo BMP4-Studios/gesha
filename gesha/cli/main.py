@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import concurrent.futures
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 import requests
 import typer
@@ -26,6 +27,10 @@ app = typer.Typer(
     rich_markup_mode="rich",
 )
 console = Console()
+
+TyperParamFactory = Callable[..., Any]
+typer_argument = cast(TyperParamFactory, getattr(typer, "Argument"))
+typer_option = cast(TyperParamFactory, getattr(typer, "Option"))
 
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
@@ -131,7 +136,7 @@ def init() -> None:
 
 @app.command()
 def scrape(
-    source: str = typer.Argument(
+    source: str = typer_argument(
         "all", 
         help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog."
     )
@@ -146,10 +151,10 @@ def scrape(
 
 @app.command(name="list")
 def list_coffees_command(
-    process: str | None = typer.Option(None, help="Filter by coffee process."),
-    flavor: str | None = typer.Option(None, help="Filter by tasting note."),
-    roaster: str | None = typer.Option(None, help="Filter by roaster name."),
-    available: bool | None = typer.Option(None, help="Show only available coffees."),
+    process: str | None = typer_option(None, help="Filter by coffee process."),
+    flavor: str | None = typer_option(None, help="Filter by tasting note."),
+    roaster: str | None = typer_option(None, help="Filter by roaster name."),
+    available: bool | None = typer_option(None, help="Show only available coffees."),
 ) -> None:
     """
     List and filter coffees currently stored in the local database.

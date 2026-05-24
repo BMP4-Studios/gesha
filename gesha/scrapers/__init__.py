@@ -24,6 +24,7 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
 }
+
 DEFAULT_SOURCES = (
     "demello",
     "traffic",

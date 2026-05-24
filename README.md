@@ -42,16 +42,6 @@ Optionally install the package in editable mode so the `gesha` CLI (or `gesha.ex
 python -m pip install -e .
 ```
 
-## Initialize the database
-
-```bash
-gesha init
-```
-
-This creates the SQLite schema for roasters, coffees, and tasting notes.
-
-Running `gesha` or `gesha scrape` will automatically initialize the database schema if needed.
-
 ## Requirements
 
 - Internet access is required for scraping remote roaster pages.
@@ -109,6 +99,12 @@ Show a coffee by ID:
 gesha show 1
 ```
 
+## Run tests
+
+```bash
+python -m pytest
+```
+
 ## Project structure
 
 - `gesha/` — Python package source code
@@ -119,7 +115,3 @@ gesha show 1
 - `gesha/services/` — business logic for persistence and querying
 - `gesha/cli/` — Typer CLI commands
 - `tests/` — pytest test cases
-
-## Notes
-
-Keep this README updated whenever installation or usage changes.
