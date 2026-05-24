@@ -9,9 +9,7 @@ from gesha.scrapers.hatch import HatchScraper
 from gesha.scrapers.shopify import (
     AngryRoasterScraper,
     ColorfullScraper,
-    HouseOfFunkScraper,
     PorteBleueScraper,
-    RogueWaveScraper,
     DeMelloScraper,
     TrafficScraper,
 )
@@ -25,8 +23,6 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "portebleue": PorteBleueScraper,
     "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
-    "roguewave": RogueWaveScraper,
-    "houseoffunk": HouseOfFunkScraper,
 }
 DEFAULT_SOURCES = (
     "demello",
@@ -34,8 +30,6 @@ DEFAULT_SOURCES = (
     "portebleue",
     "colorfull",
     "angry",
-    "roguewave",
-    "houseoffunk",
 )
 
 

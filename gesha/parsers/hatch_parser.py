@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import json
 import re
-from typing import List, Optional
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
@@ -83,11 +82,14 @@ def _is_hatch_product_path(path: str) -> bool:
     return True
 
 
-def parse_hatch_collection(html: str, base_url: str) -> List[str]:
+def parse_hatch_collection(html: str, base_url: str) -> list[str]:
     soup = BeautifulSoup(html, "html.parser")
-    urls: List[str] = []
+    urls: list[str] = []
     for anchor in soup.find_all("a", href=True):
-        href = anchor["href"].strip()
+        href = anchor.get("href")
+        if not isinstance(href, str):
+            continue
+        href = href.strip()
         if _is_hatch_product_path(href):
             urls.append(urljoin(base_url, href))
 
@@ -104,7 +106,7 @@ def parse_hatch_collection(html: str, base_url: str) -> List[str]:
     return sorted(set(urls))
 
 
-def _decode_embedded_html(html: str) -> Optional[str]:
+def _decode_embedded_html(html: str) -> str | None:
     pattern = re.compile(r'self\.__next_f\.push\(\[1,"(?P<html>(?:\\.|[^"\\])*)"\]\)')
     for match in pattern.finditer(html):
         raw = match.group("html")
@@ -117,8 +119,8 @@ def _decode_embedded_html(html: str) -> Optional[str]:
     return None
 
 
-def _collect_details(raw_html: str) -> dict[str, Optional[str]]:
-    details = {
+def _collect_details(raw_html: str) -> dict[str, str | None]:
+    details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
         "process": None,
@@ -129,7 +131,7 @@ def _collect_details(raw_html: str) -> dict[str, Optional[str]]:
     }
     detail_text = raw_html.replace("\r", "\n")
 
-    def _find(pattern: str, label: str) -> Optional[str]:
+    def _find(pattern: str, label: str) -> str | None:
         match = re.search(pattern, detail_text, re.IGNORECASE | re.DOTALL)
         if not match:
             return None
@@ -156,7 +158,7 @@ def _extract_description(soup: BeautifulSoup) -> str:
     return ""
 
 
-def _extract_tasting_notes(raw_html: str) -> List[str]:
+def _extract_tasting_notes(raw_html: str) -> list[str]:
     value = extract_labeled_value(raw_html, ["Reminds us of", "Notes"], DETAIL_LABELS)
     if not value:
         return []
@@ -187,7 +189,9 @@ def parse_hatch_product(html: str, url: str) -> CoffeeData:
     description = _extract_description(detail_soup)
     if not description:
         meta_description = soup.find("meta", {"name": "description"})
-        description = meta_description.get("content", "") if meta_description else ""
+        if isinstance(meta_description, Tag):
+            content = meta_description.get("content", "")
+            description = content if isinstance(content, str) else ""
 
     raw_html = detail_soup.get_text("\n", strip=True)
     details = _collect_details(raw_html)

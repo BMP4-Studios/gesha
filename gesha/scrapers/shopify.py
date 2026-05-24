@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional
+from typing import Any, cast
 from urllib.parse import urljoin, urlparse
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
@@ -44,17 +44,20 @@ class ShopifyScraper(BaseScraper):
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
 
-    def extract_product_urls(self, html: str) -> List[str]:
+    def extract_product_urls(self, html: str) -> list[str]:
         soup = BeautifulSoup(html, "html.parser")
         urls: list[str] = []
         for anchor in soup.select("a[href*='/products/']"):
-            href = anchor.get("href", "").split("?", 1)[0].strip()
+            raw_href = anchor.get("href")
+            if not isinstance(raw_href, str):
+                continue
+            href = raw_href.split("?", 1)[0].strip()
             if not self.PRODUCT_URL_PATTERN.match(href):
                 continue
             urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
         return sorted(dict.fromkeys(urls))
 
-    def scrape_product(self, url: str) -> Optional[CoffeeData]:
+    def scrape_product(self, url: str) -> CoffeeData | None:
         """Shopify-specific product scraping using the .js AJAX endpoint."""
         # Add Referer header to make the .js request look more legitimate
         headers = self.session.headers.copy()
@@ -63,13 +66,13 @@ class ShopifyScraper(BaseScraper):
         if response.status_code == 404:
             return None
         response.raise_for_status()
-        product_data = response.json()
+        product_data = cast(dict[str, Any], response.json())
 
         if not self._is_coffee_product(product_data):
             return None
         
         # If the JSON description is missing key details, fetch HTML as a fallback
-        html_soup = None
+        html_soup: BeautifulSoup | None = None
         description_text = self._description_text(product_data)
         
         # Heuristic: fetch HTML if JSON lacks structured labels for origin or notes.
@@ -85,7 +88,7 @@ class ShopifyScraper(BaseScraper):
         # Convert fallback soup to clean text if we have it
         # This is used for general labeled value extraction if specific selectors fail
         # and also passed to _extract_tasting_notes
-        html_text = None
+        html_text: str | None = None
         if html_soup:
             html_text = html_soup.get_text("\n", strip=True)
 
@@ -124,8 +127,8 @@ class ShopifyScraper(BaseScraper):
         self, 
         product_data: dict[str, Any], 
         url: str, 
-        html_text: str = None, 
-        html_soup: BeautifulSoup = None
+        html_text: str | None = None, 
+        html_soup: BeautifulSoup | None = None
     ) -> CoffeeData:
         description = self._description_text(product_data)
         details = self._extract_details(description)
@@ -173,7 +176,7 @@ class ShopifyScraper(BaseScraper):
         html = str(product_data.get("description") or "")
         return BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
 
-    def _extract_details(self, description: str) -> dict[str, Optional[str]]:
+    def _extract_details(self, description: str) -> dict[str, str | None]:
         return {
             "origin": extract_labeled_value(description, ["Origin", "Country", "Region", "Place"], SHOPIFY_DETAIL_LABELS),
             "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers", "Farm"], SHOPIFY_DETAIL_LABELS),
@@ -184,9 +187,9 @@ class ShopifyScraper(BaseScraper):
             "roast_style": extract_labeled_value(description, ["Roast Level", "Roast Style", "Roast"], SHOPIFY_DETAIL_LABELS),
         }
 
-    def _extract_details_from_title(self, title: str) -> dict[str, Optional[str]]:
+    def _extract_details_from_title(self, title: str) -> dict[str, str | None]:
         """Try to extract origin and process from common title patterns like 'Country - Name | Process'."""
-        details = {"origin": None, "process": None}
+        details: dict[str, str | None] = {"origin": None, "process": None}
         # Split by pipe first (highest confidence for process)
         if "|" in title:
             pipe_parts = [p.strip() for p in title.split("|")]
@@ -212,9 +215,9 @@ class ShopifyScraper(BaseScraper):
     def _extract_tasting_notes(
         self, 
         description: str, 
-        html_soup: BeautifulSoup = None, 
-        html_text: str = None,
-        html_block_notes_raw: str = None
+        html_soup: BeautifulSoup | None = None, 
+        html_text: str | None = None,
+        html_block_notes_raw: str | None = None
     ) -> list[str]:
         # Prioritize notes from the specific HTML block if provided
         if html_block_notes_raw:
@@ -256,16 +259,16 @@ class ShopifyScraper(BaseScraper):
         parts = re.split(r"[,;/]|&|\s+and\s+|\s+-\s+|[•·|]|\.\s+", value, flags=re.IGNORECASE)
         return normalize_tasting_notes(clean_tasting_note_candidates(parts))
 
-    def _extract_roast_style(self, product_data: dict[str, Any]) -> Optional[str]:
+    def _extract_roast_style(self, product_data: dict[str, Any]) -> str | None:
         tags = self._normalize_tags(product_data)
         styles = [style for style in ("filter", "espresso") if style in tags]
         return ", ".join(styles) if styles else None
 
-    def _extract_price(self, product_data: dict[str, Any]) -> Optional[int]:
+    def _extract_price(self, product_data: dict[str, Any]) -> int | None:
         price = product_data.get("price")
         return int(price) if isinstance(price, int) else None
 
-    def _extract_bag_size(self, product_data: dict[str, Any]) -> Optional[str]:
+    def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
         variants = product_data.get("variants") or []
         if not variants:
             return None
@@ -284,13 +287,13 @@ class ShopifyScraper(BaseScraper):
                 return match.group(0)
         return None
 
-    def _extract_details_from_html_block(self, html_soup: BeautifulSoup) -> dict[str, Optional[str]]:
+    def _extract_details_from_html_block(self, html_soup: BeautifulSoup) -> dict[str, str | None]:
         """
         Extracts details from a specific HTML block like the one found in Porte Bleue's accordion.
         This targets <p><strong>Label: </strong>Value<br/>...</p> patterns.
         """
         details = {}
-        accordion_content_p = html_soup.select_one("div.accordion__content.rte p")
+        accordion_content_p: Tag | None = html_soup.select_one("div.accordion__content.rte p")
         if accordion_content_p:
             # Get the raw HTML content of the <p> tag
             raw_html_content = str(accordion_content_p)
@@ -351,12 +354,11 @@ class TrafficScraper(BaseScraper):
     SOURCE_NAME = "Traffic"
     ROASTER_NAME = "Traffic Coffee"
     INCLUDE_TAGS = ("coffee",)
-    def extract_product_urls(self, html: str) -> List[str]:
+    def extract_product_urls(self, html: str) -> list[str]:
         return parse_traffic_collection(html, base_url=self.BASE_URL)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         return parse_traffic_product(html, url)
-
 
 from gesha.parsers.demello_parser import parse_demello_collection, parse_demello_product
 class DeMelloScraper(BaseScraper):
@@ -365,7 +367,7 @@ class DeMelloScraper(BaseScraper):
     SOURCE_NAME = "De Mello"
     ROASTER_NAME = "De Mello Coffee"
     INCLUDE_TAGS = ("coffee",)
-    def extract_product_urls(self, html: str) -> List[str]:
+    def extract_product_urls(self, html: str) -> list[str]:
         return parse_demello_collection(html, base_url=self.BASE_URL)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:

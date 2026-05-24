@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-from typing import List, Optional
 
 from bs4 import BeautifulSoup
 
@@ -17,7 +16,7 @@ EXCLUDE_SLUG_KEYWORDS = (
 )
 
 
-def parse_demello_collection(html: str, base_url: str) -> List[str]:
+def parse_demello_collection(html: str, base_url: str) -> list[str]:
     soup = BeautifulSoup(html, "html.parser")
     urls = [
         *extract_matching_urls(soup, selector="[data-url]", attribute="data-url", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
@@ -28,7 +27,7 @@ def parse_demello_collection(html: str, base_url: str) -> List[str]:
     return sorted(dict.fromkeys(urls))
 
 
-def _extract_json_ld_description(soup: BeautifulSoup) -> Optional[str]:
+def _extract_json_ld_description(soup: BeautifulSoup) -> str | None:
     for script in soup.find_all("script", type="application/ld+json"):
         if not script.string:
             continue
@@ -43,7 +42,7 @@ def _extract_json_ld_description(soup: BeautifulSoup) -> Optional[str]:
     return None
 
 
-def _extract_tasting_notes(description: Optional[str]) -> List[str]:
+def _extract_tasting_notes(description: str | None) -> list[str]:
     if not description:
         return []
     snippet = description.splitlines()[0]
@@ -59,8 +58,8 @@ def _find_details_block(soup: BeautifulSoup) -> str:
     return soup.get_text("\n", strip=True)
 
 
-def _parse_demello_details(text: str) -> dict[str, Optional[str]]:
-    details = {
+def _parse_demello_details(text: str) -> dict[str, str | None]:
+    details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
         "process": None,
@@ -70,7 +69,7 @@ def _parse_demello_details(text: str) -> dict[str, Optional[str]]:
         "bag_size": None,
     }
 
-    def value_for(key: str) -> Optional[str]:
+    def value_for(key: str) -> str | None:
         match = re.search(rf"{re.escape(key)}\s*[:\-]\s*(.*?)(?:\n|$)", text, re.IGNORECASE)
         return match.group(1).strip() if match else None
 

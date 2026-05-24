@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import List, Optional
 
 from gesha.models.coffee import CoffeeData
 from curl_cffi.requests import Session
@@ -32,7 +31,7 @@ class BaseScraper(ABC):
         self.session.headers.update(self.DEFAULT_HEADERS)
         self.logger = logging.getLogger(self.__class__.__module__)
 
-    def scrape(self) -> List[CoffeeData]:
+    def scrape(self) -> list[CoffeeData]:
         """Fetch a collection page, fetch each product page, and return normalized data."""
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
@@ -62,7 +61,7 @@ class BaseScraper(ABC):
                 )
         return coffees
 
-    def scrape_product(self, url: str) -> Optional[CoffeeData]:
+    def scrape_product(self, url: str) -> CoffeeData | None:
         """Fetch and parse a single product URL. Defaults to HTML-based parsing."""
         response = self.session.get(url, timeout=15)
         if response.status_code == 404:
@@ -71,7 +70,7 @@ class BaseScraper(ABC):
         return self.parse_product(response.text, url)
 
     @abstractmethod
-    def extract_product_urls(self, html: str) -> List[str]:
+    def extract_product_urls(self, html: str) -> list[str]:
         """Extract absolute product URLs from collection HTML."""
         raise NotImplementedError
 

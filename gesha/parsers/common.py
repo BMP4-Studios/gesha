@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from gesha.normalization.normalize import remove_emojis
 
 COMMON_TASTING_NOTE_LABELS = [
@@ -18,7 +17,7 @@ COMMON_TASTING_NOTE_LABELS = [
 ]
 
 
-def extract_text(element: Optional[BeautifulSoup]) -> Optional[str]:
+def extract_text(element: Tag | None) -> str | None:
     if element is None:
         return None
     if element.name == "meta":
@@ -42,7 +41,7 @@ def extract_matching_urls(
     urls: list[str] = []
     for element in soup.select(selector):
         href = element.get(attribute)
-        if not href:
+        if not isinstance(href, str) or not href:
             continue
         href = href.strip()
         if pattern.match(href):
@@ -50,7 +49,7 @@ def extract_matching_urls(
     return urls
 
 
-def parse_price(value: str | None) -> Optional[int]:
+def parse_price(value: str | None) -> int | None:
     if not value:
         return None
     match = re.search(r"(?:CA)?\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
@@ -59,7 +58,7 @@ def parse_price(value: str | None) -> Optional[int]:
     return int(float(match.group(1)) * 100)
 
 
-def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> Optional[str]:
+def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> str | None:
     label_pattern = "|".join(re.escape(label) for label in labels)
     stop_pattern = "|".join(re.escape(label) for label in stop_labels)
     pattern = rf"(?:{label_pattern})\s*[:\-]\s*(.*?)(?=\n|(?:{stop_pattern})(?:\s*[:\-]|\b)|$)"

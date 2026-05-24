@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base
 
 SQLITE_URL = "sqlite:///gesha.db"
 
 engine = create_engine(SQLITE_URL, echo=False, future=True)
-SessionLocal = sessionmaker(bind=engine, future=True, expire_on_commit=False)
+SessionLocal: sessionmaker[Session] = sessionmaker(bind=engine, future=True, expire_on_commit=False)
 
 
 def init_db() -> None:

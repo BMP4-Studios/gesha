@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import concurrent.futures
-from typing import Optional
+from collections.abc import Sequence
 
 import requests
 import typer
@@ -9,7 +9,10 @@ from rich.table import Table
 from rich.console import Console
 
 from gesha.db.session import get_session, init_db
+from gesha.db.models import Coffee
+from gesha.models.coffee import CoffeeData
 from gesha.scrapers import get_scrapers, supported_sources
+from gesha.scrapers.base import BaseScraper
 from gesha.services.coffee_service import CoffeeService
 from gesha.normalization.normalize import NA_LABEL
 
@@ -25,7 +28,7 @@ app = typer.Typer(
 console = Console()
 
 
-def _print_coffees(coffees: list) -> None:
+def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
@@ -75,7 +78,7 @@ def _refresh_catalog(source: str) -> None:
         scrapers = get_scrapers(source)
         refreshed_roaster_names = []
 
-        def run_scraper(scraper):
+        def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
             return scraper.SOURCE_NAME, scraper.ROASTER_NAME, scraper.scrape()
 
@@ -89,7 +92,8 @@ def _refresh_catalog(source: str) -> None:
 
                 if scraped_coffees:
                     refreshed_roaster_names.append(roaster_name)
-                    removed_count = service.delete_stale_coffees( roaster_name, [c.url for c in scraped_coffees if c.url],)
+                    current_urls = [coffee.url for coffee in scraped_coffees if coffee.url]
+                    removed_count = service.delete_stale_coffees(roaster_name, current_urls)
                 else:
                     removed_count = 0
                     console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
@@ -140,12 +144,12 @@ def scrape(
     _refresh_catalog(source)
 
 
-@app.command()
-def list(
-    process: Optional[str] = typer.Option(None, help="Filter by coffee process."),
-    flavor: Optional[str] = typer.Option(None, help="Filter by tasting note."),
-    roaster: Optional[str] = typer.Option(None, help="Filter by roaster name."),
-    available: Optional[bool] = typer.Option(None, help="Show only available coffees."),
+@app.command(name="list")
+def list_coffees_command(
+    process: str | None = typer.Option(None, help="Filter by coffee process."),
+    flavor: str | None = typer.Option(None, help="Filter by tasting note."),
+    roaster: str | None = typer.Option(None, help="Filter by roaster name."),
+    available: bool | None = typer.Option(None, help="Show only available coffees."),
 ) -> None:
     """
     List and filter coffees currently stored in the local database.

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import List, Optional
+from datetime import date, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +24,7 @@ class Roaster(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
-    coffees: Mapped[List["Coffee"]]= relationship("Coffee", back_populates="roaster")
+    coffees: Mapped[list["Coffee"]] = relationship("Coffee", back_populates="roaster")
 
     def __repr__(self) -> str:
         return f"<Roaster name={self.name!r}>"
@@ -49,22 +48,22 @@ class Coffee(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     roaster_id: Mapped[int] = mapped_column(ForeignKey("roasters.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
-    origin: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    producer: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    process: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    varietal: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    altitude: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    roast_style: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    price_cents: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    bag_size: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    origin: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    producer: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    process: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    varietal: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    altitude: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    roast_style: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bag_size: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     availability: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    roast_date: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
+    roast_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")
-    tasting_notes: Mapped[List[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")
+    tasting_notes: Mapped[list[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Coffee name={self.name!r} roaster={self.roaster.name!r}>"

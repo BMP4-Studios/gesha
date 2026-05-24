@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["gesha"]
+include = ["gesha*"]
 
 [project.scripts]
 gesha = "gesha.cli.main:app"

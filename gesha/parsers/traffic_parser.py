@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
 
 from bs4 import BeautifulSoup
 
@@ -23,7 +22,7 @@ DETAIL_LABELS = [
 ] + COMMON_TASTING_NOTE_LABELS
 
 
-def parse_traffic_collection(html: str, base_url: str) -> List[str]:
+def parse_traffic_collection(html: str, base_url: str) -> list[str]:
     soup = BeautifulSoup(html, "html.parser")
     urls = extract_matching_urls(
         soup,
@@ -36,8 +35,8 @@ def parse_traffic_collection(html: str, base_url: str) -> List[str]:
     return sorted(dict.fromkeys(urls))
 
 
-def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
-    details = {
+def _parse_traffic_details(text: str) -> dict[str, str | None]:
+    details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
         "process": None,
@@ -47,7 +46,7 @@ def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
         "bag_size": None,
     }
 
-    def value_for(key: str) -> Optional[str]:
+    def value_for(key: str) -> str | None:
         return extract_labeled_value(text, [key], DETAIL_LABELS)
 
     details["origin"] = value_for("Origin")
@@ -60,7 +59,7 @@ def _parse_traffic_details(text: str) -> dict[str, Optional[str]]:
     return details
 
 
-def _extract_tasting_notes(text: str) -> List[str]:
+def _extract_tasting_notes(text: str) -> list[str]:
     value = extract_labeled_value(text, COMMON_TASTING_NOTE_LABELS, DETAIL_LABELS)
     if not value:
         return []
@@ -76,6 +75,8 @@ def parse_traffic_product(html: str, url: str) -> CoffeeData:
 
     desc_div = soup.select_one("div.product-block-description")
     description = extract_text(desc_div) if desc_div else ""
+    if description is None:
+        description = ""
 
     details = _parse_traffic_details(description)
     tasting_notes = _extract_tasting_notes(description)

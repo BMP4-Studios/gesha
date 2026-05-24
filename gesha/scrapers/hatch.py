@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from gesha.models.coffee import CoffeeData
 from gesha.parsers.hatch_parser import parse_hatch_collection, parse_hatch_product
 from gesha.scrapers.base import BaseScraper
@@ -13,7 +11,7 @@ class HatchScraper(BaseScraper):
     SOURCE_NAME = "Hatch"
     ROASTER_NAME = "Hatch Coffee"
 
-    def extract_product_urls(self, html: str) -> List[str]:
+    def extract_product_urls(self, html: str) -> list[str]:
         return parse_hatch_collection(html, base_url=self.BASE_URL)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:

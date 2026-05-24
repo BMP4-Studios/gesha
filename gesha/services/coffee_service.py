@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -58,11 +58,11 @@ class CoffeeService:
 
     def list_coffees(
         self,
-        process: Optional[str] = None,
-        flavor: Optional[str] = None,
-        roaster_name: Optional[str] = None,
-        available: Optional[bool] = None,
-    ) -> List[Coffee]:
+        process: str | None = None,
+        flavor: str | None = None,
+        roaster_name: str | None = None,
+        available: bool | None = None,
+    ) -> list[Coffee]:
         query = select(Coffee).join(Roaster)
         if roaster_name:
             query = query.where(Roaster.name.ilike(f"%{roaster_name}%"))
@@ -75,7 +75,7 @@ class CoffeeService:
 
         return list(self.session.scalars(query).all())
 
-    def get_coffee_by_id(self, coffee_id: int) -> Optional[Coffee]:
+    def get_coffee_by_id(self, coffee_id: int) -> Coffee | None:
         return self.session.get(Coffee, coffee_id)
 
     def delete_stale_coffees(self, roaster_name: str, current_urls: Iterable[str]) -> int:
