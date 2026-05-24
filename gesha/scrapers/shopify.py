@@ -104,7 +104,7 @@ class ShopifyScraper(BaseScraper):
         return urljoin(self.BASE_URL, f"/products/{handle}")
 
     def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
-        raw_tags = product_data.get("tags") or []
+        raw_tags = product_data.get("tags") or [] # type: ignore
         if isinstance(raw_tags, str):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
         return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
@@ -117,7 +117,6 @@ class ShopifyScraper(BaseScraper):
         if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or \
            any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
             return False
-        product_type = str(product_data.get("type") or "").strip().lower()
 
         if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
             return True
@@ -270,19 +269,30 @@ class ShopifyScraper(BaseScraper):
         return int(price) if isinstance(price, int) else None
 
     def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
-        variants = product_data.get("variants") or []
+        raw_variants: object = product_data.get("variants")
+        if not isinstance(raw_variants, list):
+            return None
+
+        variants: list[dict[str, object]] = []
+        for raw_variant in cast(list[object], raw_variants):
+            if isinstance(raw_variant, dict):
+                variants.append(cast(dict[str, object], raw_variant))
+
         if not variants:
             return None
+
         # Check first variant for weight info
         variant = variants[0]
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
-        if weight and unit:
+        
+        if isinstance(weight, int | float) and isinstance(unit, str) and unit:
             return f"{int(weight)}{unit}"
 
         # Fallback to variant title regex
-        for v in variants:
-            title = str(v.get("title") or "")
+        for variant in variants:
+            raw_title = variant.get("title")
+            title = raw_title if isinstance(raw_title, str) else ""
             match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", title, re.IGNORECASE)
             if match:
                 return match.group(0)
