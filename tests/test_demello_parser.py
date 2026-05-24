@@ -39,3 +39,24 @@ def test_parse_demello_product() -> None:
     assert "chocolate" in coffee.tasting_notes
     assert "dark cherry" in coffee.tasting_notes
     assert "vanilla" in coffee.tasting_notes
+
+
+def test_parse_demello_product_extracts_size_from_variant_popout() -> None:
+    html = (
+        '<h1 class="product__title">Dancing Goats</h1>'
+        '<span class="price-item price-item--regular">$16.00</span>'
+        '<variant-selects>'
+        '<small data-selected-value="">227g</small>'
+        '<li selected="selected" value="227g">'
+        '<a data-value="227g"><span>227g</span></a>'
+        "</li>"
+        "</variant-selects>"
+        '<div class="product__description__content"><p>Milk Chocolate · Vanilla</p></div>'
+        '<div class="metafield-rich_text_field">'
+        '<p>Country : Brazil<br/>Process : Natural</p>'
+        '</div>'
+    )
+
+    coffee = parse_demello_product(html, "https://hellodemello.com/products/dancing-goats")
+
+    assert coffee.bag_size == "227g"

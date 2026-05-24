@@ -58,6 +58,45 @@ def parse_price(value: str | None) -> int | None:
     return int(float(match.group(1)) * 100)
 
 
+def extract_bag_size(value: str | None) -> str | None:
+    if not value:
+        return None
+    match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", value, re.IGNORECASE)
+    if match:
+        return match.group(0)
+    return None
+
+
+def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str | None:
+    selectors = (
+        "select[name='id'] option[selected]",
+        "select[name='id'] option",
+        "variant-selects [data-selected-value]",
+        "variant-selects [data-popout-toggle-text]",
+        "variant-selects [selected] [data-value]",
+        "variant-selects [selected]",
+    )
+    for selector in selectors:
+        element = soup.select_one(selector)
+        size = extract_bag_size(extract_text(element))
+        if size:
+            return size
+
+        raw_value = element.get("data-value") if element else None
+        if isinstance(raw_value, str):
+            size = extract_bag_size(raw_value)
+            if size:
+                return size
+
+        raw_value = element.get("value") if element else None
+        if isinstance(raw_value, str):
+            size = extract_bag_size(raw_value)
+            if size:
+                return size
+
+    return extract_bag_size(f"{title} {url}")
+
+
 def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> str | None:
     label_pattern = "|".join(re.escape(label) for label in labels)
     stop_pattern = "|".join(re.escape(label) for label in stop_labels)

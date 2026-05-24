@@ -66,3 +66,25 @@ def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
     )
 
     assert coffee.tasting_notes == ["apple cider", "flowers", "honey cake"]
+
+
+def test_parse_traffic_product_extracts_size_from_variant_option() -> None:
+    html = (
+        "<h1>Collab avec Beton Arme 100g</h1>"
+        '<span class="product-price">$10.00</span>'
+        '<select name="id">'
+        '<option selected="selected" value="123">100g</option>'
+        "</select>"
+        '<div class="product-block-description">'
+        "Origin: Colombia "
+        "Process: Washed "
+        "In the cup: chocolate"
+        "</div>"
+    )
+
+    coffee = parse_traffic_product(
+        html,
+        "https://www.trafficcoffee.com/collections/coffee/products/beton-arme-100g",
+    )
+
+    assert coffee.bag_size == "100g"

@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
 from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
+from gesha.parsers.common import extract_matching_urls, extract_shopify_bag_size, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/products/[^/?#]+$")
 EXCLUDE_SLUG_KEYWORDS = (
@@ -108,6 +108,6 @@ def parse_demello_product(html: str, url: str) -> CoffeeData:
         tasting_notes=_extract_tasting_notes(description),
         roast_style=details.get("roast_style"),
         price_cents=price_cents,
-        bag_size=details.get("bag_size"),
+        bag_size=details.get("bag_size") or extract_shopify_bag_size(soup, title, url),
         url=url,
     )
