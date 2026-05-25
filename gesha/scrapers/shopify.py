@@ -1,3 +1,10 @@
+"""Shopify-oriented scraping and adapters for several supported roasters.
+
+The generic ``ShopifyScraper`` favors Shopify's product JSON endpoint and
+supplements it with HTML when theme-specific detail blocks contain better
+metadata. Simple HTML-only adapters at the bottom delegate to parser modules.
+"""
+
 from __future__ import annotations
 
 import re
@@ -39,12 +46,15 @@ SHOPIFY_DETAIL_LABELS = [
 
 
 class ShopifyScraper(BaseScraper):
+    """Extract coffee products from stores exposing Shopify product JSON."""
+
     COLLECTION_PATH = "/collections/coffee"
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
 
     def extract_product_urls(self, html: str) -> list[str]:
+        """Convert collection product links into canonical Shopify product URLs."""
         soup = BeautifulSoup(html, "html.parser")
         urls: list[str] = []
         for anchor in soup.select("a[href*='/products/']"):
@@ -58,7 +68,7 @@ class ShopifyScraper(BaseScraper):
         return sorted(dict.fromkeys(urls))
 
     def scrape_product(self, url: str) -> CoffeeData | None:
-        """Shopify-specific product scraping using the .js AJAX endpoint."""
+        """Fetch Shopify JSON and optional HTML fallback for one product."""
         # Add Referer header to make the .js request look more legitimate
         session = cast(Any, self.session)
         headers = session.headers.copy()
@@ -96,20 +106,24 @@ class ShopifyScraper(BaseScraper):
         return self._coffee_from_product(product_data, url, html_text=html_text, html_soup=html_soup)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
+        """Prevent the base HTML parser path for JSON-driven Shopify products."""
         raise NotImplementedError("ShopifyScraper parses product JSON instead of product HTML.")
 
     def _canonical_product_url(self, url: str) -> str:
+        """Strip collection prefixes so one Shopify item has one stored URL."""
         parsed = urlparse(url)
         handle = parsed.path.rstrip("/").rsplit("/", 1)[-1]
         return urljoin(self.BASE_URL, f"/products/{handle}")
 
     def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
+        """Return lowercase Shopify tags independent of API string/list shape."""
         raw_tags = product_data.get("tags") or [] # type: ignore
         if isinstance(raw_tags, str):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
         return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
 
     def _is_coffee_product(self, product_data: dict[str, Any]) -> bool:
+        """Reject subscriptions and accept products satisfying source tag rules."""
         handle = str(product_data.get("handle") or "").lower()
         tags = self._normalize_tags(product_data)
 
@@ -130,6 +144,7 @@ class ShopifyScraper(BaseScraper):
         html_text: str | None = None, 
         html_soup: BeautifulSoup | None = None
     ) -> CoffeeData:
+        """Merge Shopify and theme HTML fields into the shared catalog model."""
         description = self._description_text(product_data)
         details = self._extract_details(description)
         title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
@@ -173,10 +188,12 @@ class ShopifyScraper(BaseScraper):
         )
 
     def _description_text(self, product_data: dict[str, Any]) -> str:
+        """Flatten Shopify's HTML description into label-searchable text."""
         html = str(product_data.get("description") or "")
         return BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
 
     def _extract_details(self, description: str) -> dict[str, str | None]:
+        """Extract generic labeled metadata exposed in Shopify descriptions."""
         return {
             "origin": extract_labeled_value(description, ["Origin", "Country", "Region", "Place"], SHOPIFY_DETAIL_LABELS),
             "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers", "Farm"], SHOPIFY_DETAIL_LABELS),
@@ -219,6 +236,7 @@ class ShopifyScraper(BaseScraper):
         html_text: str | None = None,
         html_block_notes_raw: str | None = None
     ) -> list[str]:
+        """Extract notes from structured blocks, theme markup, or description prose."""
         # Prioritize notes from the specific HTML block if provided
         if html_block_notes_raw:
             notes = normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[;,\n•·|]|\.\s+", html_block_notes_raw)))
@@ -260,15 +278,18 @@ class ShopifyScraper(BaseScraper):
         return normalize_tasting_notes(clean_tasting_note_candidates(parts))
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> str | None:
+        """Use standard Shopify tags as a fallback roast-style classification."""
         tags = self._normalize_tags(product_data)
         styles = [style for style in ("filter", "espresso") if style in tags]
         return ", ".join(styles) if styles else None
 
     def _extract_price(self, product_data: dict[str, Any]) -> int | None:
+        """Read Shopify's integer-cent product price when it is supplied."""
         price = product_data.get("price")
         return int(price) if isinstance(price, int) else None
 
     def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
+        """Find bag weight in Shopify variant fields or variant titles."""
         raw_variants: object = product_data.get("variants")
         if not isinstance(raw_variants, list):
             return None
@@ -300,8 +321,10 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_details_from_html_block(self, html_soup: BeautifulSoup) -> dict[str, str | None]:
         """
-        Extracts details from a specific HTML block like the one found in Porte Bleue's accordion.
-        This targets <p><strong>Label: </strong>Value<br/>...</p> patterns.
+        Extract label/value fields from accordion markup used by some themes.
+
+        Porte Bleue, for example, exposes more complete product metadata in
+        ``<p><strong>Label:</strong> Value<br/>...</p>`` HTML than in JSON.
         """
         details = {}
         accordion_content_p: Tag | None = html_soup.select_one("div.accordion__content.rte p")
@@ -319,6 +342,8 @@ class ShopifyScraper(BaseScraper):
 
 
 class PorteBleueScraper(ShopifyScraper):
+    """Shopify configuration for Porte Bleue products."""
+
     BASE_URL = "https://portebleue.ca"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Porte Bleue"
@@ -327,6 +352,8 @@ class PorteBleueScraper(ShopifyScraper):
 
 
 class ColorfullScraper(ShopifyScraper):
+    """Shopify configuration for Colorfull, whose products lack coffee tags."""
+
     BASE_URL = "https://colorfullcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all"
     SOURCE_NAME = "Colorfull"
@@ -336,6 +363,8 @@ class ColorfullScraper(ShopifyScraper):
 
 
 class AngryRoasterScraper(ShopifyScraper):
+    """Shopify configuration for The Angry Roaster products."""
+
     BASE_URL = "https://theangryroaster.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "The Angry Roaster"
@@ -344,6 +373,8 @@ class AngryRoasterScraper(ShopifyScraper):
 
 
 class RogueWaveScraper(ShopifyScraper):
+    """Shopify configuration retained for potential explicit registry use."""
+
     BASE_URL = "https://www.roguewavecoffee.ca"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Rogue Wave"
@@ -352,34 +383,48 @@ class RogueWaveScraper(ShopifyScraper):
 
 
 class HouseOfFunkScraper(ShopifyScraper):
+    """Shopify configuration retained for potential explicit registry use."""
+
     BASE_URL = "https://www.houseoffunkbrewing.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "House of Funk"
     ROASTER_NAME = "House of Funk"
     INCLUDE_TAGS = ("coffee",)
 
+# These HTML-backed adapters share transport behavior with BaseScraper, but
+# their page structures are sufficiently distinct to live in parser modules.
 from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
 class TrafficScraper(BaseScraper):
+    """HTML scraper adapter that delegates Traffic markup parsing."""
+
     BASE_URL = "https://www.trafficcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Traffic"
     ROASTER_NAME = "Traffic Coffee"
     INCLUDE_TAGS = ("coffee",)
+
     def extract_product_urls(self, html: str) -> list[str]:
+        """Discover Traffic product pages in collection HTML."""
         return parse_traffic_collection(html, base_url=self.BASE_URL)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
+        """Delegate Traffic page normalization to its source-specific parser."""
         return parse_traffic_product(html, url)
 
 from gesha.parsers.demello_parser import parse_demello_collection, parse_demello_product
 class DeMelloScraper(BaseScraper):
+    """HTML scraper adapter that delegates De Mello markup parsing."""
+
     BASE_URL = "https://hellodemello.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
     SOURCE_NAME = "De Mello"
     ROASTER_NAME = "De Mello Coffee"
     INCLUDE_TAGS = ("coffee",)
+
     def extract_product_urls(self, html: str) -> list[str]:
+        """Discover De Mello product pages in collection HTML."""
         return parse_demello_collection(html, base_url=self.BASE_URL)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
+        """Delegate De Mello page normalization to its source-specific parser."""
         return parse_demello_product(html, url)

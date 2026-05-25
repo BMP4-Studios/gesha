@@ -1,1 +1,1 @@
-"""Parser helpers for scraper HTML extraction."""
+"""Source-specific HTML parsers imported by concrete scraper adapters."""

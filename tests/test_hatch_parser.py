@@ -1,7 +1,10 @@
+"""Tests for Hatch's filtered discovery and application-payload parsing."""
+
 from gesha.parsers.hatch_parser import parse_hatch_collection, parse_hatch_product
 
 
 def test_parse_hatch_collection_excludes_non_bag_products() -> None:
+    """Shop merchandise and prepared drinks are excluded from coffee results."""
     html = (
         '<a href="/shop/andres-martinez-geisha-washed">Coffee</a>'
         '<a href="/shop/hario-v60-filters">Filters</a>'
@@ -17,6 +20,7 @@ def test_parse_hatch_collection_excludes_non_bag_products() -> None:
 
 
 def test_parse_hatch_collection_extracts_embedded_paths() -> None:
+    """Serialized links in application markup are discovered and filtered."""
     html = (
         '{"href":"/shop/andres-martinez-geisha-washed"}'
         '{"href":"\\/shop\\/rio-brilhante-tropicana-natural"}'
@@ -34,6 +38,7 @@ def test_parse_hatch_collection_extracts_embedded_paths() -> None:
 
 
 def test_parse_hatch_product_uses_only_labeled_tasting_notes() -> None:
+    """Labeled cup notes are retained while surrounding prose is ignored."""
     html = (
         "<h1>Example Gesha Washed</h1>"
         "<p>Origin: Origin: Huila, Colombia</p>"
@@ -51,6 +56,7 @@ def test_parse_hatch_product_uses_only_labeled_tasting_notes() -> None:
 
 
 def test_parse_hatch_product_does_not_fallback_to_description_as_notes() -> None:
+    """Unlabeled description copy is not guessed to be flavor metadata."""
     html = (
         "<h1>Example Coffee</h1>"
         "<p>Origin: Colombia</p>"

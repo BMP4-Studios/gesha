@@ -1,3 +1,9 @@
+"""Typer command surface for scraping, caching, and inspecting coffees.
+
+The installed ``gesha`` executable resolves to ``app`` in this module. It
+coordinates scrapers and ``CoffeeService`` while Rich handles terminal output.
+"""
+
 from __future__ import annotations
 
 import concurrent.futures
@@ -34,6 +40,7 @@ typer_option = cast(TyperParamFactory, getattr(typer, "Option"))
 
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
+    """Render queried ORM coffee records as the shared CLI catalog table."""
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
@@ -44,6 +51,8 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table.add_column("Price")
     table.add_column("Notes")
 
+    # Keep scrape output and cache/list output visually identical by rendering
+    # records only after they have been stored and reloaded from the database.
     for coffee in coffees:
         notes = ", ".join(note.name for note in coffee.tasting_notes)
         price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
@@ -63,7 +72,8 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
 
 
 def _refresh_catalog(source: str) -> None:
-    # create the database if it doesn't already exist
+    """Scrape one or all sources, persist results, and print refreshed records."""
+    # Create the database on first execution so a refresh is immediately usable.
     init_db()
 
     with get_session() as session:
@@ -84,14 +94,19 @@ def _refresh_catalog(source: str) -> None:
         refreshed_roaster_names: list[str] = []
 
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
+            """Run a network scraper in a worker and retain source identity."""
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
             return scraper.SOURCE_NAME, scraper.ROASTER_NAME, scraper.scrape()
 
+        # Each roaster is independent, so fetch sources concurrently while
+        # serializing database writes in the owning command/session thread.
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
             future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
             for future in concurrent.futures.as_completed(future_to_scraper):
                 source_name, roaster_name, scraped_coffees = future.result()
 
+                # Upsert current products before trimming rows no longer found
+                # on this successfully returned roaster listing.
                 for coffee in scraped_coffees:
                     service.create_or_update_coffee(coffee)
 
@@ -106,6 +121,9 @@ def _refresh_catalog(source: str) -> None:
                 console.print(f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]")
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
+        # An all-source refresh displays only successfully returned roasters;
+        # cached rows for a failed source remain protected but are not implied
+        # to have been refreshed during this invocation.
         if source == "all":
             coffees = [
                 coffee
@@ -129,7 +147,7 @@ def main(ctx: typer.Context) -> None:
 
 @app.command()
 def init() -> None:
-    """Create local SQLite database tables."""
+    """Create local SQLite database tables without running a scrape."""
     init_db()
     console.print("[green]Database initialized.[/green]")
 
@@ -145,8 +163,33 @@ def scrape(
     Refresh the local database by scraping roaster websites.
     
     This command fetches product data, normalizes it, updates existing records, 
-    and deletes coffees that are no longer available on the roaster's site."""
+    and deletes coffees that are no longer available on the roaster's site.
+    It is also the network-backed counterpart to the read-only ``cache`` command."""
     _refresh_catalog(source)
+
+
+def _query_cached_coffees(
+    process: str | None,
+    flavour: str | None,
+    roaster: str | None,
+    available: bool | None,
+) -> None:
+    """Print cached rows for the read-only ``list`` and ``cache`` commands."""
+    with get_session() as session:
+        service = CoffeeService(session)
+        coffees = service.list_coffees(process=process, flavour=flavour, roaster_name=roaster, available=available)
+        _print_coffees(coffees)
+
+
+@app.command(name="cache")
+def cache_coffees_command(
+    process: str | None = typer_option(None, help="Filter by coffee process."),
+    flavour: str | None = typer_option(None, help="Filter by tasting note."),
+    roaster: str | None = typer_option(None, help="Filter by roaster name."),
+    available: bool | None = typer_option(None, help="Show only available coffees."),
+) -> None:
+    """Relist previously scraped coffees without contacting roaster websites."""
+    _query_cached_coffees(process, flavour, roaster, available)
 
 
 @app.command(name="list")
@@ -156,19 +199,13 @@ def list_coffees_command(
     roaster: str | None = typer_option(None, help="Filter by roaster name."),
     available: bool | None = typer_option(None, help="Show only available coffees."),
 ) -> None:
-    """
-    List and filter coffees currently stored in the local database.
-    
-    Use the options below to narrow down the catalog by process, flavour notes, or availability."""
-    with get_session() as session:
-        service = CoffeeService(session)
-        coffees = service.list_coffees(process=process, flavour=flavour, roaster_name=roaster, available=available)
-        _print_coffees(coffees)
+    """List and filter cached coffees; equivalent to ``gesha cache``."""
+    _query_cached_coffees(process, flavour, roaster, available)
 
 
 @app.command()
 def show(coffee_id: int) -> None:
-    """Show details for a single coffee."""
+    """Show one cached coffee record selected by its table ID."""
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
@@ -197,7 +234,7 @@ def show(coffee_id: int) -> None:
 
 @app.command()
 def debug(coffee_id: int) -> None:
-    """Dump all raw web data for a coffee (HTML and JSON) into a single debug file."""
+    """Fetch raw source responses for a cached coffee to help parser debugging."""
 
     with get_session() as session:
         service = CoffeeService(session)
@@ -214,7 +251,8 @@ def debug(coffee_id: int) -> None:
         filename = f"debug/debug_{coffee_id}.txt"
         output : list[str] = []
 
-        # 1. Fetch JSON (Shopify AJAX)
+        # Capture a Shopify-style JSON response when supported; a missing JSON
+        # endpoint is tolerated because non-Shopify records are also debuggable.
         json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
         res_json = requests.get(json_url, timeout=15)
         if res_json.status_code == 200:
@@ -222,7 +260,8 @@ def debug(coffee_id: int) -> None:
             output.append(res_json.text)
             output.append("\n\n")
 
-        # 2. Fetch HTML
+        # The HTML response is always included because each parser may depend
+        # on selectors or embedded page payloads not represented in JSON.
         res_html = requests.get(coffee.url, timeout=15)
         res_html.raise_for_status()
         output.append("=== RAW HTML DATA ===\n")

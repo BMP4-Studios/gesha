@@ -1,3 +1,9 @@
+"""SQLAlchemy schema for the locally cached coffee catalog.
+
+The CLI opens this database through ``db.session`` and ``CoffeeService`` owns
+creation, querying, and removal of these persisted records.
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
@@ -7,14 +13,19 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
+    """Declarative base used by table definitions and database initialization."""
+
     pass
 
 
 def utc_now() -> datetime:
+    """Supply UTC audit timestamps for inserted and updated coffee records."""
     return datetime.now(UTC)
 
 
 class Roaster(Base):
+    """A coffee company, shared by all cached products from that source."""
+
     __tablename__ = "roasters"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -22,10 +33,13 @@ class Roaster(Base):
     coffees: Mapped[list["Coffee"]] = relationship("Coffee", back_populates="roaster")
 
     def __repr__(self) -> str:
+        """Return a compact representation useful during debugging."""
         return f"<Roaster name={self.name!r}>"
 
 
 class TastingNote(Base):
+    """One searchable tasting-note label associated with a cached coffee."""
+
     __tablename__ = "tasting_notes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -34,10 +48,13 @@ class TastingNote(Base):
     coffee: Mapped["Coffee"] = relationship(back_populates="tasting_notes")
 
     def __repr__(self) -> str:
+        """Return a compact representation useful during debugging."""
         return f"<TastingNote name={self.name!r}>"
 
 
 class Coffee(Base):
+    """Persisted catalog entry created or refreshed from a scraped product."""
+
     __tablename__ = "coffees"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -61,4 +78,5 @@ class Coffee(Base):
     tasting_notes: Mapped[list[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
+        """Return a compact representation including its owning roaster."""
         return f"<Coffee name={self.name!r} roaster={self.roaster.name!r}>"

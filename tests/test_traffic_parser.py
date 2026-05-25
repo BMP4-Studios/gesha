@@ -1,7 +1,10 @@
+"""Tests for Traffic collection selectors and labeled product metadata."""
+
 from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
 
 
 def test_parse_traffic_collection() -> None:
+    """Only canonical Traffic coffee collection links are accepted."""
     html = (
         '<a href="/collections/coffee/products/coffee-one">Coffee One</a>'
         '<a href="/collections/coffee/products/coffee-two?variant=123">Ignored Variant</a>'
@@ -15,6 +18,7 @@ def test_parse_traffic_collection() -> None:
 
 
 def test_parse_traffic_product() -> None:
+    """A complete Traffic description maps into all main catalog fields."""
     html = (
         "<h1>La Piramide</h1>"
         '<span class="product-price">$24.00</span>'
@@ -49,6 +53,7 @@ def test_parse_traffic_product() -> None:
 
 
 def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
+    """Narrative about-copy does not become tasting-note filter values."""
     html = (
         "<h1>Yellow Diamond</h1>"
         '<span class="product-price">$27.00</span>'
@@ -69,6 +74,7 @@ def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
 
 
 def test_parse_traffic_product_extracts_size_from_variant_option() -> None:
+    """Selected variant controls provide a missing Traffic bag size."""
     html = (
         "<h1>Collab avec Beton Arme 100g</h1>"
         '<span class="product-price">$10.00</span>'

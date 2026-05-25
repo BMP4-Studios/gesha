@@ -1,3 +1,9 @@
+"""Small normalization rules applied when scraper output becomes catalog data.
+
+Parsers call these functions before creating ``CoffeeData`` so product pages
+from different roasters can be listed and filtered consistently.
+"""
+
 from __future__ import annotations
 
 import re
@@ -7,7 +13,7 @@ from collections.abc import Iterable
 NA_LABEL = "[red]NONE[/red]"
 
 def remove_emojis(text: str) -> str:
-    """Remove emojis, symbols, and non-standard decorative characters from text."""
+    """Remove decorative characters that otherwise pollute parsed field values."""
     if not text:
         return ""
     # 1. Normalize to NFKC form to handle mathematical script (e.g. blossomed) and full-width characters.
@@ -20,7 +26,7 @@ def remove_emojis(text: str) -> str:
 
 
 def normalize_process(value: str | None) -> str | None:
-    """Bare minimum normalization: lowercase and strip."""
+    """Return a searchable process label, merging a few common synonyms."""
     if not value:
         return None
     cleaned = remove_emojis(value).lower().strip()
@@ -30,7 +36,7 @@ def normalize_process(value: str | None) -> str | None:
 
 
 def normalize_country(value: str | None) -> str | None:
-    """Bare minimum normalization: lowercase and strip."""
+    """Clean an origin field while retaining intentional source capitalization."""
     if not value:
         return None
     cleaned = remove_emojis(value).strip()
@@ -38,13 +44,14 @@ def normalize_country(value: str | None) -> str | None:
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
-    """Split by common delimiters and lowercase each note."""
+    """Return deduplicated tasting notes from text or parser candidates."""
     if values is None:
         return []
     if isinstance(values, str):
         # Support standard separators plus bullets, middle dots, and "and/&"
         values = re.split(r"[,;/]|&|\s+and\s+|\s+-\s+|[•·|]|\.\s+", values, flags=re.IGNORECASE)
     normalized: list[str] = []
+    # Merge obvious wording variants so flavor searches do not miss matches.
     for note in values:
         candidate = remove_emojis(note.strip().lower()).strip(" .")
         if not candidate:

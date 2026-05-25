@@ -1,7 +1,10 @@
+"""Tests for behavior shared by JSON-backed Shopify scraper adapters."""
+
 from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
 
 
 def test_shopify_collection_extracts_canonical_product_urls() -> None:
+    """Collection-prefixed links collapse to one stable product URL form."""
     html = (
         '<a href="/collections/coffee/products/gold-92">Gold 92</a>'
         '<a href="/products/las-flores?variant=123">Las Flores</a>'
@@ -17,6 +20,7 @@ def test_shopify_collection_extracts_canonical_product_urls() -> None:
 
 
 def test_shopify_product_json_parses_labeled_specs() -> None:
+    """Structured Shopify descriptions populate normalized catalog fields."""
     product = {
         "title": "Colombia - Gesha - Inza",
         "price": 2300,
@@ -53,12 +57,14 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
 
 
 def test_colorfull_allows_products_without_type_or_tags() -> None:
+    """Colorfull's source configuration accepts products without coffee tags."""
     product = {"handle": "apple-crumble", "type": "", "tags": []}
 
     assert ColorfullScraper()._is_coffee_product(product)
 
 
 def test_shopify_product_json_extracts_in_the_cup_sentence() -> None:
+    """Narrative cup-profile phrasing yields useful tasting-note values."""
     product = {
         "title": "Apple Crumble",
         "price": 3200,

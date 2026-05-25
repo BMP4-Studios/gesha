@@ -1,3 +1,9 @@
+"""Database engine and session factory for Gesha's local SQLite cache.
+
+CLI commands call ``init_db`` when creating or refreshing the catalog, then
+create short-lived sessions consumed by ``CoffeeService``.
+"""
+
 from __future__ import annotations
 
 from sqlalchemy import create_engine
@@ -12,10 +18,10 @@ SessionLocal: sessionmaker[Session] = sessionmaker(bind=engine, future=True, exp
 
 
 def init_db() -> None:
-    """Create database tables if they do not already exist."""
+    """Create database tables before the first scrape or explicit ``init``."""
     Base.metadata.create_all(engine)
 
 
 def get_session() -> Session:
-    """Return a new SQLAlchemy session."""
+    """Return a session used by CLI commands and persistence services."""
     return SessionLocal()

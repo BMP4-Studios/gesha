@@ -1,3 +1,9 @@
+"""Extract De Mello collection and product HTML into normalized coffee data.
+
+``DeMelloScraper`` delegates its HTML parsing to this module because the
+roaster exposes details in theme markup and JSON-LD rather than Shopify AJAX.
+"""
+
 from __future__ import annotations
 
 import json
@@ -17,17 +23,21 @@ EXCLUDE_SLUG_KEYWORDS = (
 
 
 def parse_demello_collection(html: str, base_url: str) -> list[str]:
+    """Return deduplicated De Mello coffee product links from a collection page."""
     soup = BeautifulSoup(html, "html.parser")
     urls = [
         *extract_matching_urls(soup, selector="[data-url]", attribute="data-url", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
         *extract_matching_urls(soup, selector="a[href^='/products/']", attribute="href", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
     ]
+    # Collection pages include coffee-adjacent merchandise that should not be
+    # turned into catalog entries.
     urls = [url for url in urls if not any(keyword in url.rsplit("/", 1)[-1].lower() for keyword in EXCLUDE_SLUG_KEYWORDS)]
 
     return sorted(dict.fromkeys(urls))
 
 
 def _extract_json_ld_description(soup: BeautifulSoup) -> str | None:
+    """Read the product description from structured metadata when available."""
     for script in soup.find_all("script", type="application/ld+json"):
         if not script.string:
             continue
@@ -43,6 +53,7 @@ def _extract_json_ld_description(soup: BeautifulSoup) -> str | None:
 
 
 def _extract_tasting_notes(description: str | None) -> list[str]:
+    """Interpret the leading description snippet as De Mello's cup notes."""
     if not description:
         return []
     snippet = description.splitlines()[0]
@@ -51,6 +62,7 @@ def _extract_tasting_notes(description: str | None) -> list[str]:
 
 
 def _find_details_block(soup: BeautifulSoup) -> str:
+    """Find the metadata-rich product block, falling back to full-page text."""
     for block in soup.select("div.metafield-rich_text_field"):
         text = block.get_text("\n", strip=True)
         if "Country" in text and "Process" in text:
@@ -59,6 +71,7 @@ def _find_details_block(soup: BeautifulSoup) -> str:
 
 
 def _parse_demello_details(text: str) -> dict[str, str | None]:
+    """Map De Mello's line-oriented labels into catalog field names."""
     details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
@@ -70,6 +83,7 @@ def _parse_demello_details(text: str) -> dict[str, str | None]:
     }
 
     def value_for(key: str) -> str | None:
+        """Read one line-based detail label from the selected details block."""
         match = re.search(rf"{re.escape(key)}\s*[:\-]\s*(.*?)(?:\n|$)", text, re.IGNORECASE)
         return match.group(1).strip() if match else None
 
@@ -83,6 +97,7 @@ def _parse_demello_details(text: str) -> dict[str, str | None]:
 
 
 def parse_demello_product(html: str, url: str) -> CoffeeData:
+    """Build one validated catalog item from a De Mello product page."""
     soup = BeautifulSoup(html, "html.parser")
     title = extract_text(soup.select_one("h1.product__title, h1")) or "Unknown coffee"
     price = extract_text(soup.select_one("span.price-item.price-item--regular"))
@@ -90,10 +105,14 @@ def parse_demello_product(html: str, url: str) -> CoffeeData:
         price = extract_text(soup.select_one("meta[property='og:price:amount']"))
     price_cents = parse_price(price)
 
+    # JSON-LD is compact and stable for notes; theme markup is retained as a
+    # fallback for pages without complete structured product metadata.
     description = _extract_json_ld_description(soup)
     if not description:
         description = extract_text(soup.select_one("div.product__description__content p")) or ""
 
+    # Labeled page copy supplies origin/process metadata independently of the
+    # marketing description used for tasting notes.
     details_block = _find_details_block(soup)
     details = _parse_demello_details(details_block)
 

@@ -1,3 +1,5 @@
+"""Tests for catalog persistence rules that protect and replace cached rows."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -7,6 +9,7 @@ from gesha.services.coffee_service import CoffeeService
 
 
 def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
+    """A refreshed roaster loses vanished products without affecting others."""
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
@@ -50,6 +53,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
 
 
 def test_delete_stale_coffees_skips_empty_url_set() -> None:
+    """An empty scrape result cannot erase previously useful cached data."""
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)

@@ -1,4 +1,4 @@
-"""Database utilities for coffee data persistence."""
+"""Export database initialization used by setup and scraping workflows."""
 from .session import init_db
 
 __all__ = ["init_db"]

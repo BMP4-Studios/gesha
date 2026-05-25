@@ -1,1 +1,1 @@
-"""Business services for coffee discovery and persistence."""
+"""Business-service package used by CLI commands to query and persist coffee."""

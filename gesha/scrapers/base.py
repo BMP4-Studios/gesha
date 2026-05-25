@@ -1,3 +1,9 @@
+"""Transport-level scraper workflow shared by every supported roaster.
+
+Concrete scraper classes provide URL discovery and product parsing while this
+base class handles HTTP sessions, failure isolation, and collection iteration.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -9,6 +15,8 @@ from curl_cffi.requests import Session
 
 
 class BaseScraper(ABC):
+    """Fetch one roaster's listing and transform its products into DTOs."""
+
     BASE_URL: str
     COLLECTION_URL: str
     SOURCE_NAME: str
@@ -28,12 +36,15 @@ class BaseScraper(ABC):
     }
 
     def __init__(self) -> None:
+        """Create a browser-like HTTP session used for all requests in a run."""
         self.session: Session[Any] = Session(impersonate="chrome")
         self.session.headers.update(self.DEFAULT_HEADERS)
         self.logger = logging.getLogger(self.__class__.__module__)
 
     def scrape(self) -> list[CoffeeData]:
-        """Fetch a collection page, fetch each product page, and return normalized data."""
+        """Fetch a collection and parse each reachable product into catalog data."""
+        # A collection failure cannot safely indicate an empty catalog; report
+        # no new results so the service layer leaves existing rows in place.
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
             response.raise_for_status()
@@ -48,6 +59,8 @@ class BaseScraper(ABC):
         product_urls = self.extract_product_urls(response.text)
         coffees: list[CoffeeData] = []
 
+        # Isolate malformed or temporarily unavailable products so one listing
+        # cannot prevent the remaining catalog from refreshing.
         for product_url in product_urls:
             try:
                 coffee = self.scrape_product(product_url)
@@ -63,7 +76,7 @@ class BaseScraper(ABC):
         return coffees
 
     def scrape_product(self, url: str) -> CoffeeData | None:
-        """Fetch and parse a single product URL. Defaults to HTML-based parsing."""
+        """Fetch and parse one HTML product page for non-AJAX subclasses."""
         response = self.session.get(url, timeout=15)
         if response.status_code == 404:
             return None
@@ -72,10 +85,10 @@ class BaseScraper(ABC):
 
     @abstractmethod
     def extract_product_urls(self, html: str) -> list[str]:
-        """Extract absolute product URLs from collection HTML."""
+        """Extract product URLs; implemented for each storefront's markup."""
         raise NotImplementedError
 
     @abstractmethod
     def parse_product(self, html: str, url: str) -> CoffeeData:
-        """Normalize one product page into CoffeeData."""
+        """Normalize one product page; implemented by source-specific parsers."""
         raise NotImplementedError

@@ -1,3 +1,9 @@
+"""Parse Traffic Coffee theme pages for the Traffic scraper adapter.
+
+Traffic uses an HTML description block with labeled fields, so this module
+isolates its selectors and extraction choices from generic scraping transport.
+"""
+
 from __future__ import annotations
 
 import re
@@ -23,6 +29,7 @@ DETAIL_LABELS = [
 
 
 def parse_traffic_collection(html: str, base_url: str) -> list[str]:
+    """Extract unique coffee product URLs from Traffic's collection markup."""
     soup = BeautifulSoup(html, "html.parser")
     urls = extract_matching_urls(
         soup,
@@ -36,6 +43,7 @@ def parse_traffic_collection(html: str, base_url: str) -> list[str]:
 
 
 def _parse_traffic_details(text: str) -> dict[str, str | None]:
+    """Extract Traffic's labeled description values into catalog fields."""
     details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
@@ -47,6 +55,7 @@ def _parse_traffic_details(text: str) -> dict[str, str | None]:
     }
 
     def value_for(key: str) -> str | None:
+        """Read one Traffic detail label using the module's stop labels."""
         return extract_labeled_value(text, [key], DETAIL_LABELS)
 
     details["origin"] = value_for("Origin")
@@ -60,6 +69,7 @@ def _parse_traffic_details(text: str) -> dict[str, str | None]:
 
 
 def _extract_tasting_notes(text: str) -> list[str]:
+    """Clean tasting notes embedded among Traffic's product detail labels."""
     value = extract_labeled_value(text, COMMON_TASTING_NOTE_LABELS, DETAIL_LABELS)
     if not value:
         return []
@@ -67,12 +77,15 @@ def _extract_tasting_notes(text: str) -> list[str]:
 
 
 def parse_traffic_product(html: str, url: str) -> CoffeeData:
+    """Build one validated catalog item from a Traffic product HTML page."""
     soup = BeautifulSoup(html, "html.parser")
     title = extract_text(soup.select_one("h1")) or "Unknown coffee"
 
     price_text = extract_text(soup.select_one("span[class*='price']"))
     price_cents = parse_price(price_text)
 
+    # Traffic keeps most useful metadata in a single product description
+    # element, allowing shared label extraction for each field.
     desc_div = soup.select_one("div.product-block-description")
     description = extract_text(desc_div) if desc_div else ""
     if description is None:

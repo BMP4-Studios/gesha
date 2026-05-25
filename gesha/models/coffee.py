@@ -1,3 +1,9 @@
+"""Validated data-transfer model shared by scrapers and persistence services.
+
+Parser and scraper code returns :class:`CoffeeData`; ``CoffeeService`` then
+copies these normalized values into SQLAlchemy database models.
+"""
+
 from __future__ import annotations
 
 from datetime import date
@@ -8,6 +14,8 @@ from gesha.normalization.normalize import NA_LABEL
 
 
 class CoffeeData(BaseModel):
+    """Portable representation of one scraped coffee before database storage."""
+
     roaster: str
     name: str
     origin: str | None = None
@@ -26,14 +34,17 @@ class CoffeeData(BaseModel):
     @field_validator("roaster", "name", mode="before")
     @classmethod
     def strip_text(cls, value: str | None) -> str | None:
+        """Trim identity fields so updates can match existing database rows."""
         return value.strip() if isinstance(value, str) else value
 
     @field_validator("tasting_notes", mode="before")
     @classmethod
     def normalize_notes(cls, value: Iterable[str] | None) -> list[str]:
+        """Store tasting notes consistently for display and flavor filtering."""
         if value is None:
             return []
         return [note.strip().lower() for note in value if isinstance(note, str) and note.strip()]
 
     def get_price_display(self) -> str:
+        """Render cents for user-facing output while handling missing prices."""
         return f"${self.price_cents / 100:.2f}" if self.price_cents is not None else NA_LABEL

@@ -35,17 +35,17 @@ DEFAULT_SOURCES = (
 
 
 def get_scraper(source: str) -> BaseScraper:
-    """Return a scraper instance for a supported source."""
+    """Instantiate one named scraper for ``gesha scrape <source>``."""
     return SCRAPER_REGISTRY[source]()
 
 
 def get_scrapers(source: str = "all") -> list[BaseScraper]:
-    """Return scraper instances for one source or every supported source."""
+    """Instantiate explicit or default scrapers for the CLI refresh workflow."""
     if source == "all":
         return [SCRAPER_REGISTRY[name]() for name in DEFAULT_SOURCES]
     return [get_scraper(source)]
 
 
 def supported_sources() -> list[str]:
-    """Return supported source names, including the aggregate source."""
+    """Return accepted CLI source keys, including the aggregate ``all`` key."""
     return ["all", *SCRAPER_REGISTRY.keys()]

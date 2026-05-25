@@ -1,3 +1,9 @@
+"""Reusable HTML/text extraction helpers for roaster-specific parsers.
+
+Individual parsers use these helpers for standard Shopify-shaped concerns
+such as product links, prices, sizes, labeled metadata, and tasting notes.
+"""
+
 from __future__ import annotations
 
 import re
@@ -18,6 +24,7 @@ COMMON_TASTING_NOTE_LABELS = [
 
 
 def extract_text(element: Tag | None) -> str | None:
+    """Extract clean user-visible text from a BeautifulSoup element or meta tag."""
     if element is None:
         return None
     if element.name == "meta":
@@ -38,6 +45,7 @@ def extract_matching_urls(
     base_url: str,
     pattern: re.Pattern[str],
 ) -> list[str]:
+    """Collect absolute links whose paths match a parser's product URL shape."""
     urls: list[str] = []
     for element in soup.select(selector):
         href = element.get(attribute)
@@ -50,6 +58,7 @@ def extract_matching_urls(
 
 
 def parse_price(value: str | None) -> int | None:
+    """Convert a Canadian-dollar display string into integer cents for storage."""
     if not value:
         return None
     match = re.search(r"(?:CA)?\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
@@ -59,6 +68,7 @@ def parse_price(value: str | None) -> int | None:
 
 
 def extract_bag_size(value: str | None) -> str | None:
+    """Find the first common coffee package size embedded in text."""
     if not value:
         return None
     match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", value, re.IGNORECASE)
@@ -68,6 +78,9 @@ def extract_bag_size(value: str | None) -> str | None:
 
 
 def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str | None:
+    """Read a selected Shopify variant size, with title/URL as a last fallback."""
+    # Themes expose variant data in different controls; try known structures
+    # from most specific selected-option selectors to broader possibilities.
     selectors = (
         "select[name='id'] option[selected]",
         "select[name='id'] option",
@@ -98,6 +111,7 @@ def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str |
 
 
 def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> str | None:
+    """Extract the value following one metadata label until the next label."""
     label_pattern = "|".join(re.escape(label) for label in labels)
     stop_pattern = "|".join(re.escape(label) for label in stop_labels)
     pattern = rf"(?:{label_pattern})\s*[:\-]\s*(.*?)(?=\n|(?:{stop_pattern})(?:\s*[:\-]|\b)|$)"
@@ -111,6 +125,7 @@ def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) 
 
 
 def clean_tasting_note_candidates(values: list[str]) -> list[str]:
+    """Discard prose and page noise from possible tasting-note fragments."""
     notes: list[str] = []
     prose_words = {
         "a",
@@ -186,6 +201,8 @@ def clean_tasting_note_candidates(values: list[str]) -> list[str]:
         "go",
         "santa bárbara",
     }
+    # Narrative descriptions can contain food words but are not useful filters;
+    # accept only short, label-like candidates that survive these heuristics.
     for value in values:
         note = re.sub(r"\s+", " ", value).strip(" .")
         note = re.sub(r"^and\s+", "", note, flags=re.IGNORECASE).strip()

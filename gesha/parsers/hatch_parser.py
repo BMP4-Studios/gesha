@@ -1,3 +1,9 @@
+"""Parse Hatch's application-rendered shop pages into catalog records.
+
+Hatch is registered as an opt-in scraper because its Next.js-like payload can
+place product details in encoded page data rather than plain visible HTML.
+"""
+
 from __future__ import annotations
 
 import json
@@ -70,6 +76,7 @@ DETAIL_LABELS = [
 
 
 def _is_hatch_product_path(path: str) -> bool:
+    """Decide whether a Hatch shop path appears to sell roasted coffee."""
     if not path.startswith("/shop/"):
         return False
     if any(path.startswith(prefix) for prefix in EXCLUDE_PATHS):
@@ -83,6 +90,7 @@ def _is_hatch_product_path(path: str) -> bool:
 
 
 def parse_hatch_collection(html: str, base_url: str) -> list[str]:
+    """Discover coffee links in visible markup and embedded application data."""
     soup = BeautifulSoup(html, "html.parser")
     urls: list[str] = []
     for anchor in soup.find_all("a", href=True):
@@ -93,6 +101,7 @@ def parse_hatch_collection(html: str, base_url: str) -> list[str]:
         if _is_hatch_product_path(href):
             urls.append(urljoin(base_url, href))
 
+    # Client-rendered pages may serialize links into escaped script payloads.
     for raw_path in re.findall(r"(?:href=|href\\?\":\\?\")(?P<path>\\?/shop\\?/[^\"\\?#]+)", html):
         href = raw_path.replace("\\/", "/")
         if _is_hatch_product_path(href):
@@ -107,6 +116,7 @@ def parse_hatch_collection(html: str, base_url: str) -> list[str]:
 
 
 def _decode_embedded_html(html: str) -> str | None:
+    """Decode a serialized page fragment containing Hatch product metadata."""
     pattern = re.compile(r'self\.__next_f\.push\(\[1,"(?P<html>(?:\\.|[^"\\])*)"\]\)')
     for match in pattern.finditer(html):
         raw = match.group("html")
@@ -120,6 +130,7 @@ def _decode_embedded_html(html: str) -> str | None:
 
 
 def _collect_details(raw_html: str) -> dict[str, str | None]:
+    """Collect labeled detail fields from decoded or ordinary product text."""
     details: dict[str, str | None] = {
         "origin": None,
         "producer": None,
@@ -132,6 +143,7 @@ def _collect_details(raw_html: str) -> dict[str, str | None]:
     detail_text = raw_html.replace("\r", "\n")
 
     def _find(pattern: str, label: str) -> str | None:
+        """Search one Hatch detail span and strip any repeated label text."""
         match = re.search(pattern, detail_text, re.IGNORECASE | re.DOTALL)
         if not match:
             return None
@@ -149,6 +161,7 @@ def _collect_details(raw_html: str) -> dict[str, str | None]:
 
 
 def _extract_description(soup: BeautifulSoup) -> str:
+    """Return descriptive copy while skipping structured detail paragraphs."""
     paragraphs = [tag.get_text(" ", strip=True) for tag in soup.find_all("p")]
     for paragraph in paragraphs:
         if any(label in paragraph for label in ["Origin:", "Producer:", "Varieties:", "Process:", "Elevation:", "Harvest:", "Recommended Brew:", "Reminds us of:"]):
@@ -159,6 +172,7 @@ def _extract_description(soup: BeautifulSoup) -> str:
 
 
 def _extract_tasting_notes(raw_html: str) -> list[str]:
+    """Read and sanitize Hatch's ``Reminds us of`` or ``Notes`` value."""
     value = extract_labeled_value(raw_html, ["Reminds us of", "Notes"], DETAIL_LABELS)
     if not value:
         return []
@@ -166,6 +180,7 @@ def _extract_tasting_notes(raw_html: str) -> list[str]:
 
 
 def _extract_availability(html: str) -> bool:
+    """Infer whether the storefront exposes the product as purchasable."""
     lowered = html.lower()
     if "sold out" in lowered or "out of stock" in lowered or "unavailable" in lowered:
         return False
@@ -173,9 +188,12 @@ def _extract_availability(html: str) -> bool:
 
 
 def parse_hatch_product(html: str, url: str) -> CoffeeData:
+    """Build a catalog item from Hatch HTML and any decoded page payload."""
     soup = BeautifulSoup(html, "html.parser")
     title = extract_text(soup.select_one("h1")) or "Unknown coffee"
 
+    # Metadata is frequently embedded in framework hydration data rather than
+    # the initially visible page. Use it when detected, otherwise parse HTML.
     embedded_html = _decode_embedded_html(html)
     details_html = embedded_html if embedded_html else html
     detail_soup = BeautifulSoup(details_html, "html.parser")
@@ -186,6 +204,8 @@ def parse_hatch_product(html: str, url: str) -> CoffeeData:
     price = price_text.strip() if price_text else None
     price_cents = parse_price(price)
 
+    # Prefer actual product copy, with metadata description as a fallback for
+    # sparse server-rendered pages.
     description = _extract_description(detail_soup)
     if not description:
         meta_description = soup.find("meta", {"name": "description"})

@@ -1,4 +1,4 @@
-"""Command-line interface package for Gesha."""
+"""Expose the Typer application used by the installed ``gesha`` command."""
 
 from .main import app
 
