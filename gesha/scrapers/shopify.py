@@ -348,7 +348,6 @@ class PorteBleueScraper(ShopifyScraper):
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Porte Bleue"
     ROASTER_NAME = "Porte Bleue"
-    INCLUDE_PRODUCT_TYPES = ("bag",)
 
 
 class ColorfullScraper(ShopifyScraper):
