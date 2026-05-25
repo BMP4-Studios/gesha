@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import Any
 
-from gesha.models.coffee import CoffeeData
+from gesha.coffee_data import CoffeeData
 from curl_cffi.requests import Session
 
 

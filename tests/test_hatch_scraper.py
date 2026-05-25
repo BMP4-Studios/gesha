@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import requests
 
-from gesha.models.coffee import CoffeeData
+from gesha.coffee_data import CoffeeData
 from gesha.scrapers.hatch import HatchScraper
 
 

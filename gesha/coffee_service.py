@@ -12,7 +12,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from gesha.db.models import Coffee, Roaster, TastingNote
-from gesha.models.coffee import CoffeeData
+from gesha.coffee_data import CoffeeData
 
 
 class CoffeeService:

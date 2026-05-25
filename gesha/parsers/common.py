@@ -10,7 +10,7 @@ import re
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
-from gesha.normalization.normalize import remove_emojis
+from gesha.normalization import remove_emojis
 
 COMMON_TASTING_NOTE_LABELS = [
     "Notes",

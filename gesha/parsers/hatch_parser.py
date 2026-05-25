@@ -12,8 +12,8 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
 
-from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.coffee_data import CoffeeData
+from gesha.normalization import normalize_country, normalize_process, normalize_tasting_notes
 from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value, extract_text, parse_price
 
 PRODUCT_LINK_PATTERN = re.compile(r"^/shop/[^/]+$")

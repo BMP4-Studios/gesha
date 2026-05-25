@@ -10,7 +10,7 @@ from datetime import date
 from typing import Iterable
 
 from pydantic import BaseModel, Field, field_validator
-from gesha.normalization.normalize import NA_LABEL
+from gesha.normalization import NA_LABEL
 
 
 class CoffeeData(BaseModel):

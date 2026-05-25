@@ -1,6 +1,6 @@
 """Tests for cleanup rules shared across all roaster parser output."""
 
-from gesha.normalization.normalize import normalize_process, normalize_country, normalize_tasting_notes, remove_emojis
+from gesha.normalization import normalize_process, normalize_country, normalize_tasting_notes, remove_emojis
 
 
 def test_normalize_process_variants() -> None:

@@ -1,6 +1,6 @@
 """Tests for validation performed at the scraper-to-service data boundary."""
 
-from gesha.models.coffee import CoffeeData
+from gesha.coffee_data import CoffeeData
 
 
 def test_coffee_data_model_strips_values() -> None:
