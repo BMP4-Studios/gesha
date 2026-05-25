@@ -59,7 +59,7 @@ class CoffeeService:
     def list_coffees(
         self,
         process: str | None = None,
-        flavor: str | None = None,
+        flavour: str | None = None,
         roaster_name: str | None = None,
         available: bool | None = None,
     ) -> list[Coffee]:
@@ -70,8 +70,8 @@ class CoffeeService:
             query = query.where(Coffee.process.ilike(f"%{process}%"))
         if available is not None:
             query = query.where(Coffee.availability == available)
-        if flavor:
-            query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavor}%")).distinct()
+        if flavour:
+            query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavour}%")).distinct()
 
         return list(self.session.scalars(query).all())
 

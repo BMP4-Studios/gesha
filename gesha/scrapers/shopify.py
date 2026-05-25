@@ -240,7 +240,7 @@ class ShopifyScraper(BaseScraper):
         
         if not value:
             for pattern in (
-                r"(?:in the cup|we taste|tastes like|notes of|profile of|flavor profile is)\s*(?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",
+                r"(?:in the cup|we taste|tastes like|notes of|profile of|flavour profile is)\s*(?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",
             ):
                 match = re.search(pattern, description, re.IGNORECASE | re.DOTALL)
                 if match:

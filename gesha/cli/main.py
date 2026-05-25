@@ -152,17 +152,17 @@ def scrape(
 @app.command(name="list")
 def list_coffees_command(
     process: str | None = typer_option(None, help="Filter by coffee process."),
-    flavor: str | None = typer_option(None, help="Filter by tasting note."),
+    flavour: str | None = typer_option(None, help="Filter by tasting note."),
     roaster: str | None = typer_option(None, help="Filter by roaster name."),
     available: bool | None = typer_option(None, help="Show only available coffees."),
 ) -> None:
     """
     List and filter coffees currently stored in the local database.
     
-    Use the options below to narrow down the catalog by process, flavor notes, or availability."""
+    Use the options below to narrow down the catalog by process, flavour notes, or availability."""
     with get_session() as session:
         service = CoffeeService(session)
-        coffees = service.list_coffees(process=process, flavor=flavor, roaster_name=roaster, available=available)
+        coffees = service.list_coffees(process=process, flavour=flavour, roaster_name=roaster, available=available)
         _print_coffees(coffees)
 
 

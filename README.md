@@ -36,7 +36,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Optionally install the package in editable mode so the `gesha` CLI (or `gesha.exe` on Windows) is available directly:
+Optionally install the package in editable mode so the `gesha` CLI is available directly:
 
 ```bash
 python -m pip install -e .
@@ -49,69 +49,11 @@ python -m pip install -e .
 
 ## Basic usage
 
-Refresh every supported roaster, remove stale local rows, and list the cleaned catalog:
-
-```bash
-gesha
-```
-
-Scrape a single supported roaster:
-
-```bash
-gesha scrape traffic
-```
-
-Supported default roasters are De Mello, Traffic, Porte Bleue, Colorfull, and The Angry Roaster. Hatch is available as an explicit custom scraper, but is not part of the default refresh because its site is less Shopify-like and less reliable:
-
-```bash
-gesha scrape hatch
-```
-
-Scrape all supported roasters (default):
-
-```bash
-gesha scrape
-```
-
-After scraping, the CLI will automatically display the cleaned local catalog.
-
-List coffees:
-
-```bash
-gesha list
-```
-
-Filter by process:
-
-```bash
-gesha list --process washed
-```
-
-Filter by tasting note:
-
-```bash
-gesha list --flavor berry
-```
-
-Show a coffee by ID:
-
-```bash
-gesha show 1
-```
-
-## Run tests
-
-```bash
-python -m pytest
-```
-
-## Project structure
-
-- `gesha/` — Python package source code
-- `gesha/db/` — SQLAlchemy models and session setup
-- `gesha/scrapers/` — scraper implementations
-- `gesha/parsers/` — HTML parsing helpers
-- `gesha/normalization/` — normalization utilities
-- `gesha/services/` — business logic for persistence and querying
-- `gesha/cli/` — Typer CLI commands
-- `tests/` — pytest test cases
+- Refresh every supported roaster, remove stale local rows, and list the cleaned catalog: `gesha`
+- Scrape all supported roasters: `gesha scrape`
+- Scrape a single supported roaster: `gesha scrape traffic`
+- List coffees that were already scraped: `gesha list`
+- Filter by process: `gesha list --process washed`
+- Filter by tasting note: `gesha list --flavour berry`
+- Show a coffee by ID: `gesha show 1`
+- Run tests: `python -m pytest`

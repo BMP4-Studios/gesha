@@ -11,7 +11,7 @@ COMMON_TASTING_NOTE_LABELS = [
     "Tasting Notes",
     "In the cup",
     "Reminds us of",
-    "Flavor Profile",
+    "flavour Profile",
     "Profile",
     "Aroma",
 ]
