@@ -1,5 +1,6 @@
-"""Transport-level scraper workflow shared by every supported roaster.
+"""Transport-level scraper workflow shared by every roaster.
 
+We call scrape() in the thread pool, so this is the starting point for all scraping.
 Concrete scraper classes provide URL discovery and product parsing while this
 base class handles HTTP sessions, failure isolation, and collection iteration.
 """
@@ -21,10 +22,8 @@ class BaseScraper(ABC):
     COLLECTION_URL: str
     SOURCE_NAME: str
     ROASTER_NAME: str
-    # Use a common Windows Chrome User-Agent to avoid being blocked on Windows
-    USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     DEFAULT_HEADERS = {
-        "User-Agent": USER_AGENT,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "en-US,en;q=0.9",
         "Connection": "keep-alive", # Standard browser behavior
@@ -41,10 +40,11 @@ class BaseScraper(ABC):
         self.session.headers.update(self.DEFAULT_HEADERS)
         self.logger = logging.getLogger(self.__class__.__module__)
 
+    # The main entry point for all scrapers; this is called in the thread pool.
     def scrape(self) -> list[CoffeeData]:
         """Fetch a collection and parse each reachable product into catalog data."""
-        # A collection failure cannot safely indicate an empty catalog; report
-        # no new results so the service layer leaves existing rows in place.
+
+        # try to fetch the collection page, but if it fails, log and return an empty catalog
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
             response.raise_for_status()
@@ -56,13 +56,14 @@ class BaseScraper(ABC):
             )
             return []
 
+        # Each scraper implements its own URL discovery and product parsing
         product_urls = self.extract_product_urls(response.text)
         coffees: list[CoffeeData] = []
 
-        # Isolate malformed or temporarily unavailable products so one listing
-        # cannot prevent the remaining catalog from refreshing.
+        # Scrape each product URL
         for product_url in product_urls:
             try:
+                # Each scraper implements its own product parsing
                 coffee = self.scrape_product(product_url)
                 if coffee:
                     coffees.append(coffee)

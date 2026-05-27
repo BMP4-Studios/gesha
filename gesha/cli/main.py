@@ -93,6 +93,7 @@ def _refresh_catalog(source: str) -> None:
         scrapers = get_scrapers(source)
         refreshed_roaster_names: list[str] = []
 
+        # this function is called in the thread pool below, calling BaseScraper.scrape()
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             """Run a network scraper in a worker and retain source identity."""
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
