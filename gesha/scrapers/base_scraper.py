@@ -42,9 +42,9 @@ class BaseScraper(ABC):
 
     # The main entry point for all scrapers; this is called in the thread pool.
     def scrape(self) -> list[CoffeeData]:
-        """Fetch a collection and parse each reachable product into catalog data."""
+        """Fetch a coffee collection and parse each reachable product into catalog data."""
 
-        # try to fetch the collection page, but if it fails, log and return an empty catalog
+        # try to fetch the collection page, return an empty catalog if it fails
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
             response.raise_for_status()
@@ -63,7 +63,7 @@ class BaseScraper(ABC):
         # Scrape each product URL
         for product_url in product_urls:
             try:
-                # Each scraper implements its own product parsing
+                # Each scraper implements its own product parsing, see below
                 coffee = self.scrape_product(product_url)
                 if coffee:
                     coffees.append(coffee)
@@ -77,11 +77,13 @@ class BaseScraper(ABC):
         return coffees
 
     def scrape_product(self, url: str) -> CoffeeData | None:
-        """Fetch and parse one HTML product page for non-AJAX subclasses."""
+        """Fetch and parse one product page; returns None on 404."""
         response = self.session.get(url, timeout=15)
         if response.status_code == 404:
             return None
         response.raise_for_status()
+
+        # Subclasses implement their own HTML parsing strategy here
         return self.parse_product(response.text, url)
 
     @abstractmethod
