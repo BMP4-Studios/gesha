@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
-from gesha.scrapers.base import BaseScraper
-from gesha.scrapers.hatch import HatchScraper
-from gesha.scrapers.shopify import (
+from gesha.scrapers.base_scraper import BaseScraper
+from gesha.scrapers.hatch_scraper import HatchScraper
+from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ColorfullScraper,
     PorteBleueScraper,

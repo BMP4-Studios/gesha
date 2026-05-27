@@ -5,7 +5,7 @@ from __future__ import annotations
 import requests
 
 from gesha.coffee_data import CoffeeData
-from gesha.scrapers.hatch import HatchScraper
+from gesha.scrapers.hatch_scraper import HatchScraper
 
 
 class FakeResponse:

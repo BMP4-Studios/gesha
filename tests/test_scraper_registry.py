@@ -3,8 +3,8 @@
 import pytest
 
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
-from gesha.scrapers.hatch import HatchScraper
-from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper, DeMelloScraper, TrafficScraper
+from gesha.scrapers.hatch_scraper import HatchScraper
+from gesha.scrapers.shopify_scraper import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper, DeMelloScraper, TrafficScraper
 
 
 def test_get_scraper_returns_registered_source() -> None:

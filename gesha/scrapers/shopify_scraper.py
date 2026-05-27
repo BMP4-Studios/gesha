@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, Tag
 from gesha.coffee_data import CoffeeData
 from gesha.normalization import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
 from gesha.parsers.common import COMMON_TASTING_NOTE_LABELS, clean_tasting_note_candidates, extract_labeled_value
-from gesha.scrapers.base import BaseScraper
+from gesha.scrapers.base_scraper import BaseScraper
 
 
 SHOPIFY_DETAIL_LABELS = [

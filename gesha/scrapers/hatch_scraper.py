@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from gesha.coffee_data import CoffeeData
 from gesha.parsers.hatch_parser import parse_hatch_collection, parse_hatch_product
-from gesha.scrapers.base import BaseScraper
+from gesha.scrapers.base_scraper import BaseScraper
 
 
 class HatchScraper(BaseScraper):

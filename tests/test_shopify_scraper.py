@@ -1,6 +1,6 @@
 """Tests for behavior shared by JSON-backed Shopify scraper adapters."""
 
-from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
+from gesha.scrapers.shopify_scraper import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
 
 
 def test_shopify_collection_extracts_canonical_product_urls() -> None:

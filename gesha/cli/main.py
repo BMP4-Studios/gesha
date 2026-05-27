@@ -19,7 +19,7 @@ from gesha.db.session import get_session, init_db
 from gesha.db.models import Coffee
 from gesha.coffee_data import CoffeeData
 from gesha.scrapers import get_scrapers, supported_sources
-from gesha.scrapers.base import BaseScraper
+from gesha.scrapers.base_scraper import BaseScraper
 from gesha.coffee_service import CoffeeService
 from gesha.normalization import NA_LABEL
 
