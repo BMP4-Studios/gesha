@@ -15,6 +15,7 @@ from gesha.scrapers.shopify_scraper import (
 
 ScraperClass: TypeAlias = type[BaseScraper]
 
+# Source keys are the public CLI contract for ``gesha scrape <source>``.
 SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "demello": DeMelloScraper,
     "traffic": TrafficScraper,
@@ -23,6 +24,7 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "angry": AngryRoasterScraper,
 }
 
+# ``all`` intentionally follows this tuple so default output order is stable.
 DEFAULT_SOURCES = (
     "demello",
     "traffic",

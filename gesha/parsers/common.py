@@ -96,12 +96,14 @@ def extract_labeled_product_facts_from_text(
     normalized_text = text.replace("\xa0", " ")
     markers: list[tuple[int, int, str | None, str | None]] = []
 
+    # Collect every known label occurrence with its canonical catalog field.
     for field, labels in aliases.items():
         for label in labels:
             pattern = rf"(?<![\w]){_label_pattern(label)}\s*[:\uff1a-]\s*"
             for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
                 markers.append((match.start(), match.end(), field, label))
 
+    # Stop labels bound the previous value without becoming facts themselves.
     for label in stop_labels:
         pattern = rf"(?<![\w]){_label_pattern(label)}(?=\s*(?:[:\uff1a-]|\b))"
         for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
@@ -110,6 +112,7 @@ def extract_labeled_product_facts_from_text(
     if not markers:
         return {}
 
+    # Prefer the longest non-overlapping label when aliases share words.
     markers.sort(key=lambda marker: (marker[0], -(marker[1] - marker[0])))
     selected: list[tuple[int, int, str | None, str | None]] = []
     occupied_until = -1
@@ -119,6 +122,7 @@ def extract_labeled_product_facts_from_text(
         selected.append(marker)
         occupied_until = marker[1]
 
+    # A value runs from the end of one label to the start of the next marker.
     facts: dict[str, str] = {}
     for index, marker in enumerate(selected):
         field = marker[2]
@@ -147,12 +151,14 @@ def extract_labeled_product_facts_from_html(
     """Extract product facts from repeated labeled rows on a product page."""
     facts: dict[str, str] = {}
 
+    # Merge in catalog-field order so earlier, more local values win.
     def merge(new_values: Mapping[str, str]) -> None:
         for field in PRODUCT_FACT_FIELDS:
             value = new_values.get(field)
             if value and field not in facts:
                 facts[field] = value
 
+    # Most Shopify themes render specs as list items, paragraphs, or table rows.
     for row in soup.find_all(["li", "p", "tr"]):
         if not isinstance(row, Tag) or _is_inside_ignored_tree(row):
             continue
@@ -170,6 +176,7 @@ def extract_labeled_product_facts_from_html(
                     )
                 )
 
+        # Plain row text handles "Process: Washed" and nested strong/span labels.
         merge(
             extract_labeled_product_facts_from_text(
                 _text_from_row(row),
@@ -178,6 +185,7 @@ def extract_labeled_product_facts_from_html(
             )
         )
 
+    # Definition lists show up on a few non-standard product detail sections.
     for term in soup.find_all("dt"):
         if not isinstance(term, Tag) or _is_inside_ignored_tree(term):
             continue
@@ -192,6 +200,7 @@ def extract_labeled_product_facts_from_html(
             )
         )
 
+    # As a fallback, scan larger blocks and only accept ones with multiple facts.
     if len(facts) < 2:
         for block in soup.find_all(["div", "section", "article"]):
             if not isinstance(block, Tag) or _is_inside_ignored_tree(block):

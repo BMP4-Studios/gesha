@@ -36,15 +36,16 @@ class BaseScraper(ABC):
 
     def __init__(self) -> None:
         """Create a browser-like HTTP session used for all requests in a run."""
+        # Reuse one impersonated browser session so collection and product
+        # requests share headers, cookies, and connection behavior.
         self.session: Session[Any] = Session(impersonate="chrome")
         self.session.headers.update(self.DEFAULT_HEADERS)
         self.logger = logging.getLogger(self.__class__.__module__)
 
-    # The main entry point for all scrapers; this is called in the thread pool.
     def scrape(self) -> list[CoffeeData]:
         """Fetch a coffee collection and parse each reachable product into catalog data."""
 
-        # try to fetch the collection page, return an empty catalog if it fails
+        # Fetch the collection page; return an empty catalog if the listing fails.
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
             response.raise_for_status()
@@ -56,14 +57,14 @@ class BaseScraper(ABC):
             )
             return []
 
-        # Each scraper implements its own URL discovery and product parsing
+        # Each scraper implements its own URL discovery and product parsing.
         product_urls = self.extract_product_urls(response.text)
         coffees: list[CoffeeData] = []
 
-        # Scrape each product URL
+        # Scrape product URLs independently so one bad product does not cancel
+        # the rest of the roaster catalog.
         for product_url in product_urls:
             try:
-                # Each scraper implements its own product parsing, see below
                 coffee = self.scrape_product(product_url)
                 if coffee:
                     coffees.append(coffee)
@@ -78,12 +79,13 @@ class BaseScraper(ABC):
 
     def scrape_product(self, url: str) -> CoffeeData | None:
         """Fetch and parse one product page; returns None on 404."""
+        # Treat 404s as normal catalog churn, but surface other HTTP failures.
         response = self.session.get(url, timeout=15)
         if response.status_code == 404:
             return None
         response.raise_for_status()
 
-        # Subclasses implement their own HTML parsing strategy here
+        # Subclasses implement their own HTML parsing strategy here.
         return self.parse_product(response.text, url)
 
     @abstractmethod

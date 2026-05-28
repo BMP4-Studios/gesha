@@ -39,6 +39,8 @@ class ShopifyScraper(BaseScraper):
         """Convert collection product links into canonical Shopify product URLs."""
         soup = BeautifulSoup(html, "html.parser")
         urls: list[str] = []
+
+        # Shopify themes expose product targets in anchors and data attributes.
         for element in soup.select("a[href*='/products/'], [data-url*='/products/']"):
             for attribute in self.PRODUCT_LINK_ATTRIBUTES:
                 raw_href = element.get(attribute)
@@ -53,11 +55,13 @@ class ShopifyScraper(BaseScraper):
                 if self._is_excluded_handle(handle):
                     continue
 
+                # Canonicalize collection links before de-duping at the end.
                 urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
         return sorted(dict.fromkeys(urls))
 
     def scrape_product(self, url: str) -> CoffeeData | None:
         """Fetch Shopify HTML first, then JSON support data for one product."""
+        # Product-page HTML usually carries the richest label/value metadata.
         html_soup: BeautifulSoup | None = None
         html_facts: dict[str, str] = {}
         res_html = self.session.get(url, timeout=15)
@@ -65,6 +69,8 @@ class ShopifyScraper(BaseScraper):
             html_soup = BeautifulSoup(res_html.text, "html.parser")
             html_facts = self._extract_html_product_facts(html_soup)
 
+        # Shopify JSON is still the reliable source for title, variants, price,
+        # availability, tags, and description fallbacks.
         session = cast(Any, self.session)
         headers = session.headers.copy()
         headers["Referer"] = url
@@ -77,6 +83,7 @@ class ShopifyScraper(BaseScraper):
         if not self._is_coffee_product(product_data):
             return None
 
+        # Merge the page facts and Shopify payload into the normalized DTO.
         return self._coffee_from_product(product_data, url, html_soup=html_soup, html_facts=html_facts)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
@@ -105,9 +112,11 @@ class ShopifyScraper(BaseScraper):
         handle = str(product_data.get("handle") or "").lower()
         tags = self._normalize_tags(product_data)
 
+        # Excluded handles/tags catch subscription, gift, and kit-like products.
         if self._is_excluded_handle(handle) or any(keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS):
             return False
 
+        # Some roasters tag coffee reliably; others configure INCLUDE_TAGS empty.
         if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
             return True
 
@@ -121,12 +130,15 @@ class ShopifyScraper(BaseScraper):
         html_facts: dict[str, str] | None = None,
     ) -> CoffeeData:
         """Merge product-page facts, Shopify JSON, and title fallbacks."""
+        # Extract every source of structured facts before choosing precedence.
         description = self._description_text(product_data)
         json_facts = self._extract_details(description)
         page_facts = html_facts or (self._extract_html_product_facts(html_soup) if html_soup else {})
         title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
         title_facts = self._extract_details_from_title(title)
 
+        # Prefer explicit page labels, then Shopify description labels, then
+        # title heuristics only for fields titles can express safely.
         origin = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or title
         producer = page_facts.get("producer") or json_facts.get("producer")
         process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process")
@@ -136,6 +148,7 @@ class ShopifyScraper(BaseScraper):
         bag_size = page_facts.get("bag_size") or json_facts.get("bag_size") or self._extract_bag_size(product_data)
         tasting_notes = self._extract_tasting_notes(description, html_soup=html_soup, page_facts=page_facts)
 
+        # Normalize at the boundary so database and display layers stay simple.
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
@@ -168,6 +181,8 @@ class ShopifyScraper(BaseScraper):
     def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
         """Read product-page label/value sections before JSON fallbacks."""
         selected_facts: dict[str, str] = {}
+
+        # Source configs can point directly at known metadata blocks.
         for selector in self.PRODUCT_FACT_SELECTORS:
             for block in html_soup.select(selector):
                 block_facts = extract_labeled_product_facts_from_html(
@@ -180,6 +195,7 @@ class ShopifyScraper(BaseScraper):
         if selected_facts:
             return selected_facts
 
+        # If no selector is configured or populated, scan the whole product page.
         return extract_labeled_product_facts_from_html(
             html_soup,
             label_aliases=self.PRODUCT_FACT_LABELS,
@@ -189,12 +205,15 @@ class ShopifyScraper(BaseScraper):
     def _extract_details_from_title(self, title: str) -> dict[str, str | None]:
         """Try to extract origin and process from ``Origin - Name | Process`` titles."""
         details: dict[str, str | None] = {"origin": None, "process": None}
+
+        # Pipe-separated titles usually put process on the far right.
         if "|" in title:
             pipe_parts = [part.strip() for part in title.split("|")]
             details["origin"] = pipe_parts[0]
             if len(pipe_parts) >= 2:
                 details["process"] = pipe_parts[-1]
 
+        # Dash-separated titles can still expose the origin at the front.
         dash_pattern = r"\s*[-\u2012\u2013\u2014\u2212]\s*"
         if details["origin"]:
             dash_parts = re.split(dash_pattern, details["origin"])
@@ -216,17 +235,20 @@ class ShopifyScraper(BaseScraper):
         page_facts: dict[str, str] | None = None,
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
+        # Labeled product-page facts are the highest-confidence notes source.
         if page_facts and page_facts.get("tasting_notes"):
             notes = normalize_tasting_notes(page_facts["tasting_notes"])
             if notes:
                 return notes
 
+        # Shopify descriptions often repeat the same labels without page markup.
         value = self._extract_details(description).get("tasting_notes")
         if value:
             notes = normalize_tasting_notes(value)
             if notes:
                 return notes
 
+        # Some themes render notes as a short standalone caption.
         if html_soup:
             target = html_soup.select_one("p.product__text.inline-richtext.caption-with-letter-spacing")
             if target and target.get_text():
@@ -234,6 +256,7 @@ class ShopifyScraper(BaseScraper):
                 if notes:
                     return notes
 
+        # Last chance: only accept very short note-like leading text.
         lines = [line.strip() for line in description.splitlines() if line.strip()]
         if lines:
             first_line = lines[0]
@@ -269,6 +292,7 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
         """Find bag weight in Shopify variant fields or variant titles."""
+        # Shopify stores variant metadata as an untyped list in product JSON.
         raw_variants: object = product_data.get("variants")
         if not isinstance(raw_variants, list):
             return None
@@ -281,6 +305,7 @@ class ShopifyScraper(BaseScraper):
         if not variants:
             return None
 
+        # Prefer first-variant weight fields when Shopify supplies them.
         variant = variants[0]
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
@@ -289,6 +314,7 @@ class ShopifyScraper(BaseScraper):
         if isinstance(weight, int | float) and weight > 0:
             return f"{int(weight)}g"
 
+        # Some roasters leave weight at zero but put "227g" in variant text.
         for variant in variants:
             for field in ("title", "public_title", "option1", "sku", "name"):
                 raw_value = variant.get(field)

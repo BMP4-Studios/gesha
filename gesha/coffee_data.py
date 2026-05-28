@@ -41,6 +41,7 @@ class CoffeeData(BaseModel):
     @classmethod
     def normalize_notes(cls, value: Iterable[str] | None) -> list[str]:
         """Store tasting notes consistently for display and flavor filtering."""
+        # Drop blank or non-string values while preserving roaster note order.
         if value is None:
             return []
         return [note.strip().lower() for note in value if isinstance(note, str) and note.strip()]

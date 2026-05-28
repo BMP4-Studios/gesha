@@ -13,6 +13,7 @@ from .models import Base
 
 SQLITE_URL = "sqlite:///gesha.db"
 
+# Keep one engine and factory at module scope; commands create short sessions.
 engine = create_engine(SQLITE_URL, echo=False, future=True)
 SessionLocal: sessionmaker[Session] = sessionmaker(bind=engine, future=True, expire_on_commit=False)
 

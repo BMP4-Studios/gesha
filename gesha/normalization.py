@@ -28,6 +28,8 @@ def normalize_process(value: str | None) -> str | None:
     """Return a searchable process label, merging a few common synonyms."""
     if not value:
         return None
+
+    # Store processes lowercase so CLI filters can match roaster variants.
     cleaned = remove_emojis(value).lower().strip()
     if cleaned in {"fully washed", "wet process"}:
         return "washed"
@@ -38,6 +40,8 @@ def normalize_country(value: str | None) -> str | None:
     """Clean an origin field while retaining intentional source capitalization."""
     if not value:
         return None
+
+    # Title-case fully lowercase origins without rewriting already styled text.
     cleaned = remove_emojis(value).strip()
     return cleaned.title() if cleaned.islower() else cleaned
 
@@ -54,6 +58,7 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
             flags=re.IGNORECASE,
         )
 
+    # Keep non-empty notes in the same order the roaster presented them.
     notes: list[str] = []
     for note in values:
         candidate = re.sub(r"\s+", " ", note).strip().strip(" .")

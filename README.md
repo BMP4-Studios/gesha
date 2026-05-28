@@ -56,4 +56,5 @@ python -m pip install -e .
 - Filter by process: `gesha list --process washed`
 - Filter by tasting note: `gesha list --flavour berry`
 - Show a coffee by ID: `gesha show 1`
-- Run tests: `python -m pytest`
+- Run tests through Gesha: `gesha test`
+- Run tests directly: `python -m pytest`

@@ -74,6 +74,7 @@ class Coffee(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
+    # Relationships let service queries navigate from coffees to owners and notes.
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")
     tasting_notes: Mapped[list[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")
 

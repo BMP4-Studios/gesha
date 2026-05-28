@@ -7,6 +7,8 @@ coordinates scrapers and ``CoffeeService`` while Rich handles terminal output.
 from __future__ import annotations
 
 import concurrent.futures
+import subprocess
+import sys
 from collections.abc import Callable, Sequence
 from typing import Any, cast
 
@@ -41,6 +43,7 @@ typer_option = cast(TyperParamFactory, getattr(typer, "Option"))
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
     """Render queried ORM coffee records as the shared CLI catalog table."""
+    # Build the stable table shape used by scrape, cache, and list output.
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
@@ -79,6 +82,7 @@ def _refresh_catalog(source: str) -> None:
     with get_session() as session:
         service = CoffeeService(session)
 
+        # Validate user input before starting any network work.
         if source not in supported_sources():
             valid_sources = sorted([s for s in supported_sources() if s != "all"])
             console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
@@ -93,7 +97,6 @@ def _refresh_catalog(source: str) -> None:
         scrapers = get_scrapers(source)
         refreshed_roaster_names: list[str] = []
 
-        # this function is called in the thread pool below, calling BaseScraper.scrape()
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             """Run a network scraper in a worker and retain source identity."""
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
@@ -176,6 +179,7 @@ def _query_cached_coffees(
     available: bool | None,
 ) -> None:
     """Print cached rows for the read-only ``list`` and ``cache`` commands."""
+    # Open a short read session so cached queries do not depend on scrape state.
     with get_session() as session:
         service = CoffeeService(session)
         coffees = service.list_coffees(process=process, flavour=flavour, roaster_name=roaster, available=available)
@@ -209,11 +213,14 @@ def show(coffee_id: int) -> None:
     """Show one cached coffee record selected by its table ID."""
     with get_session() as session:
         service = CoffeeService(session)
+
+        # Look up the row first so missing IDs fail before rendering starts.
         coffee = service.get_coffee_by_id(coffee_id)
         if coffee is None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
+        # Render the full record vertically so sparse metadata stays readable.
         table = Table(show_header=False)
         table.add_row("ID", str(coffee.id))
         table.add_row("Roaster", coffee.roaster.name)
@@ -272,6 +279,16 @@ def debug(coffee_id: int) -> None:
             f.writelines(output)
 
         console.print(f"[green]Full raw data dumped to {filename}[/green]")
+
+
+@app.command(name="test")
+def test_command() -> None:
+    """Run the project test suite through pytest."""
+    console.print("[blue]Running tests...[/blue]")
+
+    # Delegate to the active Python executable so the current venv is used.
+    result = subprocess.run([sys.executable, "-m", "pytest"], check=False)
+    raise typer.Exit(code=result.returncode)
 
 
 if __name__ == "__main__":

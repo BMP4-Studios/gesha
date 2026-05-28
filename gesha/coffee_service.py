@@ -79,7 +79,10 @@ class CoffeeService:
         available: bool | None = None,
     ) -> list[Coffee]:
         """Query cached coffees for ``list``/``cache`` output and refresh output."""
+        # Start from coffees joined to roasters because most CLI output needs both.
         query = select(Coffee).join(Roaster)
+
+        # Add filters only when requested so the same method powers all listings.
         if roaster_name:
             query = query.where(Roaster.name.ilike(f"%{roaster_name}%"))
         if process:
