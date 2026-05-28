@@ -8,11 +8,8 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
-from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
-
-from gesha.normalization import remove_emojis
 
 COMMON_TASTING_NOTE_LABELS = [
     "Notes",
@@ -49,20 +46,6 @@ DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
 }
 
 DEFAULT_PRODUCT_FACT_STOP_LABELS = ("About", "Description", "Story")
-
-
-def extract_text(element: Tag | None) -> str | None:
-    """Extract clean user-visible text from a BeautifulSoup element or meta tag."""
-    if element is None:
-        return None
-    if element.name == "meta":
-        content = element.get("content")
-        if isinstance(content, str) and content.strip():
-            return remove_emojis(content.strip()) or None
-    text = element.get_text(separator=" ", strip=True)
-    if not text:
-        return None
-    return remove_emojis(text) or None
 
 
 def _label_pattern(label: str) -> str:
@@ -223,74 +206,3 @@ def extract_labeled_product_facts_from_html(
                 break
 
     return facts
-
-
-def extract_matching_urls(
-    soup: BeautifulSoup,
-    *,
-    selector: str,
-    attribute: str,
-    base_url: str,
-    pattern: re.Pattern[str],
-) -> list[str]:
-    """Collect absolute links whose paths match a parser's product URL shape."""
-    urls: list[str] = []
-    for element in soup.select(selector):
-        href = element.get(attribute)
-        if not isinstance(href, str) or not href:
-            continue
-        href = href.strip()
-        if pattern.match(href):
-            urls.append(urljoin(base_url, href))
-    return urls
-
-
-def parse_price(value: str | None) -> int | None:
-    """Convert a Canadian-dollar display string into integer cents for storage."""
-    if not value:
-        return None
-    match = re.search(r"(?:CA)?\$\s*([0-9]+(?:\.[0-9]{1,2})?)", value)
-    if not match:
-        return None
-    return int(float(match.group(1)) * 100)
-
-
-def extract_bag_size(value: str | None) -> str | None:
-    """Find the first common coffee package size embedded in text."""
-    if not value:
-        return None
-    match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", value, re.IGNORECASE)
-    if match:
-        return match.group(0)
-    return None
-
-
-def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str | None:
-    """Read a selected Shopify variant size, with title/URL as a last fallback."""
-    selectors = (
-        "select[name='id'] option[selected]",
-        "select[name='id'] option",
-        "variant-selects [data-selected-value]",
-        "variant-selects [data-popout-toggle-text]",
-        "variant-selects [selected] [data-value]",
-        "variant-selects [selected]",
-    )
-    for selector in selectors:
-        element = soup.select_one(selector)
-        size = extract_bag_size(extract_text(element))
-        if size:
-            return size
-
-        raw_value = element.get("data-value") if element else None
-        if isinstance(raw_value, str):
-            size = extract_bag_size(raw_value)
-            if size:
-                return size
-
-        raw_value = element.get("value") if element else None
-        if isinstance(raw_value, str):
-            size = extract_bag_size(raw_value)
-            if size:
-                return size
-
-    return extract_bag_size(f"{title} {url}")

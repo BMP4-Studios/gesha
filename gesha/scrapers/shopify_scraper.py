@@ -28,23 +28,32 @@ class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
+    PRODUCT_LINK_ATTRIBUTES: tuple[str, ...] = ("href", "data-url")
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
     PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
+    PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
         soup = BeautifulSoup(html, "html.parser")
         urls: list[str] = []
-        for anchor in soup.select("a[href*='/products/']"):
-            raw_href = anchor.get("href")
-            if not isinstance(raw_href, str):
-                continue
-            href = raw_href.split("?", 1)[0].strip()
-            if not self.PRODUCT_URL_PATTERN.match(href):
-                continue
-            urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
+        for element in soup.select("a[href*='/products/'], [data-url*='/products/']"):
+            for attribute in self.PRODUCT_LINK_ATTRIBUTES:
+                raw_href = element.get(attribute)
+                if not isinstance(raw_href, str):
+                    continue
+                href = raw_href.split("?", 1)[0].strip()
+                path = urlparse(href).path if href.startswith(("http://", "https://")) else href
+                if not self.PRODUCT_URL_PATTERN.match(path):
+                    continue
+
+                handle = path.rstrip("/").rsplit("/", 1)[-1].lower()
+                if self._is_excluded_handle(handle):
+                    continue
+
+                urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
         return sorted(dict.fromkeys(urls))
 
     def scrape_product(self, url: str) -> CoffeeData | None:
@@ -87,14 +96,16 @@ class ShopifyScraper(BaseScraper):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
         return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
 
+    def _is_excluded_handle(self, handle: str) -> bool:
+        """Return whether a product handle belongs to a non-catalog item."""
+        return any(keyword in handle for keyword in self.EXCLUDE_HANDLE_KEYWORDS)
+
     def _is_coffee_product(self, product_data: dict[str, Any]) -> bool:
         """Reject subscriptions and accept products satisfying source tag rules."""
         handle = str(product_data.get("handle") or "").lower()
         tags = self._normalize_tags(product_data)
 
-        if any(keyword in handle for keyword in self.EXCLUDE_HANDLE_KEYWORDS) or any(
-            keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS
-        ):
+        if self._is_excluded_handle(handle) or any(keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS):
             return False
 
         if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
@@ -118,7 +129,7 @@ class ShopifyScraper(BaseScraper):
 
         origin = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or title
         producer = page_facts.get("producer") or json_facts.get("producer")
-        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process") or title
+        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process")
         varietal = page_facts.get("varietal") or json_facts.get("varietal")
         altitude = page_facts.get("altitude") or json_facts.get("altitude")
         roast_style = page_facts.get("roast_style") or json_facts.get("roast_style") or self._extract_roast_style(product_data)
@@ -156,6 +167,19 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
         """Read product-page label/value sections before JSON fallbacks."""
+        selected_facts: dict[str, str] = {}
+        for selector in self.PRODUCT_FACT_SELECTORS:
+            for block in html_soup.select(selector):
+                block_facts = extract_labeled_product_facts_from_html(
+                    block,
+                    label_aliases=self.PRODUCT_FACT_LABELS,
+                    stop_labels=self.PRODUCT_FACT_STOP_LABELS,
+                )
+                for key, value in block_facts.items():
+                    selected_facts.setdefault(key, value)
+        if selected_facts:
+            return selected_facts
+
         return extract_labeled_product_facts_from_html(
             html_soup,
             label_aliases=self.PRODUCT_FACT_LABELS,
@@ -213,8 +237,22 @@ class ShopifyScraper(BaseScraper):
         lines = [line.strip() for line in description.splitlines() if line.strip()]
         if lines:
             first_line = lines[0]
-            if len(first_line) < 100 and any(separator in first_line for separator in ("|", ",", ";", "+")):
+            if len(first_line) < 100 and any(separator in first_line for separator in ("|", ",", ";", "+", "·", "•", "Â", "â")):
                 return normalize_tasting_notes(first_line)
+
+            note_lines: list[str] = []
+            for line in lines:
+                if line.lower() == "light" or re.search(r"\blight\b.*\bdark\b|[●○]", line, re.IGNORECASE):
+                    break
+                if len(line) > 60:
+                    break
+                note_lines.append(line)
+                if len(note_lines) >= 7:
+                    break
+
+            combined_notes = " ".join(note_lines)
+            if len(combined_notes) < 140 and any(separator in combined_notes for separator in ("·", "•", "Â", "â")):
+                return normalize_tasting_notes(combined_notes)
 
         return []
 
@@ -248,13 +286,16 @@ class ShopifyScraper(BaseScraper):
         unit = variant.get("weight_unit")
         if isinstance(weight, int | float) and isinstance(unit, str) and unit:
             return f"{int(weight)}{unit}"
+        if isinstance(weight, int | float) and weight > 0:
+            return f"{int(weight)}g"
 
         for variant in variants:
-            raw_title = variant.get("title")
-            title = raw_title if isinstance(raw_title, str) else ""
-            match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", title, re.IGNORECASE)
-            if match:
-                return match.group(0)
+            for field in ("title", "public_title", "option1", "sku", "name"):
+                raw_value = variant.get(field)
+                value = raw_value if isinstance(raw_value, str) else ""
+                match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", value, re.IGNORECASE)
+                if match:
+                    return match.group(0)
         return None
 
 
@@ -288,45 +329,25 @@ class AngryRoasterScraper(ShopifyScraper):
     INCLUDE_TAGS = ("coffee",)
 
 
-# These HTML-backed adapters share transport behavior with BaseScraper, but
-# their page structures are sufficiently distinct to live in parser modules.
-from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
-
-
-class TrafficScraper(BaseScraper):
-    """HTML scraper adapter that delegates Traffic markup parsing."""
+class TrafficScraper(ShopifyScraper):
+    """Shopify configuration for Traffic products."""
 
     BASE_URL = "https://www.trafficcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Traffic"
     ROASTER_NAME = "Traffic Coffee"
-    INCLUDE_TAGS = ("coffee",)
-
-    def extract_product_urls(self, html: str) -> list[str]:
-        """Discover Traffic product pages in collection HTML."""
-        return parse_traffic_collection(html, base_url=self.BASE_URL)
-
-    def parse_product(self, html: str, url: str) -> CoffeeData:
-        """Delegate Traffic page normalization to its source-specific parser."""
-        return parse_traffic_product(html, url)
+    INCLUDE_TAGS = ()
+    PRODUCT_FACT_STOP_LABELS = (*DEFAULT_PRODUCT_FACT_STOP_LABELS, "ABOUT")
+    PRODUCT_FACT_SELECTORS = ("div.product-block-description",)
 
 
-from gesha.parsers.demello_parser import parse_demello_collection, parse_demello_product
-
-
-class DeMelloScraper(BaseScraper):
-    """HTML scraper adapter that delegates De Mello markup parsing."""
+class DeMelloScraper(ShopifyScraper):
+    """Shopify configuration for De Mello products."""
 
     BASE_URL = "https://hellodemello.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
     SOURCE_NAME = "De Mello"
     ROASTER_NAME = "De Mello Coffee"
-    INCLUDE_TAGS = ("coffee",)
-
-    def extract_product_urls(self, html: str) -> list[str]:
-        """Discover De Mello product pages in collection HTML."""
-        return parse_demello_collection(html, base_url=self.BASE_URL)
-
-    def parse_product(self, html: str, url: str) -> CoffeeData:
-        """Delegate De Mello page normalization to its source-specific parser."""
-        return parse_demello_product(html, url)
+    INCLUDE_TAGS = ()
+    EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "starter-kit", "instant-coffee")
+    PRODUCT_FACT_SELECTORS = ("div.metafield-rich_text_field",)
