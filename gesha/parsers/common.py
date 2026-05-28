@@ -1,7 +1,7 @@
 """Reusable HTML/text extraction helpers for roaster-specific parsers.
 
-Individual parsers use these helpers for standard Shopify-shaped concerns
-such as product links, prices, sizes, labeled metadata, and tasting notes.
+Individual parsers use these helpers for standard storefront concerns such as
+product links, prices, sizes, and labeled product metadata.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
+
 from gesha.normalization import remove_emojis
 
 COMMON_TASTING_NOTE_LABELS = [
@@ -64,18 +65,6 @@ def extract_text(element: Tag | None) -> str | None:
     return remove_emojis(text) or None
 
 
-def merge_product_fact_labels(
-    *overrides: Mapping[str, Sequence[str]],
-) -> dict[str, tuple[str, ...]]:
-    """Return default product-fact labels plus parser-specific aliases."""
-    labels = {field: tuple(values) for field, values in DEFAULT_PRODUCT_FACT_LABELS.items()}
-    for override in overrides:
-        for field, values in override.items():
-            existing = labels.get(field, ())
-            labels[field] = (*existing, *tuple(values))
-    return labels
-
-
 def _label_pattern(label: str) -> str:
     """Build a regex fragment that tolerates flexible whitespace in labels."""
     return r"\s+".join(re.escape(part) for part in label.strip().split())
@@ -92,7 +81,7 @@ def _strip_repeated_label(value: str, labels: Sequence[str]) -> str:
     """Handle duplicated labels such as ``Origin: Origin: Colombia``."""
     cleaned = value
     for label in sorted(labels, key=len, reverse=True):
-        pattern = rf"^{_label_pattern(label)}\s*[:：-]\s*"
+        pattern = rf"^{_label_pattern(label)}\s*[:\uff1a-]\s*"
         cleaned = re.sub(pattern, "", cleaned, count=1, flags=re.IGNORECASE).strip()
     return cleaned
 
@@ -126,12 +115,12 @@ def extract_labeled_product_facts_from_text(
 
     for field, labels in aliases.items():
         for label in labels:
-            pattern = rf"(?<![\w]){_label_pattern(label)}\s*[:：-]\s*"
+            pattern = rf"(?<![\w]){_label_pattern(label)}\s*[:\uff1a-]\s*"
             for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
                 markers.append((match.start(), match.end(), field, label))
 
     for label in stop_labels:
-        pattern = rf"(?<![\w]){_label_pattern(label)}(?=\s*(?:[:：-]|\b))"
+        pattern = rf"(?<![\w]){_label_pattern(label)}(?=\s*(?:[:\uff1a-]|\b))"
         for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
             markers.append((match.start(), match.end(), None, None))
 
@@ -167,7 +156,7 @@ def extract_labeled_product_facts_from_text(
 
 
 def extract_labeled_product_facts_from_html(
-    soup: BeautifulSoup,
+    soup: BeautifulSoup | Tag,
     *,
     label_aliases: Mapping[str, Sequence[str]] | None = None,
     stop_labels: Sequence[str] = DEFAULT_PRODUCT_FACT_STOP_LABELS,
@@ -278,8 +267,6 @@ def extract_bag_size(value: str | None) -> str | None:
 
 def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str | None:
     """Read a selected Shopify variant size, with title/URL as a last fallback."""
-    # Themes expose variant data in different controls; try known structures
-    # from most specific selected-option selectors to broader possibilities.
     selectors = (
         "select[name='id'] option[selected]",
         "select[name='id'] option",
@@ -307,119 +294,3 @@ def extract_shopify_bag_size(soup: BeautifulSoup, title: str, url: str) -> str |
                 return size
 
     return extract_bag_size(f"{title} {url}")
-
-
-def extract_labeled_value(text: str, labels: list[str], stop_labels: list[str]) -> str | None:
-    """Extract the value following one metadata label until the next label."""
-    label_pattern = "|".join(re.escape(label) for label in labels)
-    stop_pattern = "|".join(re.escape(label) for label in stop_labels)
-    pattern = rf"(?:{label_pattern})\s*[:\-]\s*(.*?)(?=\n|(?:{stop_pattern})(?:\s*[:\-]|\b)|$)"
-    match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
-    if not match:
-        return None
-    value = re.sub(r"\s+", " ", match.group(1)).strip()
-    for label in labels:
-        value = re.sub(rf"^{re.escape(label)}\s*[:\-]\s*", "", value, flags=re.IGNORECASE).strip()
-    return value if value else None
-
-
-def clean_tasting_note_candidates(values: list[str]) -> list[str]:
-    """Discard prose and page noise from possible tasting-note fragments."""
-    notes: list[str] = []
-    prose_words = {
-        "a",
-        "an",
-        "around",
-        "but",
-        "can",
-        "for",
-        "from",
-        "if",
-        "in",
-        "it",
-        "it's",
-        "of",
-        "on",
-        "or",
-        "our",
-        "should",
-        "shouldn't",
-        "that",
-        "the",
-        "this",
-        "throughout",
-        "to",
-        "very",
-        "we",
-        "with",
-        "you",
-        "your",
-    }
-    noisy_fragments = (
-        "{",
-        "}",
-        "[",
-        "]",
-        '"',
-        "$",
-        "amount:",
-        "createdat",
-        "updatedat",
-        "metadata",
-        "price",
-        "variant",
-        "shipping",
-        "description:",
-        "order details",
-        "producer:",
-        "origin:",
-        "process:",
-        "variety:",
-        "varietal:",
-        "altitude:",
-        "afford",
-        "amp",
-        "coffee.",
-        "delicious coffee",
-        "family",
-        "farm",
-        "farmer:",
-        "grown",
-        "growing",
-        "history",
-        "experience",
-        "shading",
-        "shade",
-        "farming",
-        "laboratory",
-        "rewarding",
-        "seasons",
-        "year",
-    )
-    noisy_exact = {
-        "go",
-        "santa bárbara",
-    }
-    # Narrative descriptions can contain food words but are not useful filters;
-    # accept only short, label-like candidates that survive these heuristics.
-    for value in values:
-        note = re.sub(r"\s+", " ", value).strip(" .")
-        note = re.sub(r"^and\s+", "", note, flags=re.IGNORECASE).strip()
-        lowered = note.lower()
-        if not note:
-            continue
-        if lowered in noisy_exact:
-            continue
-        words = re.findall(r"[a-z']+", lowered)
-        if len(note) > 48 or len(note.split()) > 4:
-            continue
-        if note[0] in "),.:;!?":
-            continue
-        if any(char in note for char in ".!?"):
-            continue
-        if any(word.replace("’", "'") in prose_words for word in words):
-            continue
-        if any(fragment in lowered for fragment in noisy_fragments):
-            continue
-        notes.append(note)
-    return notes

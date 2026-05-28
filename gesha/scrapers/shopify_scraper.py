@@ -27,7 +27,6 @@ from gesha.scrapers.base_scraper import BaseScraper
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
-    COLLECTION_PATH = "/collections/coffee"
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
@@ -286,26 +285,6 @@ class AngryRoasterScraper(ShopifyScraper):
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "The Angry Roaster"
     ROASTER_NAME = "The Angry Roaster"
-    INCLUDE_TAGS = ("coffee",)
-
-
-class RogueWaveScraper(ShopifyScraper):
-    """Shopify configuration retained for potential explicit registry use."""
-
-    BASE_URL = "https://www.roguewavecoffee.ca"
-    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
-    SOURCE_NAME = "Rogue Wave"
-    ROASTER_NAME = "Rogue Wave Coffee"
-    INCLUDE_TAGS = ("coffee",)
-
-
-class HouseOfFunkScraper(ShopifyScraper):
-    """Shopify configuration retained for potential explicit registry use."""
-
-    BASE_URL = "https://www.houseoffunkbrewing.com"
-    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
-    SOURCE_NAME = "House of Funk"
-    ROASTER_NAME = "House of Funk"
     INCLUDE_TAGS = ("coffee",)
 
 

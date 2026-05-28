@@ -40,16 +40,6 @@ def parse_traffic_collection(html: str, base_url: str) -> list[str]:
     return sorted(dict.fromkeys(urls))
 
 
-def _parse_traffic_details(text: str) -> dict[str, str | None]:
-    """Extract Traffic's labeled description values into catalog fields."""
-    return extract_labeled_product_facts_from_text(text, stop_labels=DETAIL_STOP_LABELS)
-
-
-def _extract_tasting_notes(text: str) -> list[str]:
-    """Clean tasting notes embedded among Traffic's product detail labels."""
-    return normalize_tasting_notes(_parse_traffic_details(text).get("tasting_notes"))
-
-
 def parse_traffic_product(html: str, url: str) -> CoffeeData:
     """Build one validated catalog item from a Traffic product HTML page."""
     soup = BeautifulSoup(html, "html.parser")
@@ -69,8 +59,8 @@ def parse_traffic_product(html: str, url: str) -> CoffeeData:
     if desc_div:
         details = extract_labeled_product_facts_from_html(desc_div, stop_labels=DETAIL_STOP_LABELS)
     if not details:
-        details = _parse_traffic_details(description)
-    tasting_notes = normalize_tasting_notes(details.get("tasting_notes")) or _extract_tasting_notes(description)
+        details = extract_labeled_product_facts_from_text(description, stop_labels=DETAIL_STOP_LABELS)
+    tasting_notes = normalize_tasting_notes(details.get("tasting_notes"))
 
     return CoffeeData(
         roaster="Traffic Coffee",
