@@ -54,7 +54,7 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
 
     scraper = TrafficScraper()
     monkeypatch.setattr(scraper.session, "get", lambda url, timeout: fake_get(url, timeout))
-    monkeypatch.setattr("gesha.scrapers.shopify.parse_traffic_product", fake_parse)
+    monkeypatch.setattr("gesha.scrapers.shopify_scraper.parse_traffic_product", fake_parse)
 
     coffees = scraper.scrape()
 

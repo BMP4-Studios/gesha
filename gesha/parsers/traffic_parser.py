@@ -12,20 +12,18 @@ from bs4 import BeautifulSoup
 
 from gesha.coffee_data import CoffeeData
 from gesha.normalization import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import COMMON_TASTING_NOTE_LABELS, clean_tasting_note_candidates, extract_labeled_value, extract_matching_urls, extract_shopify_bag_size, extract_text, parse_price
+from gesha.parsers.common import (
+    DEFAULT_PRODUCT_FACT_STOP_LABELS,
+    extract_labeled_product_facts_from_html,
+    extract_labeled_product_facts_from_text,
+    extract_matching_urls,
+    extract_shopify_bag_size,
+    extract_text,
+    parse_price,
+)
 
 PRODUCT_URL_PATTERN = re.compile(r"^/collections/coffee/products/[^/?#]+$")
-DETAIL_LABELS = [
-    "Farmer",
-    "Origin",
-    "Process",
-    "Varietal",
-    "Altitude",
-    "Roast level",
-    "Size",
-    "About",
-    "ABOUT",
-] + COMMON_TASTING_NOTE_LABELS
+DETAIL_STOP_LABELS = (*DEFAULT_PRODUCT_FACT_STOP_LABELS, "ABOUT")
 
 
 def parse_traffic_collection(html: str, base_url: str) -> list[str]:
@@ -44,36 +42,12 @@ def parse_traffic_collection(html: str, base_url: str) -> list[str]:
 
 def _parse_traffic_details(text: str) -> dict[str, str | None]:
     """Extract Traffic's labeled description values into catalog fields."""
-    details: dict[str, str | None] = {
-        "origin": None,
-        "producer": None,
-        "process": None,
-        "varietal": None,
-        "altitude": None,
-        "roast_style": None,
-        "bag_size": None,
-    }
-
-    def value_for(key: str) -> str | None:
-        """Read one Traffic detail label using the module's stop labels."""
-        return extract_labeled_value(text, [key], DETAIL_LABELS)
-
-    details["origin"] = value_for("Origin")
-    details["producer"] = value_for("Farmer")
-    details["process"] = value_for("Process")
-    details["varietal"] = value_for("Varietal")
-    details["altitude"] = value_for("Altitude")
-    details["roast_style"] = value_for("Roast level")
-    details["bag_size"] = value_for("Size")
-    return details
+    return extract_labeled_product_facts_from_text(text, stop_labels=DETAIL_STOP_LABELS)
 
 
 def _extract_tasting_notes(text: str) -> list[str]:
     """Clean tasting notes embedded among Traffic's product detail labels."""
-    value = extract_labeled_value(text, COMMON_TASTING_NOTE_LABELS, DETAIL_LABELS)
-    if not value:
-        return []
-    return normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[,;/]|\s+-\s+", value)))
+    return normalize_tasting_notes(_parse_traffic_details(text).get("tasting_notes"))
 
 
 def parse_traffic_product(html: str, url: str) -> CoffeeData:
@@ -91,8 +65,12 @@ def parse_traffic_product(html: str, url: str) -> CoffeeData:
     if description is None:
         description = ""
 
-    details = _parse_traffic_details(description)
-    tasting_notes = _extract_tasting_notes(description)
+    details = {}
+    if desc_div:
+        details = extract_labeled_product_facts_from_html(desc_div, stop_labels=DETAIL_STOP_LABELS)
+    if not details:
+        details = _parse_traffic_details(description)
+    tasting_notes = normalize_tasting_notes(details.get("tasting_notes")) or _extract_tasting_notes(description)
 
     return CoffeeData(
         roaster="Traffic Coffee",

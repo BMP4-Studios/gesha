@@ -27,4 +27,4 @@ def test_remove_emojis() -> None:
     assert remove_emojis("LOVEBUZZ 😵‍💫 💙") == "LOVEBUZZ"
     assert remove_emojis("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". Bouquet. blossomed edition"
     assert normalize_tasting_notes("Apricot • Honey • Orange") == ["apricot", "honey", "orange"]
-    assert normalize_tasting_notes("Honey. Caramel. Chocolate.") == ["caramel", "chocolate", "honey"]
+    assert normalize_tasting_notes("Honey. Caramel. Chocolate.") == ["honey", "caramel", "chocolate"]

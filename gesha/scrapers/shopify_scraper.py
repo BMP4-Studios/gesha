@@ -1,8 +1,8 @@
 """Shopify-oriented scraping and adapters for several supported roasters.
 
-The generic ``ShopifyScraper`` favors Shopify's product JSON endpoint and
-supplements it with HTML when theme-specific detail blocks contain better
-metadata. Simple HTML-only adapters at the bottom delegate to parser modules.
+The generic ``ShopifyScraper`` reads product-page label/value sections first
+and uses Shopify JSON as support data for price, variants, availability, and
+fallback description metadata.
 """
 
 from __future__ import annotations
@@ -11,38 +11,17 @@ import re
 from typing import Any, cast
 from urllib.parse import urljoin, urlparse
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from gesha.coffee_data import CoffeeData
 from gesha.normalization import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
-from gesha.parsers.common import COMMON_TASTING_NOTE_LABELS, clean_tasting_note_candidates, extract_labeled_value
+from gesha.parsers.common import (
+    DEFAULT_PRODUCT_FACT_LABELS,
+    DEFAULT_PRODUCT_FACT_STOP_LABELS,
+    extract_labeled_product_facts_from_html,
+    extract_labeled_product_facts_from_text,
+)
 from gesha.scrapers.base_scraper import BaseScraper
-
-
-SHOPIFY_DETAIL_LABELS = [
-    "Country",
-    "Origin",
-    "Origins",
-    "Region",
-    "Place",
-    "Producer",
-    "Producers",
-    "Coffee Producers",
-    "Farm",
-    "Variety",
-    "Varieties",
-    "Cultivar",
-    "Process",
-    "Method",
-    "Altitude",
-    "Elevation",
-    "Amount",
-    "Size",
-    "Specs",
-    "Roast Level",
-    "Roast Style",
-    "Roast",
-] + COMMON_TASTING_NOTE_LABELS
 
 
 class ShopifyScraper(BaseScraper):
@@ -52,6 +31,8 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
+    PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
+    PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
@@ -68,11 +49,17 @@ class ShopifyScraper(BaseScraper):
         return sorted(dict.fromkeys(urls))
 
     def scrape_product(self, url: str) -> CoffeeData | None:
-        """Fetch Shopify JSON and optional HTML fallback for one product."""
-        # Add Referer header to make the .js request look more legitimate
+        """Fetch Shopify HTML first, then JSON support data for one product."""
+        html_soup: BeautifulSoup | None = None
+        html_facts: dict[str, str] = {}
+        res_html = self.session.get(url, timeout=15)
+        if res_html.status_code == 200:
+            html_soup = BeautifulSoup(res_html.text, "html.parser")
+            html_facts = self._extract_html_product_facts(html_soup)
+
         session = cast(Any, self.session)
         headers = session.headers.copy()
-        headers["Referer"] = url # The HTML product page is the referer for the .js endpoint
+        headers["Referer"] = url
         response = session.get(f"{url}.js", headers=headers, timeout=15)
         if response.status_code == 404:
             return None
@@ -81,29 +68,8 @@ class ShopifyScraper(BaseScraper):
 
         if not self._is_coffee_product(product_data):
             return None
-        
-        # If the JSON description is missing key details, fetch HTML as a fallback
-        html_soup: BeautifulSoup | None = None
-        description_text = self._description_text(product_data)
-        
-        # Heuristic: fetch HTML if JSON lacks structured labels for origin or notes.
-        # Narrative descriptions (like Porte Bleue's) often don't match labeled extraction.
-        has_structured_origin = bool(self._extract_details(description_text).get("origin"))
-        has_structured_notes = bool(self._extract_tasting_notes(description_text))
 
-        if not (has_structured_origin and has_structured_notes):
-            res_html = self.session.get(url, timeout=15)
-            if res_html.status_code == 200:
-                html_soup = BeautifulSoup(res_html.text, "html.parser")
-
-        # Convert fallback soup to clean text if we have it
-        # This is used for general labeled value extraction if specific selectors fail
-        # and also passed to _extract_tasting_notes
-        html_text: str | None = None
-        if html_soup:
-            html_text = html_soup.get_text("\n", strip=True)
-
-        return self._coffee_from_product(product_data, url, html_text=html_text, html_soup=html_soup)
+        return self._coffee_from_product(product_data, url, html_soup=html_soup, html_facts=html_facts)
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         """Prevent the base HTML parser path for JSON-driven Shopify products."""
@@ -117,7 +83,7 @@ class ShopifyScraper(BaseScraper):
 
     def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
         """Return lowercase Shopify tags independent of API string/list shape."""
-        raw_tags = product_data.get("tags") or [] # type: ignore
+        raw_tags = product_data.get("tags") or []
         if isinstance(raw_tags, str):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
         return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
@@ -127,9 +93,9 @@ class ShopifyScraper(BaseScraper):
         handle = str(product_data.get("handle") or "").lower()
         tags = self._normalize_tags(product_data)
 
-        # Exclude handles or tags containing subscription keywords
-        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or \
-           any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
+        if any(keyword in handle for keyword in self.EXCLUDE_HANDLE_KEYWORDS) or any(
+            keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS
+        ):
             return False
 
         if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
@@ -138,39 +104,28 @@ class ShopifyScraper(BaseScraper):
         return not self.INCLUDE_TAGS
 
     def _coffee_from_product(
-        self, 
-        product_data: dict[str, Any], 
-        url: str, 
-        html_text: str | None = None, 
-        html_soup: BeautifulSoup | None = None
+        self,
+        product_data: dict[str, Any],
+        url: str,
+        html_soup: BeautifulSoup | None = None,
+        html_facts: dict[str, str] | None = None,
     ) -> CoffeeData:
-        """Merge Shopify and theme HTML fields into the shared catalog model."""
+        """Merge product-page facts, Shopify JSON, and title fallbacks."""
         description = self._description_text(product_data)
-        details = self._extract_details(description)
+        json_facts = self._extract_details(description)
+        page_facts = html_facts or (self._extract_html_product_facts(html_soup) if html_soup else {})
         title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
+        title_facts = self._extract_details_from_title(title)
 
-        # Fallback to title parsing if description labels are missing
-        title_details = self._extract_details_from_title(title)
+        origin = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or title
+        producer = page_facts.get("producer") or json_facts.get("producer")
+        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process") or title
+        varietal = page_facts.get("varietal") or json_facts.get("varietal")
+        altitude = page_facts.get("altitude") or json_facts.get("altitude")
+        roast_style = page_facts.get("roast_style") or json_facts.get("roast_style") or self._extract_roast_style(product_data)
+        bag_size = page_facts.get("bag_size") or json_facts.get("bag_size") or self._extract_bag_size(product_data)
+        tasting_notes = self._extract_tasting_notes(description, html_soup=html_soup, page_facts=page_facts)
 
-        # Extract details from specific HTML block (like accordions) if available
-        html_block_details = self._extract_details_from_html_block(html_soup) if html_soup else {}
-
-        # Prioritize details from HTML block, then JSON description, then title
-        origin = html_block_details.get("origin") or details.get("origin") or title_details.get("origin") or title
-        producer = html_block_details.get("producer") or details.get("producer")
-        process = html_block_details.get("process") or details.get("process") or title_details.get("process") or title
-        varietal = html_block_details.get("varietal") or details.get("varietal")
-        altitude = html_block_details.get("altitude") or details.get("altitude")
-        roast_style = html_block_details.get("roast_style") or details.get("roast_style") or self._extract_roast_style(product_data)
-
-        # Tasting notes can come from multiple places, prioritize specific HTML block if found
-        tasting_notes = self._extract_tasting_notes(
-            description, 
-            html_soup=html_soup, 
-            html_text=html_text,
-            html_block_notes_raw=html_block_details.get("tasting_notes_raw")
-        )
-        
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
@@ -182,7 +137,7 @@ class ShopifyScraper(BaseScraper):
             tasting_notes=tasting_notes,
             roast_style=roast_style,
             price_cents=self._extract_price(product_data),
-            bag_size=details.get("bag_size") or self._extract_bag_size(product_data),
+            bag_size=bag_size,
             url=url,
             availability=bool(product_data.get("available", True)),
         )
@@ -192,36 +147,38 @@ class ShopifyScraper(BaseScraper):
         html = str(product_data.get("description") or "")
         return BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
 
-    def _extract_details(self, description: str) -> dict[str, str | None]:
-        """Extract generic labeled metadata exposed in Shopify descriptions."""
-        return {
-            "origin": extract_labeled_value(description, ["Origin", "Country", "Region", "Place"], SHOPIFY_DETAIL_LABELS),
-            "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers", "Farm"], SHOPIFY_DETAIL_LABELS),
-            "process": extract_labeled_value(description, ["Process", "Method"], SHOPIFY_DETAIL_LABELS),
-            "varietal": extract_labeled_value(description, ["Variety", "Varieties", "Cultivar"], SHOPIFY_DETAIL_LABELS),
-            "altitude": extract_labeled_value(description, ["Altitude", "Elevation"], SHOPIFY_DETAIL_LABELS),
-            "bag_size": extract_labeled_value(description, ["Amount", "Size", "Specs"], SHOPIFY_DETAIL_LABELS),
-            "roast_style": extract_labeled_value(description, ["Roast Level", "Roast Style", "Roast"], SHOPIFY_DETAIL_LABELS),
-        }
+    def _extract_details(self, description: str) -> dict[str, str]:
+        """Extract labeled metadata exposed in Shopify descriptions."""
+        return extract_labeled_product_facts_from_text(
+            description,
+            label_aliases=self.PRODUCT_FACT_LABELS,
+            stop_labels=self.PRODUCT_FACT_STOP_LABELS,
+        )
+
+    def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
+        """Read product-page label/value sections before JSON fallbacks."""
+        return extract_labeled_product_facts_from_html(
+            html_soup,
+            label_aliases=self.PRODUCT_FACT_LABELS,
+            stop_labels=self.PRODUCT_FACT_STOP_LABELS,
+        )
 
     def _extract_details_from_title(self, title: str) -> dict[str, str | None]:
-        """Try to extract origin and process from common title patterns like 'Country - Name | Process'."""
+        """Try to extract origin and process from ``Origin - Name | Process`` titles."""
         details: dict[str, str | None] = {"origin": None, "process": None}
-        # Split by pipe first (highest confidence for process)
         if "|" in title:
-            pipe_parts = [p.strip() for p in title.split("|")]
+            pipe_parts = [part.strip() for part in title.split("|")]
             details["origin"] = pipe_parts[0]
             if len(pipe_parts) >= 2:
-                # If there are 3+ parts (Origin | Name | Process), use the last
                 details["process"] = pipe_parts[-1]
-        # Refine origin if it was set or try dash split
+
+        dash_pattern = r"\s*[-\u2012\u2013\u2014\u2212]\s*"
         if details["origin"]:
-            dash_parts = re.split(r"\s*[−–—-]\s*", details["origin"])
+            dash_parts = re.split(dash_pattern, details["origin"])
             if dash_parts:
                 details["origin"] = dash_parts[0]
         else:
-            # No pipe, fallback to dash split
-            dash_parts = re.split(r"\s*[−–—-]\s*", title)
+            dash_parts = re.split(dash_pattern, title)
             if len(dash_parts) >= 2:
                 details["origin"] = dash_parts[0]
                 if len(dash_parts) >= 3:
@@ -230,52 +187,37 @@ class ShopifyScraper(BaseScraper):
         return details
 
     def _extract_tasting_notes(
-        self, 
-        description: str, 
-        html_soup: BeautifulSoup | None = None, 
-        html_text: str | None = None,
-        html_block_notes_raw: str | None = None
+        self,
+        description: str,
+        html_soup: BeautifulSoup | None = None,
+        page_facts: dict[str, str] | None = None,
     ) -> list[str]:
-        """Extract notes from structured blocks, theme markup, or description prose."""
-        # Prioritize notes from the specific HTML block if provided
-        if html_block_notes_raw:
-            notes = normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[;,\n•·|]|\.\s+", html_block_notes_raw)))
+        """Extract source-ordered notes from labeled facts before loose fallbacks."""
+        if page_facts and page_facts.get("tasting_notes"):
+            notes = normalize_tasting_notes(page_facts["tasting_notes"])
             if notes:
                 return notes
 
-        # 1. Try Porte Bleue / common theme "subtitle" notes pattern in the HTML soup
+        value = self._extract_details(description).get("tasting_notes")
+        if value:
+            notes = normalize_tasting_notes(value)
+            if notes:
+                return notes
+
         if html_soup:
-            # This targets the specific paragraph under the title found on Porte Bleue and others
             target = html_soup.select_one("p.product__text.inline-richtext.caption-with-letter-spacing")
             if target and target.get_text():
-                notes = normalize_tasting_notes(clean_tasting_note_candidates(re.split(r"[•·|]", target.get_text())))
+                notes = normalize_tasting_notes(target.get_text())
                 if notes:
                     return notes
 
-        # 2. Try labeled extraction on description (JSON text) or fallback text (HTML cleaned to text)
-        source = html_text if (html_text and not description.strip()) else description
-        value = extract_labeled_value(source, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
-        
-        if not value:
-            for pattern in (
-                r"(?:in the cup|we taste|tastes like|notes of|profile of|flavour profile is)\s*(?:you can find|you'll find|is|are)?\s*(.+?)(?:\.|$)",
-            ):
-                match = re.search(pattern, description, re.IGNORECASE | re.DOTALL)
-                if match:
-                    value = match.group(1)
-                    break
-        if not value:
-            # Fallback to the first line only if it looks like a list (short and has separators)
-            lines = [l.strip() for l in description.splitlines() if l.strip()]
-            if lines:
-                first_line = lines[0]
-                if len(first_line) < 100 and any(sep in first_line for sep in ("•", "·", "|", ",", ";")):
-                    value = first_line
-        if not value:
-            return []
-        # Support standard separators plus bullets, middle dots, and period-space
-        parts = re.split(r"[,;/]|&|\s+and\s+|\s+-\s+|[•·|]|\.\s+", value, flags=re.IGNORECASE)
-        return normalize_tasting_notes(clean_tasting_note_candidates(parts))
+        lines = [line.strip() for line in description.splitlines() if line.strip()]
+        if lines:
+            first_line = lines[0]
+            if len(first_line) < 100 and any(separator in first_line for separator in ("|", ",", ";", "+")):
+                return normalize_tasting_notes(first_line)
+
+        return []
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> str | None:
         """Use standard Shopify tags as a fallback roast-style classification."""
@@ -302,15 +244,12 @@ class ShopifyScraper(BaseScraper):
         if not variants:
             return None
 
-        # Check first variant for weight info
         variant = variants[0]
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
-        
         if isinstance(weight, int | float) and isinstance(unit, str) and unit:
             return f"{int(weight)}{unit}"
 
-        # Fallback to variant title regex
         for variant in variants:
             raw_title = variant.get("title")
             title = raw_title if isinstance(raw_title, str) else ""
@@ -318,27 +257,6 @@ class ShopifyScraper(BaseScraper):
             if match:
                 return match.group(0)
         return None
-
-    def _extract_details_from_html_block(self, html_soup: BeautifulSoup) -> dict[str, str | None]:
-        """
-        Extract label/value fields from accordion markup used by some themes.
-
-        Porte Bleue, for example, exposes more complete product metadata in
-        ``<p><strong>Label:</strong> Value<br/>...</p>`` HTML than in JSON.
-        """
-        details = {}
-        accordion_content_p: Tag | None = html_soup.select_one("div.accordion__content.rte p")
-        if accordion_content_p:
-            # Get the raw HTML content of the <p> tag
-            raw_html_content = str(accordion_content_p)
-            # Replace <br/> with newlines to make it easier for extract_labeled_value
-            text_block = raw_html_content.replace("<br/>", "\n")
-            # Use BeautifulSoup to get clean text from the modified block
-            clean_text_block = BeautifulSoup(text_block, "html.parser").get_text("\n", strip=True)
-
-            details = self._extract_details(clean_text_block)
-            details["tasting_notes_raw"] = extract_labeled_value(clean_text_block, COMMON_TASTING_NOTE_LABELS, SHOPIFY_DETAIL_LABELS)
-        return details
 
 
 class PorteBleueScraper(ShopifyScraper):
@@ -390,9 +308,12 @@ class HouseOfFunkScraper(ShopifyScraper):
     ROASTER_NAME = "House of Funk"
     INCLUDE_TAGS = ("coffee",)
 
+
 # These HTML-backed adapters share transport behavior with BaseScraper, but
 # their page structures are sufficiently distinct to live in parser modules.
 from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic_product
+
+
 class TrafficScraper(BaseScraper):
     """HTML scraper adapter that delegates Traffic markup parsing."""
 
@@ -410,7 +331,10 @@ class TrafficScraper(BaseScraper):
         """Delegate Traffic page normalization to its source-specific parser."""
         return parse_traffic_product(html, url)
 
+
 from gesha.parsers.demello_parser import parse_demello_collection, parse_demello_product
+
+
 class DeMelloScraper(BaseScraper):
     """HTML scraper adapter that delegates De Mello markup parsing."""
 

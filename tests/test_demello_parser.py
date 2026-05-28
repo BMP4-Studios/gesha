@@ -40,7 +40,7 @@ def test_parse_demello_product() -> None:
     assert coffee.varietal == "Yellow Catuai"
     assert coffee.altitude == "1200 masl"
     assert coffee.price_cents == 1600
-    assert "chocolate" in coffee.tasting_notes
+    assert "milk chocolate" in coffee.tasting_notes
     assert "dark cherry" in coffee.tasting_notes
     assert "vanilla" in coffee.tasting_notes
 

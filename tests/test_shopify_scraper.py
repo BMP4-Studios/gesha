@@ -1,5 +1,7 @@
 """Tests for behavior shared by JSON-backed Shopify scraper adapters."""
 
+from bs4 import BeautifulSoup
+
 from gesha.scrapers.shopify_scraper import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper
 
 
@@ -53,7 +55,7 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
     assert coffee.altitude == "1900 MASL"
     assert coffee.bag_size == "250g"
     assert coffee.price_cents == 2300
-    assert coffee.tasting_notes == ["bergamot", "blueberries", "clementine", "lavender"]
+    assert coffee.tasting_notes == ["bergamot", "clementine", "lavender", "blueberries"]
 
 
 def test_colorfull_allows_products_without_type_or_tags() -> None:
@@ -63,20 +65,32 @@ def test_colorfull_allows_products_without_type_or_tags() -> None:
     assert ColorfullScraper()._is_coffee_product(product)
 
 
-def test_shopify_product_json_extracts_in_the_cup_sentence() -> None:
-    """Narrative cup-profile phrasing yields useful tasting-note values."""
+def test_shopify_product_prefers_labeled_html_product_facts() -> None:
+    """Product-page label sections beat less complete JSON description text."""
     product = {
         "title": "Apple Crumble",
         "price": 3200,
         "available": True,
         "type": "",
         "tags": [],
-        "description": "<p>In the cup you can find green apple, green jolly rancher, and slight funk in the finish.</p>",
+        "description": "<p>Process: Washed</p><p>Notes: Green Apple, Green Jolly Rancher</p>",
     }
+    html = """
+    <div class="mt-8 text-scheme-text">
+      <ul>
+        <li><span>Value / Roasting degree: 2 - Medium</span></li>
+        <li><span>Process: Co-ferment and Ethyl Acetate Decaf</span></li>
+        <li><span>Tasting notes: Maraschino Cherry + Strawberry Jam + Dark Chocolate</span></li>
+      </ul>
+    </div>
+    """
 
     coffee = ColorfullScraper()._coffee_from_product(
         product,
         "https://colorfullcoffee.com/products/apple-crumble",
+        html_soup=BeautifulSoup(html, "html.parser"),
     )
 
-    assert coffee.tasting_notes == ["green apple", "green jolly rancher"]
+    assert coffee.process == "co-ferment and ethyl acetate decaf"
+    assert coffee.roast_style == "2 - Medium"
+    assert coffee.tasting_notes == ["maraschino cherry", "strawberry jam", "dark chocolate"]

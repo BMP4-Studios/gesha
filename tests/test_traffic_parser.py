@@ -49,7 +49,7 @@ def test_parse_traffic_product() -> None:
     assert coffee.roast_style == "Filter"
     assert coffee.price_cents == 2400
     assert coffee.bag_size == "250g"
-    assert coffee.tasting_notes == ["caramel", "floral", "orange"]
+    assert coffee.tasting_notes == ["orange", "caramel", "florals"]
 
 
 def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
@@ -70,7 +70,7 @@ def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
         "https://www.trafficcoffee.com/collections/coffee/products/yellow-diamond",
     )
 
-    assert coffee.tasting_notes == ["apple cider", "flowers", "honey cake"]
+    assert coffee.tasting_notes == ["apple cider", "honey cake", "flowers"]
 
 
 def test_parse_traffic_product_extracts_size_from_variant_option() -> None:

@@ -52,7 +52,7 @@ def test_parse_hatch_product_uses_only_labeled_tasting_notes() -> None:
     coffee = parse_hatch_product(html, "https://hatchcrafted.com/shop/example-gesha")
 
     assert coffee.origin == "Huila, Colombia"
-    assert coffee.tasting_notes == ["jasmine", "nectarine", "white tea"]
+    assert coffee.tasting_notes == ["jasmine", "white tea", "nectarine"]
 
 
 def test_parse_hatch_product_does_not_fallback_to_description_as_notes() -> None:

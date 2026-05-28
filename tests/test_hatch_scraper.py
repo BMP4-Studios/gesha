@@ -51,7 +51,7 @@ def test_scrape_skips_failed_product_urls(monkeypatch) -> None:
 
     scraper = HatchScraper()
     monkeypatch.setattr(scraper.session, "get", lambda url, timeout: fake_get(url, timeout))
-    monkeypatch.setattr("gesha.scrapers.hatch.parse_hatch_product", fake_parse)
+    monkeypatch.setattr("gesha.scrapers.hatch_scraper.parse_hatch_product", fake_parse)
 
     coffees = scraper.scrape()
 
