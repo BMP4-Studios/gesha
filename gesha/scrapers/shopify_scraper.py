@@ -14,7 +14,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 from gesha.coffee_data import CoffeeData
-from gesha.normalization import normalize_country, normalize_process, normalize_tasting_notes, remove_emojis
+from gesha.normalization import normalize_tasting_notes, remove_emojis, NA_LABEL
 from gesha.parsers.common import (
     DEFAULT_PRODUCT_FACT_LABELS,
     DEFAULT_PRODUCT_FACT_STOP_LABELS,
@@ -139,9 +139,9 @@ class ShopifyScraper(BaseScraper):
 
         # Prefer explicit page labels, then Shopify description labels, then
         # title heuristics only for fields titles can express safely.
-        origin = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or title
+        origin  = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or ""
         producer = page_facts.get("producer") or json_facts.get("producer")
-        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process")
+        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process") or ""
         varietal = page_facts.get("varietal") or json_facts.get("varietal")
         altitude = page_facts.get("altitude") or json_facts.get("altitude")
         roast_style = page_facts.get("roast_style") or json_facts.get("roast_style") or self._extract_roast_style(product_data)
@@ -150,19 +150,19 @@ class ShopifyScraper(BaseScraper):
 
         # Normalize at the boundary so database and display layers stay simple.
         return CoffeeData(
-            roaster=self.ROASTER_NAME,
-            name=title,
-            origin=normalize_country(origin),
-            producer=producer,
-            process=normalize_process(process),
-            varietal=varietal,
-            altitude=altitude,
-            tasting_notes=tasting_notes,
-            roast_style=roast_style,
-            price_cents=self._extract_price(product_data),
-            bag_size=bag_size,
-            url=url,
-            availability=bool(product_data.get("available", True)),
+            roaster = self.ROASTER_NAME,
+            name = title,
+            origin = remove_emojis(origin),
+            producer = producer,
+            process = remove_emojis(process),
+            varietal = varietal,
+            altitude = altitude,
+            tasting_notes = tasting_notes,
+            roast_style = roast_style,
+            price_cents = self._extract_price(product_data),
+            bag_size = bag_size,
+            url = url,
+            availability = bool(product_data.get("available", True)),
         )
 
     def _description_text(self, product_data: dict[str, Any]) -> str:
@@ -219,12 +219,15 @@ class ShopifyScraper(BaseScraper):
             dash_parts = re.split(dash_pattern, details["origin"])
             if dash_parts:
                 details["origin"] = dash_parts[0]
-        else:
-            dash_parts = re.split(dash_pattern, title)
-            if len(dash_parts) >= 2:
-                details["origin"] = dash_parts[0]
-                if len(dash_parts) >= 3:
-                    details["process"] = dash_parts[-1]
+
+        # Some roasters, e.g., maybe rogue?, might have the coffee name as COUNTRY - COFFEE_NAME,
+        #  but for now this is messing up colorfull so just commenting it out
+        # else:
+        #     dash_parts = re.split(dash_pattern, title)
+        #     if len(dash_parts) >= 2:
+        #         details["origin"] = dash_parts[0]
+        #         if len(dash_parts) >= 3:
+        #             details["process"] = dash_parts[-1]
 
         return details
 

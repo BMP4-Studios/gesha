@@ -2,12 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Gesha: scrape traffic",
+      "name": "Gesha scrape test",
       "type": "debugpy",
       "request": "launch",
       "module": "gesha.cli.main",
       "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-      "args": ["scrape", "traffic"],
+      "args": ["scrape", "colorfull"], // <-- REPLACE ME
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
       "justMyCode": true

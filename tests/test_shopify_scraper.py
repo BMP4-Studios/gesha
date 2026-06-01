@@ -64,8 +64,8 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
     )
 
     assert coffee.roaster == "The Angry Roaster"
-    assert coffee.name == "Colombia - Gesha - Inza"
-    assert coffee.origin == "CAUCA, COLOMBIA"
+    assert coffee.name == "colombia - gesha - inza"
+    assert coffee.origin == "cauca, colombia"
     assert coffee.producer == "RAFAEL VELASQUEZ"
     assert coffee.process == "washed"
     assert coffee.varietal == "GESHA"
@@ -138,7 +138,7 @@ def test_traffic_product_uses_shopify_json_labeled_description() -> None:
     )
 
     assert coffee.roaster == "Traffic Coffee"
-    assert coffee.origin == "Kitale, Kenya"
+    assert coffee.origin == "kitale, kenya"
     assert coffee.process == "washed"
     assert coffee.varietal == "AA Batian & Ruiru"
     assert coffee.roast_style == "Superlight"
@@ -179,7 +179,7 @@ def test_demello_product_uses_shopify_description_and_metafield_details() -> Non
     )
 
     assert coffee.roaster == "De Mello Coffee"
-    assert coffee.origin == "Brazil"
+    assert coffee.origin == "brazil"
     assert coffee.producer == "Group of Sitios"
     assert coffee.process == "natural"
     assert coffee.varietal == "Yellow Catuai"

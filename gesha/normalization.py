@@ -17,33 +17,13 @@ def remove_emojis(text: str) -> str:
     """Remove decorative characters that otherwise pollute parsed field values."""
     if not text:
         return ""
+
     # Normalize to NFKC form to handle mathematical script and full-width chars.
     normalized_text = unicodedata.normalize("NFKC", text)
+
     # Keep common product punctuation plus mojibake bullet chars seen in fixtures.
     cleaned_text = re.sub(r'[^\w\s.,!?"\'#\-:;/$\u00e2\u20ac\u00a2\u00c2\u00b7]', "", normalized_text)
-    return re.sub(r"\s+", " ", cleaned_text).strip()
-
-
-def normalize_process(value: str | None) -> str | None:
-    """Return a searchable process label, merging a few common synonyms."""
-    if not value:
-        return None
-
-    # Store processes lowercase so CLI filters can match roaster variants.
-    cleaned = remove_emojis(value).lower().strip()
-    if cleaned in {"fully washed", "wet process"}:
-        return "washed"
-    return cleaned
-
-
-def normalize_country(value: str | None) -> str | None:
-    """Clean an origin field while retaining intentional source capitalization."""
-    if not value:
-        return None
-
-    # Title-case fully lowercase origins without rewriting already styled text.
-    cleaned = remove_emojis(value).strip()
-    return cleaned.title() if cleaned.islower() else cleaned
+    return re.sub(r"\s+", " ", cleaned_text).lower().strip()
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:

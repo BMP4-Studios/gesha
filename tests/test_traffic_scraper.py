@@ -66,7 +66,7 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
 
     assert len(coffees) == 1
     assert coffees[0].roaster == "Traffic Coffee"
-    assert coffees[0].name == "Test Coffee"
-    assert coffees[0].origin == "Colombia"
+    assert coffees[0].name == "test coffee"
+    assert coffees[0].origin == "colombia"
     assert coffees[0].tasting_notes == ["berry"]
     assert "https://www.trafficcoffee.com/products/bad-page.js" in calls
