@@ -13,17 +13,22 @@ from collections.abc import Iterable
 NA_LABEL = "[red]NONE[/red]"
 
 
-def remove_emojis(text: str) -> str:
-    """Remove decorative characters that otherwise pollute parsed field values."""
-    if not text:
-        return ""
+def normalize_search_text(value: str | None) -> str | None:
+    """Remove decorative characters without changing meaningful casing."""
+    if not value:
+        return None
 
     # Normalize to NFKC form to handle mathematical script and full-width chars.
-    normalized_text = unicodedata.normalize("NFKC", text)
+    normalized_text = unicodedata.normalize("NFKC", value)
 
     # Keep common product punctuation plus mojibake bullet chars seen in fixtures.
-    cleaned_text = re.sub(r'[^\w\s.,!?"\'#\-:;/$\u00e2\u20ac\u00a2\u00c2\u00b7]', "", normalized_text)
+    cleaned_text = re.sub(r'[^\w\s.,!?"\'#\-:;/$|\u00e2\u20ac\u00a2\u00c2\u00b7]', "", normalized_text)
     return re.sub(r"\s+", " ", cleaned_text).lower().strip()
+
+
+def price_display(price_cents: int | None) -> str:
+    """Render optional integer-cent prices for user-facing output."""
+    return f"${price_cents / 100:.2f}" if price_cents is not None else NA_LABEL
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
@@ -41,6 +46,8 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
     # Keep non-empty notes in the same order the roaster presented them.
     notes: list[str] = []
     for note in values:
+        if not isinstance(note, str):
+            continue
         candidate = re.sub(r"\s+", " ", note).strip().strip(" .")
         if candidate:
             notes.append(candidate.lower())

@@ -10,6 +10,7 @@ import concurrent.futures
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any, cast
 
 import requests
@@ -23,7 +24,7 @@ from gesha.coffee_data import CoffeeData
 from gesha.scrapers import get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
 from gesha.coffee_service import CoffeeService
-from gesha.normalization import NA_LABEL
+from gesha.normalization import NA_LABEL, price_display
 
 app = typer.Typer(
     help=(
@@ -58,7 +59,6 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     # records only after they have been stored and reloaded from the database.
     for coffee in coffees:
         notes = ", ".join(note.name for note in coffee.tasting_notes)
-        price = f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL
         name_display = f"[link={coffee.url}]{coffee.name}[/link]" if coffee.url else coffee.name
         table.add_row(
             str(coffee.id),
@@ -67,7 +67,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
             coffee.bag_size or NA_LABEL,
             coffee.process or NA_LABEL,
             coffee.origin or NA_LABEL,
-            price,
+            price_display(coffee.price_cents),
             notes or NA_LABEL,
         )
 
@@ -122,7 +122,10 @@ def _refresh_catalog(source: str) -> None:
                     removed_count = 0
                     console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
 
-                console.print(f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]")
+                console.print(
+                    f"[green]Finished {source_name}: {len(scraped_coffees)} imported, "
+                    f"{removed_count} stale removed.[/green]"
+                )
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
         # An all-source refresh displays only successfully returned roasters;
@@ -159,16 +162,16 @@ def init() -> None:
 @app.command()
 def scrape(
     source: str = typer_argument(
-        "all", 
-        help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog."
+        "all",
+        help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog.",
     )
 ) -> None:
-    """
-    Refresh the local database by scraping roaster websites.
-    
-    This command fetches product data, normalizes it, updates existing records, 
+    """Refresh the local database by scraping roaster websites.
+
+    This command fetches product data, normalizes it, updates existing records,
     and deletes coffees that are no longer available on the roaster's site.
-    It is also the network-backed counterpart to the read-only ``cache`` command."""
+    It is also the network-backed counterpart to the read-only ``cache`` command.
+    """
     _refresh_catalog(source)
 
 
@@ -182,7 +185,12 @@ def _query_cached_coffees(
     # Open a short read session so cached queries do not depend on scrape state.
     with get_session() as session:
         service = CoffeeService(session)
-        coffees = service.list_coffees(process=process, flavour=flavour, roaster_name=roaster, available=available)
+        coffees = service.list_coffees(
+            process=process,
+            flavour=flavour,
+            roaster_name=roaster,
+            available=available,
+        )
         _print_coffees(coffees)
 
 
@@ -233,7 +241,7 @@ def show(coffee_id: int) -> None:
         table.add_row("Altitude", coffee.altitude or NA_LABEL)
         table.add_row("Roast style", coffee.roast_style or NA_LABEL)
         table.add_row("Bag size", coffee.bag_size or NA_LABEL)
-        table.add_row("Price", f"${coffee.price_cents / 100:.2f}" if coffee.price_cents else NA_LABEL)
+        table.add_row("Price", price_display(coffee.price_cents))
         table.add_row("Availability", "yes" if coffee.availability else "no")
         table.add_row("URL", coffee.url or NA_LABEL)
         table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or NA_LABEL)
@@ -275,8 +283,7 @@ def debug(coffee_id: int) -> None:
         output.append("=== RAW HTML DATA ===\n")
         output.append(res_html.text)
 
-        with open(filename, "w", encoding="utf-8") as f:
-            f.writelines(output)
+        filename.write_text("".join(output), encoding="utf-8")
 
         console.print(f"[green]Full raw data dumped to {filename}[/green]")
 

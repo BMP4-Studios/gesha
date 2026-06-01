@@ -10,7 +10,7 @@ from datetime import date
 from typing import Iterable
 
 from pydantic import BaseModel, Field, field_validator
-from gesha.normalization import NA_LABEL
+from gesha.normalization import normalize_tasting_notes
 
 
 class CoffeeData(BaseModel):
@@ -39,13 +39,6 @@ class CoffeeData(BaseModel):
 
     @field_validator("tasting_notes", mode="before")
     @classmethod
-    def normalize_notes(cls, value: Iterable[str] | None) -> list[str]:
+    def normalize_notes(cls, value: Iterable[str] | str | None) -> list[str]:
         """Store tasting notes consistently for display and flavor filtering."""
-        # Drop blank or non-string values while preserving roaster note order.
-        if value is None:
-            return []
-        return [note.strip().lower() for note in value if isinstance(note, str) and note.strip()]
-
-    def get_price_display(self) -> str:
-        """Render cents for user-facing output while handling missing prices."""
-        return f"${self.price_cents / 100:.2f}" if self.price_cents is not None else NA_LABEL
+        return normalize_tasting_notes(value)

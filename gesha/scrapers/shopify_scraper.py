@@ -14,7 +14,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 from gesha.coffee_data import CoffeeData
-from gesha.normalization import normalize_tasting_notes, remove_emojis, NA_LABEL
+from gesha.normalization import normalize_search_text, normalize_tasting_notes
 from gesha.parsers.common import (
     DEFAULT_PRODUCT_FACT_LABELS,
     DEFAULT_PRODUCT_FACT_STOP_LABELS,
@@ -22,6 +22,16 @@ from gesha.parsers.common import (
     extract_labeled_product_facts_from_text,
 )
 from gesha.scrapers.base_scraper import BaseScraper
+
+
+def _first_non_blank(*values: str | None) -> str | None:
+    """Return the first source value that carries actual content."""
+    for value in values:
+        if value:
+            cleaned = value.strip()
+            if cleaned:
+                return cleaned
+    return None
 
 
 class ShopifyScraper(BaseScraper):
@@ -34,6 +44,11 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
     PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
+    # some roasters (Rogue?) use dashes to add the origin to the title. Enable this by setting the flag to True
+    EXTRACT_DASH_TITLE_FACTS = False
+    NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", "·", "•", "Â", "â")
+    BULLET_NOTE_SEPARATORS = ("·", "•", "Â", "â")
+    ROAST_SCALE_PATTERN = re.compile(r"\blight\b.*\bdark\b|[●○]", re.IGNORECASE)
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
@@ -134,27 +149,40 @@ class ShopifyScraper(BaseScraper):
         description = self._description_text(product_data)
         json_facts = self._extract_details(description)
         page_facts = html_facts or (self._extract_html_product_facts(html_soup) if html_soup else {})
-        title = remove_emojis(str(product_data.get("title") or "Unknown coffee"))
+        title = normalize_search_text(str(product_data.get("title") or "Unknown coffee")) or "unknown coffee"
         title_facts = self._extract_details_from_title(title)
 
         # Prefer explicit page labels, then Shopify description labels, then
         # title heuristics only for fields titles can express safely.
-        origin  = page_facts.get("origin") or json_facts.get("origin") or title_facts.get("origin") or ""
-        producer = page_facts.get("producer") or json_facts.get("producer")
-        process = page_facts.get("process") or json_facts.get("process") or title_facts.get("process") or ""
-        varietal = page_facts.get("varietal") or json_facts.get("varietal")
-        altitude = page_facts.get("altitude") or json_facts.get("altitude")
-        roast_style = page_facts.get("roast_style") or json_facts.get("roast_style") or self._extract_roast_style(product_data)
-        bag_size = page_facts.get("bag_size") or json_facts.get("bag_size") or self._extract_bag_size(product_data)
-        tasting_notes = self._extract_tasting_notes(description, html_soup=html_soup, page_facts=page_facts)
+        origin = _first_non_blank(page_facts.get("origin"), json_facts.get("origin"), title_facts.get("origin"))
+        producer = _first_non_blank(page_facts.get("producer"), json_facts.get("producer"))
+        process = _first_non_blank(page_facts.get("process"), json_facts.get("process"), title_facts.get("process"))
+        varietal = _first_non_blank(page_facts.get("varietal"), json_facts.get("varietal"))
+        altitude = _first_non_blank(page_facts.get("altitude"), json_facts.get("altitude"))
+        roast_style = _first_non_blank(
+            page_facts.get("roast_style"),
+            json_facts.get("roast_style"),
+            self._extract_roast_style(product_data),
+        )
+        bag_size = _first_non_blank(
+            page_facts.get("bag_size"),
+            json_facts.get("bag_size"),
+            self._extract_bag_size(product_data),
+        )
+        tasting_notes = self._extract_tasting_notes(
+            description,
+            html_soup=html_soup,
+            page_facts=page_facts,
+            json_facts=json_facts,
+        )
 
         # Normalize at the boundary so database and display layers stay simple.
         return CoffeeData(
             roaster = self.ROASTER_NAME,
             name = title,
-            origin = remove_emojis(origin),
+            origin = normalize_search_text(origin),
             producer = producer,
-            process = remove_emojis(process),
+            process = normalize_search_text(process),
             varietal = varietal,
             altitude = altitude,
             tasting_notes = tasting_notes,
@@ -213,21 +241,21 @@ class ShopifyScraper(BaseScraper):
             if len(pipe_parts) >= 2:
                 details["process"] = pipe_parts[-1]
 
-        # Dash-separated titles can still expose the origin at the front.
+        # Pipe-separated origins may still include a dash-separated coffee name.
         dash_pattern = r"\s*[-\u2012\u2013\u2014\u2212]\s*"
         if details["origin"]:
             dash_parts = re.split(dash_pattern, details["origin"])
             if dash_parts:
                 details["origin"] = dash_parts[0]
 
-        # Some roasters, e.g., maybe rogue?, might have the coffee name as COUNTRY - COFFEE_NAME,
-        #  but for now this is messing up colorfull so just commenting it out
-        # else:
-        #     dash_parts = re.split(dash_pattern, title)
-        #     if len(dash_parts) >= 2:
-        #         details["origin"] = dash_parts[0]
-        #         if len(dash_parts) >= 3:
-        #             details["process"] = dash_parts[-1]
+        elif self.EXTRACT_DASH_TITLE_FACTS:
+            # Dash-only titles are ambiguous, so sources opt in after fixtures
+            # prove they consistently use ``Origin - Name - Process``.
+            dash_parts = re.split(dash_pattern, title)
+            if len(dash_parts) >= 2:
+                details["origin"] = dash_parts[0]
+                if len(dash_parts) >= 3:
+                    details["process"] = dash_parts[-1]
 
         return details
 
@@ -236,6 +264,7 @@ class ShopifyScraper(BaseScraper):
         description: str,
         html_soup: BeautifulSoup | None = None,
         page_facts: dict[str, str] | None = None,
+        json_facts: dict[str, str] | None = None,
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
         # Labeled product-page facts are the highest-confidence notes source.
@@ -245,7 +274,8 @@ class ShopifyScraper(BaseScraper):
                 return notes
 
         # Shopify descriptions often repeat the same labels without page markup.
-        value = self._extract_details(description).get("tasting_notes")
+        facts = json_facts if json_facts is not None else self._extract_details(description)
+        value = facts.get("tasting_notes")
         if value:
             notes = normalize_tasting_notes(value)
             if notes:
@@ -263,12 +293,12 @@ class ShopifyScraper(BaseScraper):
         lines = [line.strip() for line in description.splitlines() if line.strip()]
         if lines:
             first_line = lines[0]
-            if len(first_line) < 100 and any(separator in first_line for separator in ("|", ",", ";", "+", "·", "•", "Â", "â")):
+            if len(first_line) < 100 and any(separator in first_line for separator in self.NOTE_HINT_SEPARATORS):
                 return normalize_tasting_notes(first_line)
 
             note_lines: list[str] = []
             for line in lines:
-                if line.lower() == "light" or re.search(r"\blight\b.*\bdark\b|[●○]", line, re.IGNORECASE):
+                if line.lower() == "light" or self.ROAST_SCALE_PATTERN.search(line):
                     break
                 if len(line) > 60:
                     break
@@ -277,7 +307,9 @@ class ShopifyScraper(BaseScraper):
                     break
 
             combined_notes = " ".join(note_lines)
-            if len(combined_notes) < 140 and any(separator in combined_notes for separator in ("·", "•", "Â", "â")):
+            if len(combined_notes) < 140 and any(
+                separator in combined_notes for separator in self.BULLET_NOTE_SEPARATORS
+            ):
                 return normalize_tasting_notes(combined_notes)
 
         return []

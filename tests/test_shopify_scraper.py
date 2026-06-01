@@ -113,6 +113,48 @@ def test_shopify_product_prefers_labeled_html_product_facts() -> None:
     assert coffee.tasting_notes == ["maraschino cherry", "strawberry jam", "dark chocolate"]
 
 
+def test_shopify_title_dash_facts_are_opt_in() -> None:
+    """Dash-only titles are too ambiguous to parse without source config."""
+    product = {
+        "title": "Apple Crumble - Washed",
+        "price": 3200,
+        "available": True,
+        "type": "",
+        "tags": [],
+        "description": "",
+    }
+
+    coffee = ColorfullScraper()._coffee_from_product(
+        product,
+        "https://colorfullcoffee.com/products/apple-crumble",
+    )
+
+    assert coffee.name == "apple crumble - washed"
+    assert coffee.origin is None
+    assert coffee.process is None
+
+
+def test_shopify_title_pipe_facts_remain_supported() -> None:
+    """Pipe-separated titles can still provide safe origin and process hints."""
+    product = {
+        "title": "Colombia - Las Flores | Washed",
+        "price": 2300,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["coffee"],
+        "description": "",
+    }
+
+    coffee = AngryRoasterScraper()._coffee_from_product(
+        product,
+        "https://theangryroaster.com/products/colombia-las-flores",
+    )
+
+    assert coffee.name == "colombia - las flores | washed"
+    assert coffee.origin == "colombia"
+    assert coffee.process == "washed"
+
+
 def test_traffic_product_uses_shopify_json_labeled_description() -> None:
     """Traffic's Shopify JSON description contains the structured product facts."""
     product = {

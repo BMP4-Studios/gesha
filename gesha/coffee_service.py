@@ -15,6 +15,22 @@ from gesha.db.models import Coffee, Roaster, TastingNote
 from gesha.coffee_data import CoffeeData
 
 
+SCRAPED_COFFEE_FIELDS: tuple[str, ...] = (
+    "name",
+    "origin",
+    "producer",
+    "process",
+    "varietal",
+    "altitude",
+    "roast_style",
+    "price_cents",
+    "bag_size",
+    "url",
+    "availability",
+    "roast_date",
+)
+
+
 class CoffeeService:
     """Read and update the local catalog within a caller-owned DB session."""
 
@@ -49,18 +65,8 @@ class CoffeeService:
             self.session.add(coffee)
 
         # Refresh mutable scraped fields while preserving the stable row ID.
-        coffee.name = data.name
-        coffee.origin = data.origin
-        coffee.producer = data.producer
-        coffee.process = data.process
-        coffee.varietal = data.varietal
-        coffee.altitude = data.altitude
-        coffee.roast_style = data.roast_style
-        coffee.price_cents = data.price_cents
-        coffee.bag_size = data.bag_size
-        coffee.url = data.url
-        coffee.availability = data.availability
-        coffee.roast_date = data.roast_date
+        for field in SCRAPED_COFFEE_FIELDS:
+            setattr(coffee, field, getattr(data, field))
 
         # Tasting notes are replaced because they describe the current listing.
         coffee.tasting_notes.clear()
@@ -90,7 +96,11 @@ class CoffeeService:
         if available is not None:
             query = query.where(Coffee.availability == available)
         if flavour:
-            query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavour}%")).distinct()
+            query = (
+                query.join(Coffee.tasting_notes)
+                .where(TastingNote.name.ilike(f"%{flavour}%"))
+                .distinct()
+            )
 
         return list(self.session.scalars(query).all())
 
