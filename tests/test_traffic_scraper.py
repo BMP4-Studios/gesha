@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import requests
-
 from gesha.models.coffee import CoffeeData
 from gesha.scrapers.traffic import TrafficScraper
 
@@ -17,10 +16,7 @@ class FakeResponse:
 
 
 def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
-    collection_html = (
-        '<a href="/collections/coffee/products/test-coffee">Test Coffee</a>'
-        '<a href="/collections/coffee/products/bad-page">Bad Page</a>'
-    )
+    collection_html = '<a href="/collections/coffee/products/test-coffee">Test Coffee</a><a href="/collections/coffee/products/bad-page">Bad Page</a>'
     good_coffee = CoffeeData(
         roaster="Traffic Coffee",
         name="Test Coffee",

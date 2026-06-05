@@ -1,9 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from gesha.db.models import Base
 from gesha.models.coffee import CoffeeData
 from gesha.services.coffee_service import CoffeeService
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
@@ -47,6 +46,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
     assert kept.url in urls
     assert "https://hatchcrafted.com/shop/old-coffee" not in urls
     assert "https://hellodemello.com/products/other" in urls
+    engine.dispose()
 
 
 def test_delete_stale_coffees_skips_empty_url_set() -> None:
@@ -70,3 +70,4 @@ def test_delete_stale_coffees_skips_empty_url_set() -> None:
 
     assert removed_count == 0
     assert len(coffees) == 1
+    engine.dispose()

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional
 
 from sqlalchemy import (
     Boolean,
-    Column,
     Date,
     DateTime,
     ForeignKey,
     Integer,
     String,
-    Text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -20,12 +18,16 @@ class Base(DeclarativeBase):
     pass
 
 
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
 class Roaster(Base):
     __tablename__ = "roasters"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
-    coffees: Mapped[List["Coffee"]]= relationship("Coffee", back_populates="roaster")
+    coffees: Mapped[List["Coffee"]] = relationship("Coffee", back_populates="roaster")
 
     def __repr__(self) -> str:
         return f"<Roaster name={self.name!r}>"
@@ -60,8 +62,8 @@ class Coffee(Base):
     url: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     availability: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     roast_date: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")
     tasting_notes: Mapped[List[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")

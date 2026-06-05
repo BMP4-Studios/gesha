@@ -3,10 +3,9 @@ from __future__ import annotations
 import concurrent.futures
 from typing import Optional
 
-import requests
 import typer
-from rich.table import Table
 from rich.console import Console
+from rich.table import Table
 
 from gesha.db.session import get_session, init_db
 from gesha.scrapers import get_scrapers, supported_sources
@@ -14,6 +13,7 @@ from gesha.services.coffee_service import CoffeeService
 
 app = typer.Typer(help="Local specialty coffee discovery and cart optimization CLI.")
 console = Console()
+SOURCE_HELP = f"Scraper to run: {', '.join(supported_sources())}."
 
 
 def _print_coffees(coffees: list) -> None:
@@ -81,11 +81,7 @@ def _refresh_catalog(source: str) -> None:
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
         if source == "all":
-            coffees = [
-                coffee
-                for coffee in service.list_coffees()
-                if coffee.roaster.name in refreshed_roaster_names
-            ]
+            coffees = [coffee for coffee in service.list_coffees() if coffee.roaster.name in refreshed_roaster_names]
         elif refreshed_roaster_names:
             # If we scraped a single specific source, filter to its roaster name
             coffees = service.list_coffees(roaster_name=refreshed_roaster_names[0])
@@ -109,7 +105,9 @@ def init() -> None:
 
 
 @app.command()
-def scrape(source: str = typer.Argument("all", help="Scraper to run: demello, traffic, portebleue, colorfull, angry, hatch, or all.")) -> None:
+def scrape(
+    source: str = typer.Argument("all", help=SOURCE_HELP),
+) -> None:
     """Refresh coffees from supported roasters and clean stale rows."""
     _refresh_catalog(source)
 

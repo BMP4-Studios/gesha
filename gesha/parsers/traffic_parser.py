@@ -6,8 +6,18 @@ from typing import List, Optional
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value, extract_matching_urls, extract_text, parse_price
+from gesha.normalization.normalize import (
+    normalize_country,
+    normalize_process,
+    normalize_tasting_notes,
+)
+from gesha.parsers.common import (
+    clean_tasting_note_candidates,
+    extract_labeled_value,
+    extract_matching_urls,
+    extract_text,
+    parse_price,
+)
 
 PRODUCT_URL_PATTERN = re.compile(r"^/collections/coffee/products/[^/?#]+$")
 DETAIL_LABELS = [

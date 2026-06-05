@@ -2,12 +2,7 @@ from gesha.parsers.traffic_parser import parse_traffic_collection, parse_traffic
 
 
 def test_parse_traffic_collection() -> None:
-    html = (
-        '<a href="/collections/coffee/products/coffee-one">Coffee One</a>'
-        '<a href="/collections/coffee/products/coffee-two?variant=123">Ignored Variant</a>'
-        '<a href="/products/not-traffic">Ignored Product</a>'
-        '<a href="/collections/coffee/products/coffee-one">Duplicate</a>'
-    )
+    html = '<a href="/collections/coffee/products/coffee-one">Coffee One</a><a href="/collections/coffee/products/coffee-two?variant=123">Ignored Variant</a><a href="/products/not-traffic">Ignored Product</a><a href="/collections/coffee/products/coffee-one">Duplicate</a>'
 
     urls = parse_traffic_collection(html, base_url="https://www.trafficcoffee.com")
 
@@ -15,20 +10,7 @@ def test_parse_traffic_collection() -> None:
 
 
 def test_parse_traffic_product() -> None:
-    html = (
-        "<h1>La Piramide</h1>"
-        '<span class="product-price">$24.00</span>'
-        '<div class="product-block-description">'
-        "Origin: Colombia "
-        "Farmer: Luz Marina Trujillo "
-        "Process: Washed "
-        "Varietal: Caturra "
-        "Altitude: 1900 masl "
-        "Roast level: Filter "
-        "Size: 250g "
-        "In the cup: Orange, caramel; florals"
-        "</div>"
-    )
+    html = '<h1>La Piramide</h1><span class="product-price">$24.00</span><div class="product-block-description">Origin: Colombia Farmer: Luz Marina Trujillo Process: Washed Varietal: Caturra Altitude: 1900 masl Roast level: Filter Size: 250g In the cup: Orange, caramel; florals</div>'
 
     coffee = parse_traffic_product(
         html,
@@ -49,16 +31,7 @@ def test_parse_traffic_product() -> None:
 
 
 def test_parse_traffic_product_stops_notes_before_about_copy() -> None:
-    html = (
-        "<h1>Yellow Diamond</h1>"
-        '<span class="product-price">$27.00</span>'
-        '<div class="product-block-description">'
-        "Origin: Kenya "
-        "Process: Natural "
-        "In the cup: apple cider, honey cake, flowers "
-        "ABOUT Habil moved his family and this long story should not be notes."
-        "</div>"
-    )
+    html = '<h1>Yellow Diamond</h1><span class="product-price">$27.00</span><div class="product-block-description">Origin: Kenya Process: Natural In the cup: apple cider, honey cake, flowers ABOUT Habil moved his family and this long story should not be notes.</div>'
 
     coffee = parse_traffic_product(
         html,

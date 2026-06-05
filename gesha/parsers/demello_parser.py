@@ -7,7 +7,11 @@ from typing import List, Optional
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.normalization.normalize import (
+    normalize_country,
+    normalize_process,
+    normalize_tasting_notes,
+)
 from gesha.parsers.common import extract_matching_urls, extract_text, parse_price
 
 PRODUCT_URL_PATTERN = re.compile(r"^/products/[^/?#]+$")
@@ -20,8 +24,20 @@ EXCLUDE_SLUG_KEYWORDS = (
 def parse_demello_collection(html: str, base_url: str) -> List[str]:
     soup = BeautifulSoup(html, "html.parser")
     urls = [
-        *extract_matching_urls(soup, selector="[data-url]", attribute="data-url", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
-        *extract_matching_urls(soup, selector="a[href^='/products/']", attribute="href", base_url=base_url, pattern=PRODUCT_URL_PATTERN),
+        *extract_matching_urls(
+            soup,
+            selector="[data-url]",
+            attribute="data-url",
+            base_url=base_url,
+            pattern=PRODUCT_URL_PATTERN,
+        ),
+        *extract_matching_urls(
+            soup,
+            selector="a[href^='/products/']",
+            attribute="href",
+            base_url=base_url,
+            pattern=PRODUCT_URL_PATTERN,
+        ),
     ]
     urls = [url for url in urls if not any(keyword in url.rsplit("/", 1)[-1].lower() for keyword in EXCLUDE_SLUG_KEYWORDS)]
 

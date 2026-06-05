@@ -17,12 +17,7 @@ def test_parse_hatch_collection_excludes_non_bag_products() -> None:
 
 
 def test_parse_hatch_collection_extracts_embedded_paths() -> None:
-    html = (
-        '{"href":"/shop/andres-martinez-geisha-washed"}'
-        '{"href":"\\/shop\\/rio-brilhante-tropicana-natural"}'
-        '"url":"/shop/blackout"'
-        '{"href":"/shop/hario-v60-filters"}'
-    )
+    html = '{"href":"/shop/andres-martinez-geisha-washed"}{"href":"\\/shop\\/rio-brilhante-tropicana-natural"}"url":"/shop/blackout"{"href":"/shop/hario-v60-filters"}'
 
     urls = parse_hatch_collection(html, base_url="https://hatchcrafted.com")
 
@@ -34,15 +29,7 @@ def test_parse_hatch_collection_extracts_embedded_paths() -> None:
 
 
 def test_parse_hatch_product_uses_only_labeled_tasting_notes() -> None:
-    html = (
-        "<h1>Example Gesha Washed</h1>"
-        "<p>Origin: Origin: Huila, Colombia</p>"
-        "<p>Producer: Example Farm</p>"
-        "<p>Process: Washed</p>"
-        "<p>Reminds us of: jasmine, white tea, nectarine</p>"
-        "<p>This is a long farm story that should not become a tasting note.</p>"
-        "<span>CA$35.00</span>"
-    )
+    html = "<h1>Example Gesha Washed</h1><p>Origin: Origin: Huila, Colombia</p><p>Producer: Example Farm</p><p>Process: Washed</p><p>Reminds us of: jasmine, white tea, nectarine</p><p>This is a long farm story that should not become a tasting note.</p><span>CA$35.00</span>"
 
     coffee = parse_hatch_product(html, "https://hatchcrafted.com/shop/example-gesha")
 
@@ -51,13 +38,7 @@ def test_parse_hatch_product_uses_only_labeled_tasting_notes() -> None:
 
 
 def test_parse_hatch_product_does_not_fallback_to_description_as_notes() -> None:
-    html = (
-        "<h1>Example Coffee</h1>"
-        "<p>Origin: Colombia</p>"
-        "<p>Process: Washed</p>"
-        "<p>This is a descriptive paragraph, not a list of tasting notes.</p>"
-        "<span>CA$22.00</span>"
-    )
+    html = "<h1>Example Coffee</h1><p>Origin: Colombia</p><p>Process: Washed</p><p>This is a descriptive paragraph, not a list of tasting notes.</p><span>CA$22.00</span>"
 
     coffee = parse_hatch_product(html, "https://hatchcrafted.com/shop/example-coffee")
 

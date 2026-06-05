@@ -4,14 +4,16 @@ import re
 from typing import Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
-import requests
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
+from gesha.normalization.normalize import (
+    normalize_country,
+    normalize_process,
+    normalize_tasting_notes,
+)
 from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value
 from gesha.scrapers.base import BaseScraper
-
 
 SHOPIFY_DETAIL_LABELS = [
     "Country",
@@ -82,8 +84,7 @@ class ShopifyScraper(BaseScraper):
         tags = {str(tag).strip().lower() for tag in product_data.get("tags") or []}
 
         # Exclude handles or tags containing subscription keywords
-        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or \
-           any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
+        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
             return False
         product_type = str(product_data.get("type") or "").strip().lower()
 
@@ -100,12 +101,12 @@ class ShopifyScraper(BaseScraper):
 
         # Fallback to title parsing if description labels are missing
         title_details = self._extract_details_from_title(title)
-        origin = details.get("origin") or title_details.get("origin") or title
+        origin = details.get("origin") or normalize_country(title_details.get("origin")) or normalize_country(title)
         process = details.get("process") or title_details.get("process") or title
         return CoffeeData(
             roaster=self.ROASTER_NAME,
             name=title,
-            origin=normalize_country(origin),
+            origin=origin,
             producer=details.get("producer"),
             process=normalize_process(process),
             varietal=details.get("varietal"),

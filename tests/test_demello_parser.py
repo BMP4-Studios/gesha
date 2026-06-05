@@ -2,11 +2,7 @@ from gesha.parsers.demello_parser import parse_demello_collection, parse_demello
 
 
 def test_parse_demello_collection() -> None:
-    html = (
-        '<div data-url="/products/coffee-one"></div>'
-        '<a href="/products/coffee-two">Coffee Two</a>'
-        '<div data-url="/products/coffee-one"></div>'
-    )
+    html = '<div data-url="/products/coffee-one"></div><a href="/products/coffee-two">Coffee Two</a><div data-url="/products/coffee-one"></div>'
 
     urls = parse_demello_collection(html, base_url="https://hellodemello.com")
 
@@ -22,8 +18,8 @@ def test_parse_demello_product() -> None:
         '<span class="price-item price-item--regular">$16.00</span>'
         '<div class="product__description__content"><p>Milk Chocolate · Vanilla · Dark Cherry</p></div>'
         '<div class="metafield-rich_text_field">'
-        '<p>Country : Brazil<br/>Region : Machado, Minas Gerais<br/>Producer : Group of Sitios<br/>Variety : Yellow Catuai<br/>Altitude : 1200 masl<br/>Process : Natural</p>'
-        '</div>'
+        "<p>Country : Brazil<br/>Region : Machado, Minas Gerais<br/>Producer : Group of Sitios<br/>Variety : Yellow Catuai<br/>Altitude : 1200 masl<br/>Process : Natural</p>"
+        "</div>"
     )
 
     coffee = parse_demello_product(html, "https://hellodemello.com/products/dancing-goats")

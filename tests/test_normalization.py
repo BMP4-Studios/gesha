@@ -1,4 +1,8 @@
-from gesha.normalization.normalize import normalize_process, normalize_country, normalize_tasting_notes
+from gesha.normalization.normalize import (
+    normalize_country,
+    normalize_process,
+    normalize_tasting_notes,
+)
 
 
 def test_normalize_process_variants() -> None:

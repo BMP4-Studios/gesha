@@ -8,8 +8,17 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 from gesha.models.coffee import CoffeeData
-from gesha.normalization.normalize import normalize_country, normalize_process, normalize_tasting_notes
-from gesha.parsers.common import clean_tasting_note_candidates, extract_labeled_value, extract_text, parse_price
+from gesha.normalization.normalize import (
+    normalize_country,
+    normalize_process,
+    normalize_tasting_notes,
+)
+from gesha.parsers.common import (
+    clean_tasting_note_candidates,
+    extract_labeled_value,
+    extract_text,
+    parse_price,
+)
 
 PRODUCT_LINK_PATTERN = re.compile(r"^/shop/[^/]+$")
 EXCLUDE_PATHS = (
@@ -137,9 +146,18 @@ def _collect_details(raw_html: str) -> dict[str, Optional[str]]:
         value = re.sub(rf"^{re.escape(label)}\s*[:\-]\s*", "", value, flags=re.IGNORECASE).strip()
         return value if value else None
 
-    details["origin"] = _find(r"Origin:\s*(.*?)(?:Producer:|Varieties?:|Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)", "Origin")
-    details["producer"] = _find(r"Producer:\s*(.*?)(?:Varieties?:|Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)", "Producer")
-    details["varietal"] = _find(r"Varieties?:\s*(.*?)(?:Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)", "Variety")
+    details["origin"] = _find(
+        r"Origin:\s*(.*?)(?:Producer:|Varieties?:|Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)",
+        "Origin",
+    )
+    details["producer"] = _find(
+        r"Producer:\s*(.*?)(?:Varieties?:|Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)",
+        "Producer",
+    )
+    details["varietal"] = _find(
+        r"Varieties?:\s*(.*?)(?:Process:|Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)",
+        "Variety",
+    )
     details["process"] = _find(r"Process:\s*(.*?)(?:Elevation:|Harvest:|Recommended Brew:|Reminds us of:|$)", "Process")
     details["altitude"] = _find(r"Elevation:\s*(.*?)(?:Harvest:|Recommended Brew:|Reminds us of:|$)", "Elevation")
     details["bag_size"] = _find(r"(\d+\s*(?:g|kg|oz|lb|bag))", "")
@@ -149,7 +167,19 @@ def _collect_details(raw_html: str) -> dict[str, Optional[str]]:
 def _extract_description(soup: BeautifulSoup) -> str:
     paragraphs = [tag.get_text(" ", strip=True) for tag in soup.find_all("p")]
     for paragraph in paragraphs:
-        if any(label in paragraph for label in ["Origin:", "Producer:", "Varieties:", "Process:", "Elevation:", "Harvest:", "Recommended Brew:", "Reminds us of:"]):
+        if any(
+            label in paragraph
+            for label in [
+                "Origin:",
+                "Producer:",
+                "Varieties:",
+                "Process:",
+                "Elevation:",
+                "Harvest:",
+                "Recommended Brew:",
+                "Reminds us of:",
+            ]
+        ):
             continue
         if paragraph:
             return paragraph
@@ -193,10 +223,12 @@ def parse_hatch_product(html: str, url: str) -> CoffeeData:
     details = _collect_details(raw_html)
     tasting_notes = _extract_tasting_notes(raw_html)
 
+    origin = details.get("origin") or normalize_country(title)
+
     return CoffeeData(
         roaster="Hatch Coffee",
         name=title,
-        origin=normalize_country(details.get("origin")) or normalize_country(title),
+        origin=origin,
         producer=details.get("producer"),
         process=normalize_process(details.get("process")) or normalize_process(title),
         varietal=details.get("varietal"),

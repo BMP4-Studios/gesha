@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Iterable, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class CoffeeData(BaseModel):
@@ -22,14 +22,18 @@ class CoffeeData(BaseModel):
     availability: bool = True
     roast_date: Optional[date] = None
 
-    @validator("roaster", "name", pre=True, always=True)
+    @field_validator("roaster", "name", mode="before")
+    @classmethod
     def strip_text(cls, value: Optional[str]) -> Optional[str]:
         return value.strip() if isinstance(value, str) else value
 
-    @validator("tasting_notes", pre=True)
+    @field_validator("tasting_notes", mode="before")
+    @classmethod
     def normalize_notes(cls, value: Optional[Iterable[str]]) -> List[str]:
         if value is None:
             return []
+        if isinstance(value, str):
+            return [value.strip().lower()] if value.strip() else []
         return [note.strip().lower() for note in value if isinstance(note, str) and note.strip()]
 
     def get_price_display(self) -> str:

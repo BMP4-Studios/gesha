@@ -2,11 +2,7 @@ from gesha.scrapers.shopify import AngryRoasterScraper, ColorfullScraper, PorteB
 
 
 def test_shopify_collection_extracts_canonical_product_urls() -> None:
-    html = (
-        '<a href="/collections/coffee/products/gold-92">Gold 92</a>'
-        '<a href="/products/las-flores?variant=123">Las Flores</a>'
-        '<a href="/collections/merch">Merch</a>'
-    )
+    html = '<a href="/collections/coffee/products/gold-92">Gold 92</a><a href="/products/las-flores?variant=123">Las Flores</a><a href="/collections/merch">Merch</a>'
 
     urls = PorteBleueScraper().extract_product_urls(html)
 
@@ -23,16 +19,7 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
         "available": True,
         "type": "Coffee",
         "tags": ["coffee", "washed"],
-        "description": (
-            "<p>Specs</p>"
-            "<p>Region: CAUCA, COLOMBIA</p>"
-            "<p>Variety: GESHA</p>"
-            "<p>Method: WASHED</p>"
-            "<p>Altitude: 1900 MASL</p>"
-            "<p>Coffee Producers: RAFAEL VELASQUEZ</p>"
-            "<p>Notes: BERGAMOT, CLEMENTINE, LAVENDER & BLUEBERRIES</p>"
-            "<p>Amount: 250g</p>"
-        ),
+        "description": ("<p>Specs</p><p>Region: CAUCA, COLOMBIA</p><p>Variety: GESHA</p><p>Method: WASHED</p><p>Altitude: 1900 MASL</p><p>Coffee Producers: RAFAEL VELASQUEZ</p><p>Notes: BERGAMOT, CLEMENTINE, LAVENDER & BLUEBERRIES</p><p>Amount: 250g</p>"),
     }
 
     coffee = AngryRoasterScraper()._coffee_from_product(
