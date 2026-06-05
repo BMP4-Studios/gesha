@@ -1,11 +1,13 @@
 """Tests for cleanup rules shared across all roaster parser output."""
 
-from gesha.normalization import normalize_search_text, normalize_tasting_notes, price_display, NA_LABEL
+from gesha.normalization import NA_LABEL, normalize_search_text, normalize_tasting_notes, price_display
+
 
 def test_price_display_handles_zero_cents() -> None:
     """Zero-valued prices are rendered as prices, not missing data."""
     assert price_display(0) == "$0.00"
     assert price_display(None) == NA_LABEL
+
 
 def test_normalize_tasting_notes_from_string() -> None:
     """Delimited cup-note text becomes a stable list of note values."""

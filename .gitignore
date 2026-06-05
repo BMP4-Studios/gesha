@@ -15,5 +15,6 @@ build/
 *.log
 .DS_Store
 coverage.xml
+.coverage
 htmlcov/
 debug/

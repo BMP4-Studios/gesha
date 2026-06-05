@@ -72,7 +72,9 @@ class Coffee(Base):
     availability: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     roast_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
     # Relationships let service queries navigate from coffees to owners and notes.
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")

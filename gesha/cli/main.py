@@ -10,21 +10,19 @@ import concurrent.futures
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
-from pathlib import Path
 from typing import Any, cast
 
 import requests
 import typer
-from rich.table import Table
-from rich.console import Console
-
-from gesha.db.session import get_session, init_db
-from gesha.db.models import Coffee
 from gesha.coffee_data import CoffeeData
+from gesha.coffee_service import CoffeeService
+from gesha.db.models import Coffee
+from gesha.db.session import get_session, init_db
+from gesha.normalization import NA_LABEL, price_display
 from gesha.scrapers import get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
-from gesha.coffee_service import CoffeeService
-from gesha.normalization import NA_LABEL, price_display
+from rich.console import Console
+from rich.table import Table
 
 app = typer.Typer(
     help=(
@@ -38,8 +36,8 @@ app = typer.Typer(
 console = Console()
 
 TyperParamFactory = Callable[..., Any]
-typer_argument = cast(TyperParamFactory, getattr(typer, "Argument"))
-typer_option = cast(TyperParamFactory, getattr(typer, "Option"))
+typer_argument = cast(TyperParamFactory, typer.Argument)
+typer_option = cast(TyperParamFactory, typer.Option)
 
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
@@ -132,11 +130,7 @@ def _refresh_catalog(source: str) -> None:
         # cached rows for a failed source remain protected but are not implied
         # to have been refreshed during this invocation.
         if source == "all":
-            coffees = [
-                coffee
-                for coffee in service.list_coffees()
-                if coffee.roaster.name in refreshed_roaster_names
-            ]
+            coffees = [coffee for coffee in service.list_coffees() if coffee.roaster.name in refreshed_roaster_names]
         elif refreshed_roaster_names:
             # If we scraped a single specific source, filter to its roaster name
             coffees = service.list_coffees(roaster_name=refreshed_roaster_names[0])
@@ -164,7 +158,7 @@ def scrape(
     source: str = typer_argument(
         "all",
         help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog.",
-    )
+    ),
 ) -> None:
     """Refresh the local database by scraping roaster websites.
 
@@ -265,7 +259,7 @@ def debug(coffee_id: int) -> None:
             raise typer.Exit(code=1)
 
         filename = f"debug/debug_{coffee_id}.txt"
-        output : list[str] = []
+        output: list[str] = []
 
         # Capture a Shopify-style JSON response when supported; a missing JSON
         # endpoint is tolerated because non-Shopify records are also debuggable.

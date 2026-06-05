@@ -1,7 +1,6 @@
 """Tests for shared labeled product-fact extraction."""
 
 from bs4 import BeautifulSoup
-
 from gesha.parsers.common import extract_labeled_product_facts_from_html
 
 

@@ -11,9 +11,8 @@ from collections.abc import Iterable
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from gesha.db.models import Coffee, Roaster, TastingNote
 from gesha.coffee_data import CoffeeData
-
+from gesha.db.models import Coffee, Roaster, TastingNote
 
 SCRAPED_COFFEE_FIELDS: tuple[str, ...] = (
     "name",
@@ -55,9 +54,7 @@ class CoffeeService:
 
         if coffee is None:
             coffee = self.session.scalar(
-                select(Coffee)
-                .where(Coffee.name == data.name)
-                .where(Coffee.roaster_id == roaster.id)
+                select(Coffee).where(Coffee.name == data.name).where(Coffee.roaster_id == roaster.id)
             )
 
         if coffee is None:
@@ -96,11 +93,7 @@ class CoffeeService:
         if available is not None:
             query = query.where(Coffee.availability == available)
         if flavour:
-            query = (
-                query.join(Coffee.tasting_notes)
-                .where(TastingNote.name.ilike(f"%{flavour}%"))
-                .distinct()
-            )
+            query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavour}%")).distinct()
 
         return list(self.session.scalars(query).all())
 

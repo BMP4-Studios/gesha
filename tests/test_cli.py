@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import pytest
-
 import gesha.cli.main as cli_main
+import pytest
 
 
 def test_test_command_runs_pytest_with_active_python(monkeypatch: pytest.MonkeyPatch) -> None:

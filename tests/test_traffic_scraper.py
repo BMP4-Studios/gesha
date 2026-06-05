@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import requests
-
 from gesha.scrapers import TrafficScraper
 
 
