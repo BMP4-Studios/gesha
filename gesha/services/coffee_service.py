@@ -24,7 +24,9 @@ class CoffeeService:
         if data.url:
             coffee = self.session.scalar(select(Coffee).where(Coffee.url == data.url))
         if coffee is None:
-            coffee = self.session.scalar(select(Coffee).where(Coffee.name == data.name).where(Coffee.roaster_id == roaster.id))
+            coffee = self.session.scalar(
+                select(Coffee).where(Coffee.name == data.name).where(Coffee.roaster_id == roaster.id)
+            )
 
         if coffee is None:
             coffee = Coffee(roaster_id=roaster.id, name=data.name)
@@ -87,7 +89,11 @@ class CoffeeService:
         if roaster is None:
             return 0
 
-        stale_coffees = self.session.scalars(select(Coffee).where(Coffee.roaster_id == roaster.id).where(or_(Coffee.url.is_(None), Coffee.url.not_in(urls)))).all()
+        stale_coffees = self.session.scalars(
+            select(Coffee)
+            .where(Coffee.roaster_id == roaster.id)
+            .where(or_(Coffee.url.is_(None), Coffee.url.not_in(urls)))
+        ).all()
 
         for coffee in stale_coffees:
             self.session.delete(coffee)

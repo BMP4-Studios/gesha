@@ -63,7 +63,9 @@ class Coffee(Base):
     availability: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     roast_date: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")
     tasting_notes: Mapped[List[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")

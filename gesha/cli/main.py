@@ -77,7 +77,9 @@ def _refresh_catalog(source: str) -> None:
                 else:
                     removed_count = 0
                     console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
-                console.print(f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]")
+                console.print(
+                    f"[green]Finished {source_name}: {len(scraped_coffees)} imported, {removed_count} stale removed.[/green]"
+                )
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
         if source == "all":

@@ -84,7 +84,9 @@ class ShopifyScraper(BaseScraper):
         tags = {str(tag).strip().lower() for tag in product_data.get("tags") or []}
 
         # Exclude handles or tags containing subscription keywords
-        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or any(kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS):
+        if any(kw in handle for kw in self.EXCLUDE_HANDLE_KEYWORDS) or any(
+            kw in tags for kw in self.EXCLUDE_HANDLE_KEYWORDS
+        ):
             return False
         product_type = str(product_data.get("type") or "").strip().lower()
 
@@ -126,7 +128,9 @@ class ShopifyScraper(BaseScraper):
     def _extract_details(self, description: str) -> dict[str, Optional[str]]:
         return {
             "origin": extract_labeled_value(description, ["Origin", "Country", "Region"], SHOPIFY_DETAIL_LABELS),
-            "producer": extract_labeled_value(description, ["Coffee Producers", "Producer", "Producers"], SHOPIFY_DETAIL_LABELS),
+            "producer": extract_labeled_value(
+                description, ["Coffee Producers", "Producer", "Producers"], SHOPIFY_DETAIL_LABELS
+            ),
             "process": extract_labeled_value(description, ["Process", "Method"], SHOPIFY_DETAIL_LABELS),
             "varietal": extract_labeled_value(description, ["Variety", "Varieties", "Cultivar"], SHOPIFY_DETAIL_LABELS),
             "altitude": extract_labeled_value(description, ["Altitude", "Elevation"], SHOPIFY_DETAIL_LABELS),

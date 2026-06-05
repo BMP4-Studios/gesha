@@ -39,7 +39,9 @@ def parse_demello_collection(html: str, base_url: str) -> List[str]:
             pattern=PRODUCT_URL_PATTERN,
         ),
     ]
-    urls = [url for url in urls if not any(keyword in url.rsplit("/", 1)[-1].lower() for keyword in EXCLUDE_SLUG_KEYWORDS)]
+    urls = [
+        url for url in urls if not any(keyword in url.rsplit("/", 1)[-1].lower() for keyword in EXCLUDE_SLUG_KEYWORDS)
+    ]
 
     return sorted(dict.fromkeys(urls))
 
