@@ -1,53 +1,72 @@
+"""Tests for BaseScraper failure isolation through the Traffic adapter."""
+
 from __future__ import annotations
 
 import requests
 
-from gesha.models.coffee import CoffeeData
-from gesha.scrapers.traffic import TrafficScraper
+from gesha.scrapers import TrafficScraper
 
 
 class FakeResponse:
-    def __init__(self, text: str, status_code: int = 200) -> None:
+    """Minimal response object used to isolate scraper transport behavior."""
+
+    def __init__(self, text: str, status_code: int = 200, json_data: dict | None = None) -> None:
+        """Create a deterministic response body and HTTP status."""
         self.text = text
         self.status_code = status_code
+        self._json_data = json_data
 
     def raise_for_status(self) -> None:
+        """Mirror the HTTP failure behavior the scraper expects from requests."""
         if self.status_code >= 400:
             raise requests.HTTPError(f"{self.status_code} Error")
 
+    def json(self) -> dict:
+        """Return fixture JSON for Shopify product endpoints."""
+        if self._json_data is None:
+            raise ValueError("No JSON fixture configured")
+        return self._json_data
+
 
 def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
+    """One failed Traffic product does not discard other parsed products."""
     collection_html = (
         '<a href="/collections/coffee/products/test-coffee">Test Coffee</a>'
         '<a href="/collections/coffee/products/bad-page">Bad Page</a>'
     )
-    good_coffee = CoffeeData(
-        roaster="Traffic Coffee",
-        name="Test Coffee",
-        origin="Colombia",
-        tasting_notes=["berry"],
-        url="https://www.trafficcoffee.com/collections/coffee/products/test-coffee",
-    )
-
     calls = []
 
-    def fake_get(url: str, timeout: int) -> FakeResponse:
+    def fake_get(url: str, *args, **kwargs) -> FakeResponse:
+        """Return fixture responses for each requested Traffic URL."""
         calls.append(url)
         if url == "https://www.trafficcoffee.com/collections/coffee":
             return FakeResponse(collection_html)
-        if url == "https://www.trafficcoffee.com/collections/coffee/products/test-coffee":
+        if url == "https://www.trafficcoffee.com/products/test-coffee":
             return FakeResponse("<html></html>")
+        if url == "https://www.trafficcoffee.com/products/test-coffee.js":
+            return FakeResponse(
+                "",
+                json_data={
+                    "title": "Test Coffee",
+                    "handle": "test-coffee",
+                    "price": 2400,
+                    "available": True,
+                    "type": "coffee",
+                    "tags": [],
+                    "description": "<p>Origin: Colombia</p><p>In the cup: berry</p>",
+                    "variants": [],
+                },
+            )
         return FakeResponse("", status_code=404)
 
-    def fake_parse(html: str, url: str) -> CoffeeData:
-        assert url == "https://www.trafficcoffee.com/collections/coffee/products/test-coffee"
-        return good_coffee
-
     scraper = TrafficScraper()
-    monkeypatch.setattr(scraper.session, "get", lambda url, timeout: fake_get(url, timeout))
-    monkeypatch.setattr("gesha.scrapers.traffic.parse_traffic_product", fake_parse)
+    monkeypatch.setattr(scraper.session, "get", fake_get)
 
     coffees = scraper.scrape()
 
-    assert coffees == [good_coffee]
-    assert "https://www.trafficcoffee.com/collections/coffee/products/bad-page" in calls
+    assert len(coffees) == 1
+    assert coffees[0].roaster == "Traffic Coffee"
+    assert coffees[0].name == "test coffee"
+    assert coffees[0].origin == "colombia"
+    assert coffees[0].tasting_notes == ["berry"]
+    assert "https://www.trafficcoffee.com/products/bad-page.js" in calls

@@ -4,53 +4,48 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
-from gesha.scrapers.base import BaseScraper
-from gesha.scrapers.demello import DeMelloScraper
-from gesha.scrapers.hatch import HatchScraper
-from gesha.scrapers.shopify import (
+from gesha.scrapers.base_scraper import BaseScraper
+from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ColorfullScraper,
-    HouseOfFunkScraper,
     PorteBleueScraper,
-    RogueWaveScraper,
+    DeMelloScraper,
+    TrafficScraper,
 )
-from gesha.scrapers.traffic import TrafficScraper
 
 ScraperClass: TypeAlias = type[BaseScraper]
 
+# Source keys are the public CLI contract for ``gesha scrape <source>``.
 SCRAPER_REGISTRY: dict[str, ScraperClass] = {
-    "hatch": HatchScraper,
     "demello": DeMelloScraper,
     "traffic": TrafficScraper,
     "portebleue": PorteBleueScraper,
     "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
-    "roguewave": RogueWaveScraper,
-    "houseoffunk": HouseOfFunkScraper,
 }
+
+# ``all`` intentionally follows this tuple so default output order is stable.
 DEFAULT_SOURCES = (
     "demello",
     "traffic",
     "portebleue",
     "colorfull",
     "angry",
-    "roguewave",
-    "houseoffunk",
 )
 
 
 def get_scraper(source: str) -> BaseScraper:
-    """Return a scraper instance for a supported source."""
+    """Instantiate one named scraper for ``gesha scrape <source>``."""
     return SCRAPER_REGISTRY[source]()
 
 
 def get_scrapers(source: str = "all") -> list[BaseScraper]:
-    """Return scraper instances for one source or every supported source."""
+    """Instantiate explicit or default scrapers for the CLI refresh workflow."""
     if source == "all":
         return [SCRAPER_REGISTRY[name]() for name in DEFAULT_SOURCES]
     return [get_scraper(source)]
 
 
 def supported_sources() -> list[str]:
-    """Return supported source names, including the aggregate source."""
+    """Return accepted CLI source keys, including the aggregate ``all`` key."""
     return ["all", *SCRAPER_REGISTRY.keys()]

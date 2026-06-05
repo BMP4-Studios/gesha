@@ -1,24 +1,30 @@
-from gesha.normalization.normalize import normalize_process, normalize_country, normalize_tasting_notes, remove_emojis
+"""Tests for cleanup rules shared across all roaster parser output."""
 
+from gesha.normalization import normalize_search_text, normalize_tasting_notes, price_display, NA_LABEL
 
-def test_normalize_process_variants() -> None:
-    assert normalize_process("Fully Washed") == "washed"
-    assert normalize_process("wet process") == "washed"
-    assert normalize_process("honey") == "honey"
-
-
-def test_normalize_country_aliases() -> None:
-    assert normalize_country("canada") == "Canada"
-    assert normalize_country("Ethiopia") == "Ethiopia"
-
+def test_price_display_handles_zero_cents() -> None:
+    """Zero-valued prices are rendered as prices, not missing data."""
+    assert price_display(0) == "$0.00"
+    assert price_display(None) == NA_LABEL
 
 def test_normalize_tasting_notes_from_string() -> None:
+    """Delimited cup-note text becomes a stable list of note values."""
     assert normalize_tasting_notes("berry; chocolate; floral") == ["berry", "chocolate", "floral"]
     assert normalize_tasting_notes("Maple, spice") == ["maple", "spice"]
-
-
-def test_remove_emojis() -> None:
-    assert remove_emojis("LOVEBUZZ 😵‍💫 💙") == "LOVEBUZZ"
-    assert remove_emojis("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". Bouquet. blossomed edition"
     assert normalize_tasting_notes("Apricot • Honey • Orange") == ["apricot", "honey", "orange"]
-    assert normalize_tasting_notes("Honey. Caramel. Chocolate.") == ["caramel", "chocolate", "honey"]
+    assert normalize_tasting_notes("Honey. Caramel. Chocolate.") == ["honey", "caramel", "chocolate"]
+
+
+def test_normalize_search_text() -> None:
+    """Searchable catalog labels are cleaned and lowercased."""
+    assert normalize_search_text("LOVEBUZZ 😵‍💫 💙") == "lovebuzz"
+    assert normalize_search_text("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". bouquet. blossomed edition"
+
+    assert normalize_search_text("Ethiopia") == "ethiopia"
+    assert normalize_search_text("Colombia | Washed") == "colombia | washed"
+
+    assert normalize_search_text("honey") == "honey"
+    assert normalize_search_text("canada") == "canada"
+    assert normalize_search_text("Ethiopia") == "ethiopia"
+    assert normalize_search_text("CAUCA, COLOMBIA") == "cauca, colombia"
+    assert normalize_search_text(None) is None
