@@ -7,14 +7,13 @@ name = "gesha"
 version = "0.1.0"
 description = "Local-first specialty coffee discovery and cart optimization CLI."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 authors = [{name = "bmp4 Studios"}]
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "requests>=2.31.0",
@@ -54,7 +53,7 @@ addopts = [
 [tool.ruff]
 line-length = 120
 src = ["gesha", "tests"]
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
