@@ -10,6 +10,7 @@ import concurrent.futures
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any, cast
 
 import requests
@@ -258,7 +259,8 @@ def debug(coffee_id: int) -> None:
             console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
             raise typer.Exit(code=1)
 
-        filename = f"debug/debug_{coffee_id}.txt"
+        output_path = Path("debug") / f"debug_{coffee_id}.txt"
+        output_path.parent.mkdir(exist_ok=True)
         output: list[str] = []
 
         # Capture a Shopify-style JSON response when supported; a missing JSON
@@ -277,9 +279,9 @@ def debug(coffee_id: int) -> None:
         output.append("=== RAW HTML DATA ===\n")
         output.append(res_html.text)
 
-        filename.write_text("".join(output), encoding="utf-8")
+        output_path.write_text("".join(output), encoding="utf-8")
 
-        console.print(f"[green]Full raw data dumped to {filename}[/green]")
+        console.print(f"[green]Full raw data dumped to {output_path}[/green]")
 
 
 @app.command(name="test")

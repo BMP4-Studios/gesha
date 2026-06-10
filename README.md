@@ -66,6 +66,8 @@ Run the same checks used by CI:
 ```bash
 python -m ruff format --check .
 python -m ruff check .
+python -m pyright
+python -m pip_audit --cache-dir .pip-audit-cache --skip-editable
 python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml
 python -m build
 ```
@@ -74,9 +76,11 @@ Tooling equivalents:
 
 - `clang-format` -> Ruff formatter
 - `clang-tidy` -> Ruff lint rules
+- Type checking -> Pyright
 - `gcovr` -> pytest-cov / coverage.py
+- Dependency vulnerability scanning -> pip-audit
 - C/C++ sanitizers -> mostly not applicable for Python application code; keep tests, warnings, and dependency updates healthy instead
 
-GitHub Actions runs formatting, linting, tests with coverage, and package builds on Python 3.12 and 3.13 across Linux, macOS, and Windows.
+GitHub Actions runs formatting, linting, type checking, dependency auditing, tests with coverage, and package builds on Python 3.12 and 3.13 across Linux, macOS, and Windows.
 
 This project is licensed under the MIT License.

@@ -36,6 +36,12 @@ jobs:
       - name: Lint
         run: python -m ruff check .
 
+      - name: Type check
+        run: python -m pyright
+
+      - name: Audit dependencies
+        run: python -m pip_audit --cache-dir .pip-audit-cache --skip-editable
+
       - name: Test with coverage
         run: python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml
 
