@@ -1,9 +1,14 @@
 """Tests for the CLI-facing mapping from source names to scraper classes."""
 
 import pytest
-
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
-from gesha.scrapers.shopify_scraper import AngryRoasterScraper, ColorfullScraper, PorteBleueScraper, DeMelloScraper, TrafficScraper
+from gesha.scrapers.shopify_scraper import (
+    AngryRoasterScraper,
+    ColorfullScraper,
+    DeMelloScraper,
+    PorteBleueScraper,
+    TrafficScraper,
+)
 
 
 def test_get_scraper_returns_registered_source() -> None:

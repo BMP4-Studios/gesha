@@ -130,7 +130,7 @@ def extract_labeled_product_facts_from_text(
             continue
 
         next_start = selected[index + 1][0] if index + 1 < len(selected) else len(normalized_text)
-        value = _clean_fact_text(normalized_text[marker[1]:next_start])
+        value = _clean_fact_text(normalized_text[marker[1] : next_start])
         if value is None:
             continue
 

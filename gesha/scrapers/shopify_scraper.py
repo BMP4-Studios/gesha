@@ -178,19 +178,19 @@ class ShopifyScraper(BaseScraper):
 
         # Normalize at the boundary so database and display layers stay simple.
         return CoffeeData(
-            roaster = self.ROASTER_NAME,
-            name = title,
-            origin = normalize_search_text(origin),
-            producer = producer,
-            process = normalize_search_text(process),
-            varietal = varietal,
-            altitude = altitude,
-            tasting_notes = tasting_notes,
-            roast_style = roast_style,
-            price_cents = self._extract_price(product_data),
-            bag_size = bag_size,
-            url = url,
-            availability = bool(product_data.get("available", True)),
+            roaster=self.ROASTER_NAME,
+            name=title,
+            origin=normalize_search_text(origin),
+            producer=producer,
+            process=normalize_search_text(process),
+            varietal=varietal,
+            altitude=altitude,
+            tasting_notes=tasting_notes,
+            roast_style=roast_style,
+            price_cents=self._extract_price(product_data),
+            bag_size=bag_size,
+            url=url,
+            availability=bool(product_data.get("available", True)),
         )
 
     def _description_text(self, product_data: dict[str, Any]) -> str:

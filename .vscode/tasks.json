@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run tooling",
+      "type": "shell",
+      "command": "${workspaceFolder}/.venv/bin/python -m ruff format --check . && ${workspaceFolder}/.venv/bin/python -m ruff check . && ${workspaceFolder}/.venv/bin/python -m pyright && ${workspaceFolder}/.venv/bin/python -m pip_audit --cache-dir .pip-audit-cache --skip-editable && ${workspaceFolder}/.venv/bin/python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml && ${workspaceFolder}/.venv/bin/python -m build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

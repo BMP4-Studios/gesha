@@ -7,12 +7,13 @@ base class handles HTTP sessions, failure isolation, and collection iteration.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import Any
 
-from gesha.coffee_data import CoffeeData
 from curl_cffi.requests import Session
+
+from gesha.coffee_data import CoffeeData
 
 
 class BaseScraper(ABC):

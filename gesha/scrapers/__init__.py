@@ -8,8 +8,8 @@ from gesha.scrapers.base_scraper import BaseScraper
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ColorfullScraper,
-    PorteBleueScraper,
     DeMelloScraper,
+    PorteBleueScraper,
     TrafficScraper,
 )
 

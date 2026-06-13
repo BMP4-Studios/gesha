@@ -1,18 +1,24 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "gesha"
 version = "0.1.0"
-description = "Local-first specialty coffee discovery and cart optimization CLI."
+description = "Local-first CLI for collecting and browsing specialty coffee listings."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 authors = [{name = "bmp4 Studios"}]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = [
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.0",
-    "typer[all]>=0.10.0",
+    "typer>=0.10.0",
     "rich>=13.0.0",
     "sqlalchemy>=2.0.0",
     "pydantic>=2.8.0",
@@ -20,8 +26,35 @@ dependencies = [
     "curl-cffi>=0.7.0",
 ]
 
-[tool.setuptools.packages.find]
-include = ["gesha*"]
+[project.optional-dependencies]
+dev = [
+    "build>=1.2.0",
+    "pip-audit>=2.7.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "pyright>=1.1.390",
+    "ruff>=0.6.0",
+    "types-requests>=2.31.0",
+]
 
 [project.scripts]
 gesha = "gesha.cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["gesha*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--strict-config",
+    "--strict-markers",
+]
+
+[tool.ruff]
+line-length = 120
+src = ["gesha", "tests"]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]

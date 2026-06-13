@@ -15,5 +15,7 @@ build/
 *.log
 .DS_Store
 coverage.xml
+.coverage
+.pip-audit-cache/
 htmlcov/
 debug/

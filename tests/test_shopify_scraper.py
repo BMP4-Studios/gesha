@@ -1,8 +1,13 @@
 """Tests for behavior shared by JSON-backed Shopify scraper adapters."""
 
 from bs4 import BeautifulSoup
-
-from gesha.scrapers.shopify_scraper import AngryRoasterScraper, ColorfullScraper, DeMelloScraper, PorteBleueScraper, TrafficScraper
+from gesha.scrapers.shopify_scraper import (
+    AngryRoasterScraper,
+    ColorfullScraper,
+    DeMelloScraper,
+    PorteBleueScraper,
+    TrafficScraper,
+)
 
 
 def test_shopify_collection_extracts_canonical_product_urls() -> None:
@@ -209,8 +214,8 @@ def test_demello_product_uses_shopify_description_and_metafield_details() -> Non
     }
     html = (
         '<div class="metafield-rich_text_field">'
-        '<p>Country : Brazil<br/>Region : Machado, Minas Gerais<br/>Producer : Group of Sitios<br/>'
-        'Variety : Yellow Catuai<br/>Altitude : 1200 masl<br/>Process : Natural</p>'
+        "<p>Country : Brazil<br/>Region : Machado, Minas Gerais<br/>Producer : Group of Sitios<br/>"
+        "Variety : Yellow Catuai<br/>Altitude : 1200 masl<br/>Process : Natural</p>"
         "</div>"
     )
 

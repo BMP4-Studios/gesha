@@ -1,11 +1,10 @@
 """Tests for catalog persistence rules that protect and replace cached rows."""
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from gesha.db.models import Base
 from gesha.coffee_data import CoffeeData
 from gesha.coffee_service import CoffeeService
+from gesha.db.models import Base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
