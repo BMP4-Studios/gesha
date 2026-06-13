@@ -80,6 +80,45 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
     assert coffee.tasting_notes == ["bergamot", "clementine", "lavender", "blueberries"]
 
 
+def test_shopify_product_defaults_to_smallest_available_variant() -> None:
+    """Product-level display fields follow the lightest purchasable bag."""
+    product = {
+        "title": "Smallest Bag",
+        "price": 2600,
+        "available": True,
+        "tags": ["coffee"],
+        "description": "",
+        "variants": [
+            {
+                "id": 222,
+                "title": "2lb",
+                "price": 6000,
+                "weight": 2,
+                "weight_unit": "lb",
+                "available": True,
+            },
+            {
+                "id": 111,
+                "title": "300g",
+                "price": 2600,
+                "weight": 300,
+                "weight_unit": "g",
+                "available": True,
+            },
+        ],
+    }
+
+    coffee = AngryRoasterScraper()._coffee_from_product(
+        product,
+        "https://theangryroaster.com/products/smallest-bag",
+    )
+
+    assert coffee.price_cents == 2600
+    assert coffee.bag_size == "300g"
+    assert [variant.shopify_variant_id for variant in coffee.variants] == ["222", "111"]
+    assert [variant.weight_grams for variant in coffee.variants] == [907, 300]
+
+
 def test_colorfull_allows_products_without_type_or_tags() -> None:
     """Colorfull's source configuration accepts products without coffee tags."""
     product = {"handle": "apple-crumble", "type": "", "tags": []}

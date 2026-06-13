@@ -15,13 +15,23 @@ from typing import Any, cast
 
 import requests
 import typer
+from gesha.cart import (
+    CartCandidate,
+    build_cart_permalink,
+    cart_item_for_coffee,
+    read_preference_config,
+    recommend_carts,
+    smallest_available_variant,
+)
 from gesha.coffee_data import CoffeeData
 from gesha.coffee_service import CoffeeService
 from gesha.db.models import Coffee
 from gesha.db.session import get_session, init_db
+from gesha.measurements import parse_weight_grams, price_per_100g_cents
 from gesha.normalization import NA_LABEL, price_display
-from gesha.scrapers import get_scrapers, supported_sources
+from gesha.scrapers import get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
+from gesha.shipping import SHIPPING_POLICIES, Destination, resolve_destination, resolve_shipping_threshold
 from rich.console import Console
 from rich.table import Table
 
@@ -30,15 +40,30 @@ app = typer.Typer(
         "Gesha: A local-first specialty coffee discovery tool.\n\n"
         "This CLI scrapes supported Canadian roasters, normalizes their metadata "
         "(origin, process, tasting notes, etc.), and stores the results in a local "
-        "SQLite database for fast querying and inspection."
+        "SQLite database for querying, comparison, and cart recommendations."
     ),
     rich_markup_mode="rich",
 )
 console = Console()
+DEFAULT_PREFERENCES_PATH = Path("cart_preferences.txt")
 
 TyperParamFactory = Callable[..., Any]
 typer_argument = cast(TyperParamFactory, typer.Argument)
 typer_option = cast(TyperParamFactory, typer.Option)
+preferences_file_option = typer_option(
+    DEFAULT_PREFERENCES_PATH,
+    "--preferences",
+    "-p",
+    help="Text file containing one preference keyword per line.",
+)
+
+
+def _coffee_price_per_100g_cents(coffee: Coffee) -> int | None:
+    """Calculate unit price from the smallest variant or legacy bag fields."""
+    variant = smallest_available_variant(coffee)
+    if variant is not None:
+        return price_per_100g_cents(variant.price_cents, variant.weight_grams)
+    return price_per_100g_cents(coffee.price_cents, parse_weight_grams(coffee.bag_size))
 
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
@@ -52,6 +77,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table.add_column("Process")
     table.add_column("Origin")
     table.add_column("Price")
+    table.add_column("$/100g")
     table.add_column("Notes")
 
     # Keep scrape output and cache/list output visually identical by rendering
@@ -67,6 +93,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
             coffee.process or NA_LABEL,
             coffee.origin or NA_LABEL,
             price_display(coffee.price_cents),
+            price_display(_coffee_price_per_100g_cents(coffee)),
             notes or NA_LABEL,
         )
 
@@ -237,10 +264,187 @@ def show(coffee_id: int) -> None:
         table.add_row("Roast style", coffee.roast_style or NA_LABEL)
         table.add_row("Bag size", coffee.bag_size or NA_LABEL)
         table.add_row("Price", price_display(coffee.price_cents))
+        table.add_row("Price / 100g", price_display(_coffee_price_per_100g_cents(coffee)))
         table.add_row("Availability", "yes" if coffee.availability else "no")
         table.add_row("URL", coffee.url or NA_LABEL)
         table.add_row("Tasting notes", ", ".join(note.name for note in coffee.tasting_notes) or NA_LABEL)
         console.print(table)
+
+
+def _print_cart_candidate(
+    candidate: CartCandidate,
+    destination: Destination,
+    *,
+    rank: int,
+) -> None:
+    """Render one ranked recommendation and its Shopify cart permalink."""
+    table = Table(
+        title=f"Cart {rank}: {price_display(candidate.subtotal_cents)} "
+        f"({price_display(candidate.overspend_cents)} over threshold)",
+        show_header=True,
+        header_style="bold magenta",
+    )
+    table.add_column("Coffee")
+    table.add_column("Size")
+    table.add_column("Price", justify="right")
+    table.add_column("$/100g", justify="right")
+    table.add_column("Matches")
+
+    for item in candidate.items:
+        name_display = f"[link={item.product_url}]{item.name}[/link]"
+        table.add_row(
+            name_display,
+            item.bag_size,
+            price_display(item.price_cents),
+            price_display(item.price_per_100g_cents),
+            ", ".join(item.matched_keywords),
+        )
+
+    console.print(table)
+    console.print(f"Preference keywords covered: {', '.join(candidate.matched_keywords)}")
+    cart_url = build_cart_permalink(candidate, destination)
+    if cart_url:
+        console.print(f"[bold]Open cart:[/bold] [link={cart_url}]{cart_url}[/link]")
+    else:
+        console.print(
+            "[yellow]No pre-filled cart link is available. Refresh this roaster to store current Shopify variant IDs.[/yellow]"
+        )
+
+
+@app.command()
+def cart(
+    source: str = typer_argument(
+        "all",
+        help="The roaster to optimize (e.g., 'traffic') or 'all' for every supported roaster.",
+    ),
+    preferences: Path = preferences_file_option,
+    province: str | None = typer_option(
+        None,
+        "--province",
+        help="Canadian province or territory abbreviation; defaults to ON.",
+    ),
+    postal_code: str | None = typer_option(
+        None,
+        "--postal-code",
+        help="Canadian postal code used to infer the province and prefill checkout.",
+    ),
+    threshold: float | None = typer_option(
+        None,
+        "--threshold",
+        min=0.01,
+        help="Override the published free-shipping threshold in CAD.",
+    ),
+    max_bags: int = typer_option(
+        6,
+        "--max-bags",
+        min=1,
+        help="Maximum number of distinct smallest-size bags in a recommendation.",
+    ),
+    limit: int = typer_option(3, "--limit", min=1, help="Maximum recommendations shown per roaster."),
+    refresh_shipping: bool = typer_option(
+        True,
+        "--refresh-shipping/--no-refresh-shipping",
+        help="Check roaster shipping pages before using configured fallback thresholds.",
+    ),
+) -> None:
+    """Recommend preference-matched carts that reach free shipping."""
+    if source not in supported_sources():
+        console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        if preferences != DEFAULT_PREFERENCES_PATH and not preferences.exists():
+            raise ValueError(f"Preference file not found: {preferences}")
+        preference_config = read_preference_config(preferences)
+        selected_postal_code = postal_code or preference_config.postal_code
+        selected_province = province if province is not None else (None if postal_code else preference_config.province)
+        destination = resolve_destination(
+            province=selected_province,
+            postal_code=selected_postal_code,
+        )
+    except ValueError as exc:
+        console.print(f"[red]Error: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    if not preference_config.keywords:
+        console.print("[red]Error: Add at least one preference keyword.[/red]")
+        raise typer.Exit(code=1)
+
+    selected_roasters = list(SHIPPING_POLICIES) if source == "all" else [get_scraper(source).ROASTER_NAME]
+    override_cents = round(threshold * 100) if threshold is not None else None
+
+    init_db()
+    with get_session() as session:
+        service = CoffeeService(session)
+        coffees = service.list_coffees(available=True)
+        shipping_thresholds = {}
+
+        if override_cents is None:
+            roasters_with_coffee = {
+                roaster_name
+                for roaster_name in selected_roasters
+                if any(coffee.roaster.name == roaster_name for coffee in coffees)
+            }
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(roasters_with_coffee) or 1) as executor:
+                threshold_futures = {
+                    roaster_name: executor.submit(
+                        resolve_shipping_threshold,
+                        roaster_name,
+                        destination,
+                        refresh=refresh_shipping,
+                    )
+                    for roaster_name in roasters_with_coffee
+                }
+                shipping_thresholds = {
+                    roaster_name: future.result() for roaster_name, future in threshold_futures.items()
+                }
+
+        console.print(
+            f"[bold]Destination:[/bold] {destination.province}, Canada"
+            + (f" {destination.postal_code}" if destination.postal_code else "")
+        )
+        console.print(f"[bold]Preference keywords:[/bold] {', '.join(preference_config.keywords)}")
+
+        for roaster_name in selected_roasters:
+            roaster_coffees = [coffee for coffee in coffees if coffee.roaster.name == roaster_name]
+            if not roaster_coffees:
+                console.print(f"\n[yellow]{roaster_name}: no cached available coffees.[/yellow]")
+                continue
+
+            if override_cents is not None:
+                threshold_cents = override_cents
+                threshold_source = "command-line override"
+                policy_url = None
+            else:
+                shipping_threshold = shipping_thresholds.get(roaster_name)
+                if shipping_threshold is None:
+                    console.print(f"\n[yellow]{roaster_name}: no Canadian shipping policy is configured.[/yellow]")
+                    continue
+                threshold_cents = shipping_threshold.amount_cents
+                threshold_source = "live policy page" if shipping_threshold.detected_live else "configured fallback"
+                policy_url = shipping_threshold.policy_url
+
+            items = [
+                item
+                for coffee in roaster_coffees
+                if (item := cart_item_for_coffee(coffee, preference_config.keywords)) is not None
+            ]
+            candidates = recommend_carts(items, threshold_cents, max_bags=max_bags, limit=limit)
+
+            console.print(f"\n[bold cyan]{roaster_name}[/bold cyan]")
+            console.print(f"Estimated free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
+            if policy_url:
+                console.print(f"Policy: [link={policy_url}]{policy_url}[/link]")
+
+            if not candidates:
+                console.print(
+                    "[yellow]No matching combination reaches the threshold with the current keywords and bag limit. "
+                    "A fresh scrape may also be needed to populate variant weights and prices.[/yellow]"
+                )
+                continue
+
+            for rank, candidate in enumerate(candidates, start=1):
+                _print_cart_candidate(candidate, destination, rank=rank)
 
 
 @app.command()

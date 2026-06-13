@@ -1,0 +1,22 @@
+# Add one case-insensitive keyword per line. A coffee is eligible when any
+# keyword appears in its name, origin, producer, process, varietal, altitude,
+# roast style, or tasting notes.
+#
+# Optional destination settings:
+@province ON
+# @postal-code M5V 3A8
+
+natural
+anaerobic
+co-ferment
+coferment
+fermentation
+fruit
+berry
+cherry
+peach
+mango
+pineapple
+tropical
+wine
+funky

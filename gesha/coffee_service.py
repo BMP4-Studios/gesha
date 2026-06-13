@@ -12,7 +12,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from gesha.coffee_data import CoffeeData
-from gesha.db.models import Coffee, Roaster, TastingNote
+from gesha.db.models import Coffee, CoffeeVariant, Roaster, TastingNote
 
 SCRAPED_COFFEE_FIELDS: tuple[str, ...] = (
     "name",
@@ -69,6 +69,21 @@ class CoffeeService:
         coffee.tasting_notes.clear()
         for note in data.tasting_notes:
             coffee.tasting_notes.append(TastingNote(name=note))
+
+        # Variants are replaced as a snapshot because Shopify IDs and
+        # availability can change independently from the parent product.
+        coffee.variants.clear()
+        for variant in data.variants:
+            coffee.variants.append(
+                CoffeeVariant(
+                    shopify_variant_id=variant.shopify_variant_id,
+                    name=variant.name,
+                    price_cents=variant.price_cents,
+                    bag_size=variant.bag_size,
+                    weight_grams=variant.weight_grams,
+                    availability=variant.availability,
+                )
+            )
 
         self.session.commit()
         self.session.refresh(coffee)

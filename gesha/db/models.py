@@ -79,7 +79,33 @@ class Coffee(Base):
     # Relationships let service queries navigate from coffees to owners and notes.
     roaster: Mapped[Roaster] = relationship(back_populates="coffees")
     tasting_notes: Mapped[list[TastingNote]] = relationship(back_populates="coffee", cascade="all, delete-orphan")
+    variants: Mapped[list["CoffeeVariant"]] = relationship(
+        back_populates="coffee",
+        cascade="all, delete-orphan",
+        order_by="CoffeeVariant.weight_grams",
+    )
 
     def __repr__(self) -> str:
         """Return a compact representation including its owning roaster."""
         return f"<Coffee name={self.name!r} roaster={self.roaster.name!r}>"
+
+
+class CoffeeVariant(Base):
+    """A purchasable size/price option exposed by a Shopify product."""
+
+    __tablename__ = "coffee_variants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    coffee_id: Mapped[int] = mapped_column(ForeignKey("coffees.id"), nullable=False)
+    shopify_variant_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bag_size: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    weight_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    availability: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    coffee: Mapped[Coffee] = relationship(back_populates="variants")
+
+    def __repr__(self) -> str:
+        """Return a compact representation useful during cart debugging."""
+        return f"<CoffeeVariant name={self.name!r} price_cents={self.price_cents!r}>"

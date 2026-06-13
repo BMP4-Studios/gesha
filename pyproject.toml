@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gesha"
 version = "0.1.0"
-description = "Local-first CLI for collecting and browsing specialty coffee listings."
+description = "Local-first specialty coffee discovery and cart optimization CLI."
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [{name = "bmp4 Studios"}]

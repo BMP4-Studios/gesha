@@ -13,7 +13,8 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from gesha.coffee_data import CoffeeData
+from gesha.coffee_data import CoffeeData, CoffeeVariantData
+from gesha.measurements import is_retail_variant, parse_weight_grams, weight_to_grams
 from gesha.normalization import normalize_search_text, normalize_tasting_notes
 from gesha.parsers.common import (
     DEFAULT_PRODUCT_FACT_LABELS,
@@ -175,6 +176,8 @@ class ShopifyScraper(BaseScraper):
             page_facts=page_facts,
             json_facts=json_facts,
         )
+        variants = self._extract_variants(product_data)
+        default_variant = self._smallest_available_variant(variants)
 
         # Normalize at the boundary so database and display layers stay simple.
         return CoffeeData(
@@ -187,10 +190,11 @@ class ShopifyScraper(BaseScraper):
             altitude=altitude,
             tasting_notes=tasting_notes,
             roast_style=roast_style,
-            price_cents=self._extract_price(product_data),
-            bag_size=bag_size,
+            price_cents=default_variant.price_cents if default_variant else self._extract_price(product_data),
+            bag_size=default_variant.bag_size if default_variant else bag_size,
             url=url,
-            availability=bool(product_data.get("available", True)),
+            availability=default_variant.availability if default_variant else bool(product_data.get("available", True)),
+            variants=variants,
         )
 
     def _description_text(self, product_data: dict[str, Any]) -> str:
@@ -325,38 +329,97 @@ class ShopifyScraper(BaseScraper):
         price = product_data.get("price")
         return int(price) if isinstance(price, int) else None
 
-    def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
-        """Find bag weight in Shopify variant fields or variant titles."""
+    def _raw_variants(self, product_data: dict[str, Any]) -> list[dict[str, object]]:
+        """Return dictionary-shaped Shopify variants from an untyped payload."""
         # Shopify stores variant metadata as an untyped list in product JSON.
         raw_variants: object = product_data.get("variants")
         if not isinstance(raw_variants, list):
-            return None
+            return []
 
         variants: list[dict[str, object]] = []
         for raw_variant in cast(list[object], raw_variants):
             if isinstance(raw_variant, dict):
                 variants.append(cast(dict[str, object], raw_variant))
+        return variants
 
-        if not variants:
-            return None
+    def _variant_weight_grams(self, variant: dict[str, object]) -> int | None:
+        """Read reliable weight fields before falling back to variant labels."""
+        grams = variant.get("grams")
+        if isinstance(grams, int | float) and grams > 0:
+            return round(float(grams))
 
-        # Prefer first-variant weight fields when Shopify supplies them.
-        variant = variants[0]
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
-        if isinstance(weight, int | float) and isinstance(unit, str) and unit:
-            return f"{int(weight)}{unit}"
-        if isinstance(weight, int | float) and weight > 0:
-            return f"{int(weight)}g"
+        if isinstance(weight, int | float) and isinstance(unit, str):
+            converted = weight_to_grams(weight, unit)
+            if converted is not None:
+                return converted
 
-        # Some roasters leave weight at zero but put "227g" in variant text.
-        for variant in variants:
-            for field in ("title", "public_title", "option1", "sku", "name"):
-                raw_value = variant.get(field)
-                value = raw_value if isinstance(raw_value, str) else ""
-                match = re.search(r"\b\d+\s*(?:g|kg|oz|lb)\b", value, re.IGNORECASE)
+        for field in ("title", "public_title", "option1", "sku", "name"):
+            raw_value = variant.get(field)
+            if isinstance(raw_value, str):
+                parsed = parse_weight_grams(raw_value)
+                if parsed is not None:
+                    return parsed
+        return None
+
+    def _variant_bag_size(self, variant: dict[str, object], weight_grams: int | None) -> str | None:
+        """Preserve a source bag label, or synthesize one from gram weight."""
+        for field in ("title", "public_title", "option1", "sku", "name"):
+            raw_value = variant.get(field)
+            if isinstance(raw_value, str):
+                match = re.search(r"\b\d+(?:\.\d+)?\s*(?:g|kg|oz|lbs?)\b", raw_value, re.IGNORECASE)
                 if match:
-                    return match.group(0)
+                    return match.group(0).replace(" ", "")
+
+        if weight_grams is not None:
+            return f"{weight_grams}g"
+        return None
+
+    def _extract_variants(self, product_data: dict[str, Any]) -> list[CoffeeVariantData]:
+        """Convert Shopify variants into stable purchasable catalog options."""
+        product_available = bool(product_data.get("available", True))
+        product_price = self._extract_price(product_data)
+        variants: list[CoffeeVariantData] = []
+
+        for index, raw_variant in enumerate(self._raw_variants(product_data), start=1):
+            weight_grams = self._variant_weight_grams(raw_variant)
+            bag_size = self._variant_bag_size(raw_variant, weight_grams)
+            raw_title = raw_variant.get("title")
+            title = raw_title.strip() if isinstance(raw_title, str) and raw_title.strip() else None
+            raw_price = raw_variant.get("price")
+            price_cents = (
+                int(raw_price) if isinstance(raw_price, int | str) and str(raw_price).isdigit() else product_price
+            )
+            raw_id = raw_variant.get("id")
+            variant_id = str(raw_id) if isinstance(raw_id, int | str) and str(raw_id) else None
+
+            variants.append(
+                CoffeeVariantData(
+                    shopify_variant_id=variant_id,
+                    name=title or bag_size or f"Variant {index}",
+                    price_cents=price_cents,
+                    bag_size=bag_size,
+                    weight_grams=weight_grams,
+                    availability=bool(raw_variant.get("available", product_available)),
+                )
+            )
+        return variants
+
+    def _smallest_available_variant(self, variants: list[CoffeeVariantData]) -> CoffeeVariantData | None:
+        """Choose the lightest in-stock variant with enough data for a cart."""
+        available = [variant for variant in variants if variant.availability and is_retail_variant(variant.name)]
+        weighted = [variant for variant in available if variant.weight_grams is not None]
+        if weighted:
+            return min(weighted, key=lambda variant: variant.weight_grams or 0)
+        return available[0] if available else None
+
+    def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
+        """Find the smallest available bag size in Shopify variants."""
+        selected = self._smallest_available_variant(self._extract_variants(product_data))
+        if selected is not None:
+            return selected.bag_size
+
         return None
 
 

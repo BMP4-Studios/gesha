@@ -14,6 +14,17 @@ from pydantic import BaseModel, Field, field_validator
 from gesha.normalization import normalize_tasting_notes
 
 
+class CoffeeVariantData(BaseModel):
+    """One purchasable Shopify variant belonging to a scraped coffee."""
+
+    shopify_variant_id: str | None = None
+    name: str
+    price_cents: int | None = None
+    bag_size: str | None = None
+    weight_grams: int | None = None
+    availability: bool = True
+
+
 class CoffeeData(BaseModel):
     """Portable representation of one scraped coffee before database storage."""
 
@@ -31,6 +42,7 @@ class CoffeeData(BaseModel):
     url: str | None = None
     availability: bool = True
     roast_date: date | None = None
+    variants: list[CoffeeVariantData] = Field(default_factory=list)
 
     @field_validator("roaster", "name", mode="before")
     @classmethod
