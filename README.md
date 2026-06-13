@@ -2,66 +2,134 @@
 
 <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
-Gesha is a local-first specialty coffee discovery and cart optimization CLI tool focused on scraping Canadian roasters, normalizing coffee metadata, and storing it in a local SQLite database.
+Gesha is a local-first CLI for collecting and browsing specialty coffee listings from supported Canadian roasters.
+It scrapes product metadata, stores the resulting catalog in a local SQLite database, and provides commands for
+filtering and inspecting cached coffees.
 
-## What it does
+## Current scope
 
-- Scrapes specialty coffee products from supported roasters
-- Normalizes roaster, origin, process, tasting notes, price, bag size, and availability
-- Stores coffee records locally in SQLite
-- Provides CLI commands to query and inspect coffees
+Gesha currently:
 
-## Install
+- Scrapes coffee listings from De Mello, Traffic, Porte Bleue, Colorfull Coffee, and The Angry Roaster
+- Extracts metadata such as origin, producer, process, varietal, altitude, tasting notes, roast style, price, bag
+  size, availability, and product URL when the source provides it
+- Updates existing products and removes stale products after a successful scrape
+- Stores the catalog in `gesha.db` in the directory where the CLI is run
+- Lists and filters cached products without contacting roaster websites
 
-Create and activate a Python virtual environment, then install the package.
+## Data cleanup
+
+The scraper keeps source data recognizable rather than trying to impose a comprehensive coffee taxonomy.
+Currently, cleanup is deliberately limited:
+
+- Product titles, origins, and processes are lowercased, Unicode-normalized, stripped of decorative characters,
+  and have repeated whitespace collapsed
+- Tasting-note strings are split on common separators, trimmed, lowercased, and kept in source order
+- Structured fields are extracted from labeled product-page data when available, with Shopify descriptions, tags,
+  variants, and limited title parsing used as fallbacks
+- Other values, such as producer, varietal, altitude, roast style, and bag size, are generally stored as supplied by
+  the roaster
+
+Missing metadata remains empty and is displayed as `NONE`; Gesha does not infer facts that the source does not
+provide.
+
+## Requirements
+
+- Python 3.14
+- Internet access for scraping roaster websites
+
+The cached `list`, `cache`, and `show` commands do not require internet access once data has been scraped.
+
+## Installation
+
+Create and activate a virtual environment.
 
 **macOS/Linux:**
 
 ```bash
-python3 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 ```
 
-**Windows (Git Bash):**
+**Windows PowerShell:**
 
-```bash
-python -m venv .venv
-source .venv/Scripts/activate
+```powershell
+py -3.14 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-Install the package in editable mode so the `gesha` CLI is available directly:
+Install Gesha in editable mode:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-For local development, install the package with its tooling extras:
+For development, install the optional tooling dependencies as well:
 
 ```bash
 python -m pip install -e ".[dev]"
 ```
 
-## Requirements
+The package and dependency definitions in `pyproject.toml` are authoritative. `requirements.txt` is retained as a
+convenient flat dependency list.
 
-- Internet access is required for scraping remote roaster pages.
-- If `gesha` fails with a DNS or network error, verify your connection and retry.
+## Usage
 
-## Basic usage
+Running `gesha` without a subcommand refreshes every supported roaster and displays the refreshed catalog:
 
-- Refresh every supported roaster, remove stale local rows, and list the cleaned catalog: `gesha`
-- Scrape all supported roasters: `gesha scrape`
-- Scrape a single supported roaster: `gesha scrape traffic`
-- List coffees that were already scraped: `gesha list`
-- Filter by process: `gesha list --process washed`
-- Filter by tasting note: `gesha list --flavour berry`
-- Show a coffee by ID: `gesha show 1`
-- Run tests through Gesha: `gesha test`
-- Run tests directly: `python -m pytest`
+```bash
+gesha
+```
 
-## Development tooling
+Common commands:
 
-Run the same checks used by CI:
+```bash
+# Create the local database without scraping
+gesha init
+
+# Refresh every supported roaster
+gesha scrape
+
+# Refresh one roaster
+gesha scrape traffic
+
+# List previously scraped coffees without making network requests
+gesha list
+
+# Filter the cached catalog
+gesha list --process washed
+gesha list --flavour berry
+gesha list --roaster traffic
+gesha list --available
+
+# Show all stored fields for one catalog ID
+gesha show 1
+
+# Save a product's raw HTML and Shopify JSON for parser debugging
+gesha debug 1
+```
+
+`gesha cache` is an alias for `gesha list`. Run `gesha --help` or `gesha <command> --help` for the complete command
+reference.
+
+Supported scrape keys are:
+
+```text
+demello
+traffic
+portebleue
+colorfull
+angry
+all
+```
+
+## Development
+
+Install the development dependencies, then run every CI check from VS Code with
+`Tasks: Run Task` > `Run tooling`.
+
+The equivalent terminal commands are:
 
 ```bash
 python -m ruff format --check .
@@ -72,15 +140,23 @@ python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml
 python -m build
 ```
 
-Tooling equivalents:
+Run only the tests with either:
 
-- `clang-format` -> Ruff formatter
-- `clang-tidy` -> Ruff lint rules
-- Type checking -> Pyright
-- `gcovr` -> pytest-cov / coverage.py
-- Dependency vulnerability scanning -> pip-audit
-- C/C++ sanitizers -> mostly not applicable for Python application code; keep tests, warnings, and dependency updates healthy instead
+```bash
+python -m pytest
+gesha test
+```
 
-GitHub Actions runs formatting, linting, type checking, dependency auditing, tests with coverage, and package builds on Python 3.12 and 3.13 across Linux, macOS, and Windows.
+Tooling overview:
 
-This project is licensed under the MIT License.
+- Ruff formats code, checks common Python errors, and enforces import ordering
+- Pyright performs static type checking
+- pytest runs the test suite, while pytest-cov produces coverage reports
+- pip-audit checks installed dependencies for known vulnerabilities
+- build verifies that Gesha can produce source and wheel distributions
+
+GitHub Actions runs these checks on Python 3.14 across Linux, macOS, and Windows for pushes and pull requests.
+
+## License
+
+Gesha is licensed under the [MIT License](LICENSE).
