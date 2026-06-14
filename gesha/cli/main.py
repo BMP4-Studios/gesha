@@ -304,7 +304,7 @@ def _print_cart_candidate(
     console.print(f"Preference keywords covered: {', '.join(candidate.matched_keywords)}")
     cart_url = build_cart_permalink(candidate, destination)
     if cart_url:
-        console.print(f"[bold]Open cart:[/bold] [link={cart_url}]{cart_url}[/link]")
+        console.print(f"[bold]Open cart:[/bold] [link={cart_url}]here[/link]")
     else:
         console.print(
             "[yellow]No pre-filled cart link is available. Refresh this roaster to store current Shopify variant IDs.[/yellow]"
