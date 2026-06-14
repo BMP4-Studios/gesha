@@ -65,13 +65,7 @@ Install Gesha in editable mode:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e .
-```
-
-For development, install the optional tooling dependencies as well:
-
-```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e . # or `python -m pip install -e ".[dev]" for development mode
 ```
 
 The package and dependency definitions in `pyproject.toml` are authoritative. `requirements.txt` is retained as a

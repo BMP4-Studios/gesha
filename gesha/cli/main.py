@@ -435,7 +435,8 @@ def cart(
                         preference_config.keywords,
                         preference_config.excluded_keywords,
                     )
-                ) is not None
+                )
+                is not None
             ]
             candidates = recommend_carts(
                 items,
