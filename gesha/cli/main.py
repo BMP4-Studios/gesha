@@ -54,7 +54,7 @@ preferences_file_option = typer_option(
     DEFAULT_PREFERENCES_PATH,
     "--preferences",
     "-p",
-    help="Text file containing one preference keyword per line.",
+    help="Text file containing include/exclude preference keywords and optional destination settings.",
 )
 
 
@@ -304,7 +304,7 @@ def _print_cart_candidate(
     console.print(f"Preference keywords covered: {', '.join(candidate.matched_keywords)}")
     cart_url = build_cart_permalink(candidate, destination)
     if cart_url:
-        console.print(f"[bold]Open cart:[/bold] [link={cart_url}]here[/link]")
+        console.print(f"[link={cart_url}][bold blue]Open cart![/bold blue][/link]")
     else:
         console.print(
             "[yellow]No pre-filled cart link is available. Refresh this roaster to store current Shopify variant IDs.[/yellow]"
@@ -404,6 +404,8 @@ def cart(
             + (f" {destination.postal_code}" if destination.postal_code else "")
         )
         console.print(f"[bold]Preference keywords:[/bold] {', '.join(preference_config.keywords)}")
+        if preference_config.excluded_keywords:
+            console.print(f"[bold]Excluded keywords:[/bold] {', '.join(preference_config.excluded_keywords)}")
 
         for roaster_name in selected_roasters:
             roaster_coffees = [coffee for coffee in coffees if coffee.roaster.name == roaster_name]
@@ -427,9 +429,21 @@ def cart(
             items = [
                 item
                 for coffee in roaster_coffees
-                if (item := cart_item_for_coffee(coffee, preference_config.keywords)) is not None
+                if (
+                    item := cart_item_for_coffee(
+                        coffee,
+                        preference_config.keywords,
+                        preference_config.excluded_keywords,
+                    )
+                ) is not None
             ]
-            candidates = recommend_carts(items, threshold_cents, max_bags=max_bags, limit=limit)
+            candidates = recommend_carts(
+                items,
+                threshold_cents,
+                max_bags=max_bags,
+                limit=limit,
+                keyword_priority=preference_config.keywords,
+            )
 
             console.print(f"\n[bold cyan]{roaster_name}[/bold cyan]")
             console.print(f"Estimated free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
@@ -438,8 +452,8 @@ def cart(
 
             if not candidates:
                 console.print(
-                    "[yellow]No matching combination reaches the threshold with the current keywords and bag limit. "
-                    "A fresh scrape may also be needed to populate variant weights and prices.[/yellow]"
+                    "[yellow]No matching combination reaches the threshold with the current keywords, exclusions, "
+                    "and bag limit. A fresh scrape may also be needed to populate variant weights and prices.[/yellow]"
                 )
                 continue
 

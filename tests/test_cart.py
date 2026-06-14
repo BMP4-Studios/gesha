@@ -17,7 +17,7 @@ def test_preference_file_supports_destination_directives(tmp_path: Path) -> None
     """Keywords remain one-per-line while destination settings stay explicit."""
     path = tmp_path / "preferences.txt"
     path.write_text(
-        "# My coffee profile\n@province QC\n@postal-code H2X 1Y4\nnatural\npeach\nnatural\n",
+        "# My coffee profile\n@province QC\n@postal-code H2X 1Y4\nnatural\npeach\nnatural\n!decaf\n! dark roast\n",
         encoding="utf-8",
     )
 
@@ -26,6 +26,7 @@ def test_preference_file_supports_destination_directives(tmp_path: Path) -> None
     assert config.province == "QC"
     assert config.postal_code == "H2X 1Y4"
     assert config.keywords == ("natural", "peach")
+    assert config.excluded_keywords == ("decaf", "dark roast")
 
 
 def test_cart_item_uses_smallest_variant_and_matches_all_metadata() -> None:
@@ -67,6 +68,32 @@ def test_cart_item_uses_smallest_variant_and_matches_all_metadata() -> None:
     assert item.matched_keywords == ("wilton benitez", "peach")
 
 
+def test_cart_item_excludes_coffees_matching_negative_keywords() -> None:
+    """A negative match removes a coffee even when it also matches preferences."""
+    coffee = Coffee(
+        id=8,
+        name="Colombia Natural Decaf",
+        process="Natural",
+        url="https://example.test/products/decaf",
+        roaster=Roaster(name="Test Roaster"),
+        tasting_notes=[TastingNote(name="peach")],
+        variants=[
+            CoffeeVariant(
+                shopify_variant_id="small",
+                name="250g",
+                price_cents=2200,
+                bag_size="250g",
+                weight_grams=250,
+                availability=True,
+            ),
+        ],
+    )
+
+    item = cart_item_for_coffee(coffee, ("natural", "peach"), ("decaf",))
+
+    assert item is None
+
+
 def test_recommendations_minimize_overspend_before_preference_tiebreakers() -> None:
     """The first cart clears shipping with the smallest extra subtotal."""
     items = [
@@ -80,6 +107,26 @@ def test_recommendations_minimize_overspend_before_preference_tiebreakers() -> N
     assert [item.coffee_id for item in candidates[0].items] == [1, 2]
     assert candidates[0].subtotal_cents == 4900
     assert candidates[0].overspend_cents == 400
+
+
+def test_recommendations_prioritize_included_keyword_order() -> None:
+    """A higher-list keyword outranks lower-only matches before cost tiebreakers."""
+    items = [
+        _item(1, 4500, 900, ("floral", "funky")),
+        _item(2, 4600, 920, ("natural",)),
+    ]
+
+    candidates = recommend_carts(
+        items,
+        4000,
+        max_bags=1,
+        limit=2,
+        keyword_priority=("natural", "floral", "funky"),
+    )
+
+    assert [item.coffee_id for item in candidates[0].items] == [2]
+    assert candidates[0].matched_keywords == ("natural",)
+    assert candidates[0].overspend_cents == 600
 
 
 def test_cart_permalink_prefills_canadian_checkout_destination() -> None:

@@ -18,7 +18,7 @@ Gesha currently:
 - Lists and filters cached products without contacting roaster websites
 - Stores Shopify variants and defaults to the smallest available bag
 - Compares coffee prices by calculating the cost per 100 grams
-- Builds preference-matched cart recommendations and Shopify cart links
+- Builds preference-matched cart recommendations with ordered include keywords, exclusion keywords, and Shopify cart links
 
 ## Data cleanup
 
@@ -138,7 +138,8 @@ all
 
 ## Cart preferences
 
-Edit `cart_preferences.txt` to describe the coffees you want. Add one case-insensitive keyword per line:
+Edit `cart_preferences.txt` to describe the coffees you want. Add one case-insensitive include keyword per line,
+ordered from most important to least important:
 
 ```text
 natural
@@ -147,11 +148,18 @@ co-ferment
 peach
 mango
 wilton benitez
+! decaf
+! dark roast
 ```
 
-A coffee is eligible when at least one keyword appears in its name, origin, producer, process, varietal, altitude,
-roast style, or tasting notes. More distinct matches produce a higher preference score. Blank lines and lines
-beginning with `#` are ignored.
+Include keywords are matched against the coffee name, origin, producer, process, varietal, altitude, roast style, and
+tasting notes. A coffee is eligible when it matches at least one include keyword and no exclusion keyword. Prefix a
+keyword with `!` to exclude coffees that match it, such as `! decaf` or `! dark roast`. Blank lines and lines beginning
+with `#` are ignored. If the file is missing or has no include keywords, Gesha uses its built-in fruity/natural
+include list.
+
+The include keyword order is also the optimizer's preference order. A cart that covers a higher-listed keyword ranks
+ahead of carts that only cover lower-listed keywords; after that, Gesha uses cost and coverage tie-breakers.
 
 The same file can set a Canadian destination:
 
@@ -165,10 +173,13 @@ normalized, and used to infer its province when no province is supplied. Ontario
 
 For each roaster, Gesha:
 
-1. Selects the smallest available variant of each keyword-matched coffee.
-2. Finds combinations of distinct coffees that reach the free-shipping threshold.
-3. Ranks carts by lowest amount above the threshold, then preference coverage and score.
-4. Displays bag prices, price per 100 grams, matched keywords, and a pre-filled Shopify cart link.
+1. Removes coffees that match any `!` exclusion keyword.
+2. Selects the smallest available retail variant of each coffee that matches at least one include keyword.
+3. Finds combinations of distinct coffees that reach the free-shipping threshold.
+4. Ranks carts by ordered include-keyword coverage, then lowest amount above the threshold, then distinct keyword
+   coverage, total match count, lower combined price per 100 grams, and stable product ID order.
+5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a
+   pre-filled Shopify cart link.
 
 Gesha checks each roaster's public shipping page and falls back to a configured threshold if the page cannot be
 read or its wording is not recognized. Shipping eligibility remains an estimate because discounts, destination

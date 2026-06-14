@@ -33,9 +33,10 @@ DEFAULT_PREFERENCE_KEYWORDS = (
 
 @dataclass(frozen=True)
 class PreferenceConfig:
-    """Keywords and optional destination directives read from a text file."""
+    """Included/excluded keywords and optional destination directives."""
 
     keywords: tuple[str, ...]
+    excluded_keywords: tuple[str, ...] = ()
     province: str | None = None
     postal_code: str | None = None
 
@@ -66,6 +67,7 @@ class CartCandidate:
     threshold_cents: int
     matched_keywords: tuple[str, ...]
     preference_score: int
+    priority_coverage: tuple[int, ...] = ()
 
     @property
     def overspend_cents(self) -> int:
@@ -74,11 +76,12 @@ class CartCandidate:
 
 
 def read_preference_config(path: Path | None) -> PreferenceConfig:
-    """Read one keyword per line plus optional ``@province`` directives."""
+    """Read include/exclude keywords plus optional ``@province`` directives."""
     if path is None or not path.exists():
-        return PreferenceConfig(DEFAULT_PREFERENCE_KEYWORDS)
+        return PreferenceConfig(keywords=DEFAULT_PREFERENCE_KEYWORDS)
 
     keywords: list[str] = []
+    excluded_keywords: list[str] = []
     province: str | None = None
     postal_code: str | None = None
 
@@ -96,10 +99,24 @@ def read_preference_config(path: Path | None) -> PreferenceConfig:
             else:
                 raise ValueError(f"Unknown or empty directive on {path}:{line_number}: {line}")
             continue
+        if line.startswith("!"):
+            excluded_keyword = line[1:].strip()
+            if not excluded_keyword:
+                raise ValueError(f"Empty excluded keyword on {path}:{line_number}.")
+            excluded_keywords.append(excluded_keyword)
+            continue
         keywords.append(line)
 
     normalized_keywords = tuple(dict.fromkeys(keyword.strip() for keyword in keywords if keyword.strip()))
-    return PreferenceConfig(normalized_keywords or DEFAULT_PREFERENCE_KEYWORDS, province, postal_code)
+    normalized_excluded_keywords = tuple(
+        dict.fromkeys(keyword.strip() for keyword in excluded_keywords if keyword.strip())
+    )
+    return PreferenceConfig(
+        keywords=normalized_keywords or DEFAULT_PREFERENCE_KEYWORDS,
+        excluded_keywords=normalized_excluded_keywords,
+        province=province,
+        postal_code=postal_code,
+    )
 
 
 def _match_text(value: str) -> str:
@@ -139,8 +156,15 @@ def smallest_available_variant(coffee: Coffee) -> CoffeeVariant | None:
     return min(usable, key=lambda variant: variant.weight_grams or 0) if usable else None
 
 
-def cart_item_for_coffee(coffee: Coffee, keywords: tuple[str, ...]) -> CartItem | None:
+def cart_item_for_coffee(
+    coffee: Coffee,
+    keywords: tuple[str, ...],
+    excluded_keywords: tuple[str, ...] = (),
+) -> CartItem | None:
     """Build an optimizer item from a coffee's smallest available variant."""
+    if matched_keywords(coffee, excluded_keywords):
+        return None
+
     variant = smallest_available_variant(coffee)
     matches = matched_keywords(coffee, keywords)
     if (
@@ -172,16 +196,37 @@ def cart_item_for_coffee(coffee: Coffee, keywords: tuple[str, ...]) -> CartItem 
     )
 
 
+def _ordered_keyword_union(combination: tuple[CartItem, ...], keyword_priority: tuple[str, ...]) -> tuple[str, ...]:
+    """Return matched keywords in preference-list order, retaining any extras."""
+    matched_in_item_order = tuple(dict.fromkeys(keyword for item in combination for keyword in item.matched_keywords))
+    if not keyword_priority:
+        return matched_in_item_order
+
+    matched = set(matched_in_item_order)
+    priority_set = set(keyword_priority)
+    prioritized = tuple(keyword for keyword in keyword_priority if keyword in matched)
+    extras = tuple(keyword for keyword in matched_in_item_order if keyword not in priority_set)
+    return prioritized + extras
+
+
+def _priority_coverage(matched_keywords: tuple[str, ...], keyword_priority: tuple[str, ...]) -> tuple[int, ...]:
+    """Build a lexicographic coverage vector for ordered preference keywords."""
+    matched = set(matched_keywords)
+    return tuple(1 if keyword in matched else 0 for keyword in keyword_priority)
+
+
 def recommend_carts(
     items: list[CartItem],
     threshold_cents: int,
     *,
     max_bags: int = 6,
     limit: int = 3,
+    keyword_priority: tuple[str, ...] | None = None,
 ) -> list[CartCandidate]:
     """Rank distinct-coffee combinations that reach free shipping."""
     candidates: list[CartCandidate] = []
     maximum_size = min(max_bags, len(items))
+    priority_keywords = keyword_priority or ()
 
     for size in range(1, maximum_size + 1):
         for combination in itertools.combinations(items, size):
@@ -189,7 +234,7 @@ def recommend_carts(
             if subtotal < threshold_cents:
                 continue
 
-            keyword_union = tuple(dict.fromkeys(keyword for item in combination for keyword in item.matched_keywords))
+            keyword_union = _ordered_keyword_union(combination, priority_keywords)
             candidates.append(
                 CartCandidate(
                     items=combination,
@@ -197,11 +242,13 @@ def recommend_carts(
                     threshold_cents=threshold_cents,
                     matched_keywords=keyword_union,
                     preference_score=sum(len(item.matched_keywords) for item in combination),
+                    priority_coverage=_priority_coverage(keyword_union, priority_keywords),
                 )
             )
 
     candidates.sort(
         key=lambda candidate: (
+            tuple(-covered for covered in candidate.priority_coverage),
             candidate.overspend_cents,
             -len(candidate.matched_keywords),
             -candidate.preference_score,
