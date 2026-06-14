@@ -10,13 +10,5 @@ natural
 anaerobic
 co-ferment
 coferment
-fermentation
-fruit
-berry
-cherry
-peach
-mango
-pineapple
-tropical
-wine
+floral
 funky
