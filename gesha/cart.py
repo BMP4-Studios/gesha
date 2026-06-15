@@ -48,6 +48,9 @@ class CartItem:
     coffee_id: int
     roaster_name: str
     name: str
+    origin: str | None
+    process: str | None
+    tasting_notes: tuple[str, ...]
     product_url: str
     variant_id: str | None
     variant_name: str
@@ -185,6 +188,9 @@ def cart_item_for_coffee(
         coffee_id=coffee.id,
         roaster_name=coffee.roaster.name,
         name=coffee.name,
+        origin=coffee.origin,
+        process=coffee.process,
+        tasting_notes=tuple(note.name for note in coffee.tasting_notes),
         product_url=coffee.url,
         variant_id=variant.shopify_variant_id,
         variant_name=variant.name,

@@ -64,6 +64,9 @@ def test_cart_item_uses_smallest_variant_and_matches_all_metadata() -> None:
     assert item is not None
     assert item.variant_id == "small"
     assert item.bag_size == "250g"
+    assert item.origin is None
+    assert item.process == "Washed"
+    assert item.tasting_notes == ("peach", "jasmine")
     assert item.price_per_100g_cents == 1000
     assert item.matched_keywords == ("wilton benitez", "peach")
 
@@ -153,6 +156,9 @@ def _item(
         coffee_id=coffee_id,
         roaster_name="Test Roaster",
         name=f"Coffee {coffee_id}",
+        origin=None,
+        process=None,
+        tasting_notes=(),
         product_url=f"https://example.test/products/{coffee_id}",
         variant_id=f"variant-{coffee_id}",
         variant_name="250g",

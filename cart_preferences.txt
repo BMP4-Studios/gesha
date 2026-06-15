@@ -9,6 +9,8 @@
 @province ON
 # @postal-code M5V 3A8
 
+special
+anniversary
 natural
 anaerobic
 co-ferment
@@ -18,3 +20,4 @@ funky
 
 ! decaf
 ! dark roast
+! espresso

@@ -34,6 +34,8 @@ from gesha.scrapers.base_scraper import BaseScraper
 from gesha.shipping import SHIPPING_POLICIES, Destination, resolve_destination, resolve_shipping_threshold
 from rich.console import Console
 from rich.table import Table
+from rich.align import Align
+from rich.text import Text
 
 app = typer.Typer(
     help=(
@@ -286,8 +288,11 @@ def _print_cart_candidate(
     )
     table.add_column("Coffee")
     table.add_column("Size")
+    table.add_column("Process")
+    table.add_column("Origin")
     table.add_column("Price", justify="right")
     table.add_column("$/100g", justify="right")
+    table.add_column("Notes")
     table.add_column("Matches")
 
     for item in candidate.items:
@@ -295,8 +300,11 @@ def _print_cart_candidate(
         table.add_row(
             name_display,
             item.bag_size,
+            item.process or NA_LABEL,
+            item.origin or NA_LABEL,
             price_display(item.price_cents),
             price_display(item.price_per_100g_cents),
+            ", ".join(item.tasting_notes) or NA_LABEL,
             ", ".join(item.matched_keywords),
         )
 
@@ -399,8 +407,17 @@ def cart(
                     roaster_name: future.result() for roaster_name, future in threshold_futures.items()
                 }
 
+        console.print()
         console.print(
-            f"[bold]Destination:[/bold] {destination.province}, Canada"
+            Align.center(
+                Text(
+                    "----------==========********** Gesha Cart Recommendations **********==========----------",
+                    style="bold cyan",
+                )
+            )
+        )
+        console.print(
+            f"\n[bold]Destination:[/bold] {destination.province}, Canada"
             + (f" {destination.postal_code}" if destination.postal_code else "")
         )
         console.print(f"[bold]Preference keywords:[/bold] {', '.join(preference_config.keywords)}")
