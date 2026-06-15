@@ -4,7 +4,7 @@
     {
       "label": "Run tooling",
       "type": "shell",
-      "command": "${workspaceFolder}/.venv/bin/python -m ruff format . && ${workspaceFolder}/.venv/bin/python -m ruff check . && ${workspaceFolder}/.venv/bin/python -m pyright && ${workspaceFolder}/.venv/bin/python -m pip_audit --cache-dir .pip-audit-cache --skip-editable && ${workspaceFolder}/.venv/bin/python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml && ${workspaceFolder}/.venv/bin/python -m build",
+      "command": "${workspaceFolder}/.venv/bin/python -m ruff format . && ${workspaceFolder}/.venv/bin/python -m ruff check --fix . && ${workspaceFolder}/.venv/bin/python -m pyright && ${workspaceFolder}/.venv/bin/python -m pip_audit --cache-dir .pip-audit-cache --skip-editable && ${workspaceFolder}/.venv/bin/python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml && ${workspaceFolder}/.venv/bin/python -m build",
       "options": {
         "cwd": "${workspaceFolder}"
       },

@@ -32,9 +32,9 @@ from gesha.normalization import NA_LABEL, price_display
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
 from gesha.shipping import SHIPPING_POLICIES, Destination, resolve_destination, resolve_shipping_threshold
+from rich.align import Align
 from rich.console import Console
 from rich.table import Table
-from rich.align import Align
 from rich.text import Text
 
 app = typer.Typer(
