@@ -39,6 +39,13 @@ class BaseScraper(ABC):
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
     }
+    FAILURE_HEADER_SUMMARY = (
+        ("Retry-After", "Retry-After"),
+        ("request-id", "x-request-id"),
+        ("cf-ray", "cf-ray"),
+        ("complexity", "shopify-complexity-score"),
+        ("complexity-v2", "shopify-complexity-score-v2"),
+    )
 
     def __init__(self) -> None:
         """Create a browser-like HTTP session used for all requests in a run."""
@@ -54,6 +61,9 @@ class BaseScraper(ABC):
         # Fetch the collection page; return an empty catalog if the listing fails.
         try:
             response = self.session.get(self.COLLECTION_URL, timeout=15)
+            if response.status_code >= 400:
+                self._log_http_failure("fetch collection", self.COLLECTION_URL, response)
+                return []
             response.raise_for_status()
         except Exception as exc:
             self.logger.warning(
@@ -89,10 +99,70 @@ class BaseScraper(ABC):
         response = self.session.get(url, timeout=15)
         if response.status_code == 404:
             return None
+        if response.status_code >= 400:
+            self._log_http_failure("fetch product", url, response)
+            return None
         response.raise_for_status()
 
         # Subclasses implement their own HTML parsing strategy here.
         return self.parse_product(response.text, url)
+
+    def _response_header(self, response: Any, name: str) -> str | None:
+        """Read one response header case-insensitively from an untyped response."""
+        headers = getattr(response, "headers", {})
+        if not hasattr(headers, "get"):
+            return None
+
+        value = headers.get(name)
+        if value:
+            return str(value)
+
+        if hasattr(headers, "items"):
+            for key, candidate in headers.items():
+                if str(key).casefold() == name.casefold() and candidate:
+                    return str(candidate)
+        return None
+
+    def _http_failure_summary(self, response: Any) -> str:
+        """Build the short failure detail shown in CLI output."""
+        status_code = getattr(response, "status_code", "unknown")
+        reason = str(getattr(response, "reason", "") or "").strip()
+        parts = [f"HTTP {status_code}{f' {reason}' if reason else ''}"]
+
+        # Include only the high-signal headers that help diagnose throttling.
+        for label, header_name in self.FAILURE_HEADER_SUMMARY:
+            value = self._response_header(response, header_name)
+            if value:
+                parts.append(f"{label}: {value}")
+
+        return ", ".join(parts)
+
+    def _log_http_failure(self, action: str, url: str, response: Any) -> None:
+        """Log a concise CLI warning and a complete response dump for debugging."""
+        self.logger.warning(
+            "Failed to %s for %s: %s",
+            action,
+            self.SOURCE_NAME,
+            self._http_failure_summary(response),
+        )
+
+        # The log file gets everything useful for postmortems, including noisy
+        # headers and full response bodies that would be too much for the CLI.
+        headers = getattr(response, "headers", {})
+        header_lines = (
+            "\n".join(f"{key}: {value}" for key, value in headers.items()) if hasattr(headers, "items") else ""
+        )
+        body = str(getattr(response, "text", "") or "")
+        self.logger.debug(
+            "Full HTTP failure while attempting to %s for %s\nURL: %s\nStatus: %s\nReason: %s\nHeaders:\n%s\nBody:\n%s",
+            action,
+            self.SOURCE_NAME,
+            url,
+            getattr(response, "status_code", "unknown"),
+            str(getattr(response, "reason", "") or "").strip() or "(none)",
+            header_lines or "(none)",
+            body or "(empty)",
+        )
 
     @abstractmethod
     def extract_product_urls(self, html: str) -> list[str]:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import requests
 from gesha.scrapers import TrafficScraper
 
@@ -9,11 +11,20 @@ from gesha.scrapers import TrafficScraper
 class FakeResponse:
     """Minimal response object used to isolate scraper transport behavior."""
 
-    def __init__(self, text: str, status_code: int = 200, json_data: dict | None = None) -> None:
+    def __init__(
+        self,
+        text: str,
+        status_code: int = 200,
+        json_data: dict | None = None,
+        headers: dict[str, str] | None = None,
+        reason: str = "",
+    ) -> None:
         """Create a deterministic response body and HTTP status."""
         self.text = text
         self.status_code = status_code
         self._json_data = json_data
+        self.headers = headers or {}
+        self.reason = reason
 
     def raise_for_status(self) -> None:
         """Mirror the HTTP failure behavior the scraper expects from requests."""
@@ -40,8 +51,6 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
         """Return fixture responses for each requested Traffic URL."""
         calls.append(url)
 
-        # Force the old product-page path so this test stays focused on
-        # BaseScraper's per-product failure isolation.
         if url == "https://www.trafficcoffee.com/collections/coffee":
             return FakeResponse(collection_html)
         if url == "https://www.trafficcoffee.com/products/test-coffee":
@@ -63,7 +72,6 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
         return FakeResponse("", status_code=404)
 
     scraper = TrafficScraper()
-    scraper.USE_COLLECTION_JSON = False
     monkeypatch.setattr(scraper.session, "get", fake_get)
 
     coffees = scraper.scrape()
@@ -74,3 +82,38 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
     assert coffees[0].origin == "colombia"
     assert coffees[0].tasting_notes == ["berry"]
     assert "https://www.trafficcoffee.com/products/bad-page.js" in calls
+
+
+def test_collection_failure_logs_summary_and_full_response(monkeypatch, caplog) -> None:
+    """Collection-page 429s get the same diagnostics as optional JSON failures."""
+    headers = {
+        "retry-after": "180",
+        "x-request-id": "collection-request-123",
+        "cf-ray": "collection-ray-YUL",
+        "shopify-complexity-score-v2": "77",
+        "set-cookie": "private-cookie=value",
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeResponse:
+        """Return a detailed 429 from the collection page."""
+        return FakeResponse(
+            "<html>rate limited collection</html>",
+            status_code=429,
+            headers=headers,
+            reason="Too Many Requests",
+        )
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    with caplog.at_level(logging.DEBUG):
+        coffees = scraper.scrape()
+
+    assert coffees == []
+    assert (
+        "Failed to fetch collection for Traffic: HTTP 429 Too Many Requests, Retry-After: 180, "
+        "request-id: collection-request-123, cf-ray: collection-ray-YUL, complexity-v2: 77" in caplog.text
+    )
+    assert "Full HTTP failure while attempting to fetch collection for Traffic" in caplog.text
+    assert "set-cookie: private-cookie=value" in caplog.text
+    assert "Body:\n<html>rate limited collection</html>" in caplog.text

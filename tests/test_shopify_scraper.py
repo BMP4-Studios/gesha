@@ -12,6 +12,12 @@ from gesha.scrapers.shopify_scraper import (
 )
 
 
+class JsonOptInTrafficScraper(TrafficScraper):
+    """Traffic fixture scraper that opts into the collection JSON path."""
+
+    USE_COLLECTION_JSON = True
+
+
 class FakeShopifyResponse:
     """Small response fixture for Shopify collection feed tests."""
 
@@ -75,8 +81,28 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     ]
 
 
-def test_shopify_scrape_uses_collection_json_feed(monkeypatch) -> None:
-    """The primary scrape path reads one collection JSON feed, not each product page."""
+def test_shopify_scrape_defaults_to_product_page_path(monkeypatch) -> None:
+    """Shopify scrapers use product pages by default for richer tasting notes."""
+    calls: list[str] = []
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Fail if the default path unexpectedly requests collection JSON."""
+        calls.append(url)
+        if "products.json" in url:
+            raise AssertionError(f"Unexpected collection JSON request: {url}")
+        return FakeShopifyResponse(text="")
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert coffees == []
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee"]
+
+
+def test_shopify_scrape_can_opt_into_collection_json_feed(monkeypatch) -> None:
+    """Opted-in sources can read one collection JSON feed, not each product page."""
     calls: list[str] = []
 
     # This payload uses collection-feed field names so the adapter has to
@@ -113,7 +139,7 @@ def test_shopify_scrape_uses_collection_json_feed(monkeypatch) -> None:
             return FakeShopifyResponse(payload)
         raise AssertionError(f"Unexpected request: {url}")
 
-    scraper = TrafficScraper()
+    scraper = JsonOptInTrafficScraper()
     monkeypatch.setattr(scraper.session, "get", fake_get)
 
     coffees = scraper.scrape()
@@ -139,7 +165,7 @@ def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(
         calls.append(url)
         return FakeShopifyResponse(status_code=429)
 
-    scraper = TrafficScraper()
+    scraper = JsonOptInTrafficScraper()
     monkeypatch.setattr(scraper.session, "get", fake_get)
 
     coffees = scraper.scrape()
@@ -168,10 +194,10 @@ def test_shopify_collection_json_failure_logs_summary_and_full_response(monkeypa
             text="<html>blocked by storefront</html>",
         )
 
-    scraper = TrafficScraper()
+    scraper = JsonOptInTrafficScraper()
     monkeypatch.setattr(scraper.session, "get", fake_get)
 
-    with caplog.at_level(logging.DEBUG, logger="gesha.scrapers.shopify_scraper"):
+    with caplog.at_level(logging.DEBUG):
         coffees = scraper.scrape()
 
     assert coffees == []
@@ -180,7 +206,7 @@ def test_shopify_collection_json_failure_logs_summary_and_full_response(monkeypa
         "Retry-After: 120, request-id: request-123, cf-ray: ray-456-YUL, complexity: 950, complexity-v2: 95"
         in caplog.text
     )
-    assert "Full Shopify collection JSON failure for Traffic" in caplog.text
+    assert "Full HTTP failure while attempting to fetch Shopify collection JSON for Traffic" in caplog.text
     assert "set-cookie: diagnostic-cookie=value" in caplog.text
     assert "Body:\n<html>blocked by storefront</html>" in caplog.text
 
