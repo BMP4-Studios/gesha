@@ -12,6 +12,7 @@ build/
 *.egg
 *.sqlite3
 *.db
+gesha.log
 *.log
 .DS_Store
 coverage.xml

@@ -7,6 +7,7 @@ coordinates scrapers and ``CoffeeService`` while Rich handles terminal output.
 from __future__ import annotations
 
 import concurrent.futures
+import logging
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
@@ -49,6 +50,7 @@ app = typer.Typer(
 )
 console = Console()
 DEFAULT_PREFERENCES_PATH = Path("cart_preferences.txt")
+LOG_PATH = Path("gesha.log")
 
 # Typer's type stubs are stricter than its runtime API. These aliases keep
 # command signatures readable while avoiding noisy type-checking false positives.
@@ -63,6 +65,29 @@ preferences_file_option = typer_option(
     "-p",
     help="Text file containing include/exclude preference keywords and optional destination settings.",
 )
+
+
+def _configure_logging() -> None:
+    """Send concise warnings to the terminal and full diagnostics to a log file."""
+    root_logger = logging.getLogger()
+    if any(handler.get_name().startswith("gesha-cli-") for handler in root_logger.handlers):
+        return
+
+    # Let handlers decide what to emit: warnings reach the terminal, while debug
+    # diagnostics are retained only in the local log file.
+    root_logger.setLevel(logging.DEBUG)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.set_name("gesha-cli-terminal")
+    stream_handler.setLevel(logging.WARNING)
+    stream_handler.setFormatter(logging.Formatter("%(message)s"))
+    root_logger.addHandler(stream_handler)
+
+    file_handler = logging.FileHandler(LOG_PATH, encoding="utf-8")
+    file_handler.set_name("gesha-cli-file")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    root_logger.addHandler(file_handler)
 
 
 def _coffee_price_per_100g_cents(coffee: Coffee) -> int | None:
@@ -180,6 +205,8 @@ def _refresh_catalog(source: str) -> None:
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     """Refresh and list the Gesha catalog when no subcommand is provided."""
+    _configure_logging()
+
     # Typer invokes callbacks for both ``gesha`` and ``gesha <subcommand>``. The
     # guard makes the default refresh/cart workflow run only when no subcommand
     # was selected.

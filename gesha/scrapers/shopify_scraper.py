@@ -40,9 +40,9 @@ def _first_non_blank(*values: str | None) -> str | None:
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
-    # Source subclasses can set this to False when collection feeds omit richer
-    # product-page metadata needed by the catalog.
-    USE_COLLECTION_JSON: bool = True
+    # Using the collection json is faster and probably less prone to rate limits, but some stores omit tasting notes from the JSON feed.
+    # When enabled, the scraper tries the JSON feed first and falls back to product pages if it is unavailable or fails to parse.
+    USE_COLLECTION_JSON: bool = False
 
     # Shopify limits collection JSON pages; current roaster collections fit in one.
     PRODUCTS_JSON_LIMIT = 250
@@ -66,6 +66,13 @@ class ShopifyScraper(BaseScraper):
     NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", "·", "•", "Â", "â")
     BULLET_NOTE_SEPARATORS = ("·", "•", "Â", "â")
     ROAST_SCALE_PATTERN = re.compile(r"\blight\b.*\bdark\b|[●○]", re.IGNORECASE)
+    FAILURE_HEADER_SUMMARY = (
+        ("Retry-After", "Retry-After"),
+        ("request-id", "x-request-id"),
+        ("cf-ray", "cf-ray"),
+        ("complexity", "shopify-complexity-score"),
+        ("complexity-v2", "shopify-complexity-score-v2"),
+    )
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
@@ -95,8 +102,8 @@ class ShopifyScraper(BaseScraper):
 
     def scrape(self) -> list[CoffeeData]:
         """Prefer Shopify's collection JSON feed to avoid product-page bursts."""
-        # The JSON feed usually gives title, tags, description, and variants in
-        # one request. If disabled or unavailable, fall back to BaseScraper.
+        # The JSON feed usually gives title, tags, description, and variants in one request,
+        # but it doesn't include tasting notes clearly. If disabled or unavailable, fall back to BaseScraper.
         if self.USE_COLLECTION_JSON:
             coffees = self._scrape_collection_json()
             if coffees is not None:
@@ -114,7 +121,8 @@ class ShopifyScraper(BaseScraper):
     def _scrape_collection_json(self) -> list[CoffeeData] | None:
         """Fetch a whole Shopify collection from one JSON endpoint when available."""
         # One collection-feed request replaces many per-product page requests.
-        response = self.session.get(self._collection_products_json_url(), timeout=15)
+        collection_json_url = self._collection_products_json_url()
+        response = self.session.get(collection_json_url, timeout=15)
 
         # A 404 means the store/theme does not expose this endpoint; allow the
         # caller to fall back to the older product-page path.
@@ -124,11 +132,7 @@ class ShopifyScraper(BaseScraper):
         # Other HTTP failures are treated as a failed source refresh. Falling
         # back to many product requests could make rate limiting worse.
         if response.status_code >= 400:
-            self.logger.warning(
-                "Failed to fetch Shopify collection JSON for %s: HTTP %s",
-                self.SOURCE_NAME,
-                response.status_code,
-            )
+            self._log_collection_json_failure(collection_json_url, response)
             return []
         response.raise_for_status()
 
@@ -163,6 +167,51 @@ class ShopifyScraper(BaseScraper):
             url = self._canonical_product_url(urljoin(self.BASE_URL, f"/products/{handle}"))
             coffees.append(self._coffee_from_product(product_data, url))
         return coffees
+
+    def _response_header(self, response: Any, name: str) -> str | None:
+        """Read one response header while tolerating untyped response fixtures."""
+        headers = getattr(response, "headers", {})
+        value = headers.get(name) if hasattr(headers, "get") else None
+        return str(value) if value else None
+
+    def _collection_json_failure_summary(self, response: Any) -> str:
+        """Build the short failure detail shown in CLI output."""
+        status_code = getattr(response, "status_code", "unknown")
+        reason = str(getattr(response, "reason", "") or "").strip()
+        parts = [f"HTTP {status_code}{f' {reason}' if reason else ''}"]
+
+        # Include only the high-signal headers that help diagnose throttling.
+        for label, header_name in self.FAILURE_HEADER_SUMMARY:
+            value = self._response_header(response, header_name)
+            if value:
+                parts.append(f"{label}: {value}")
+
+        return ", ".join(parts)
+
+    def _log_collection_json_failure(self, url: str, response: Any) -> None:
+        """Log a concise CLI warning and a complete response dump for debugging."""
+        self.logger.warning(
+            "Failed to fetch Shopify collection JSON for %s: %s",
+            self.SOURCE_NAME,
+            self._collection_json_failure_summary(response),
+        )
+
+        # The log file gets everything useful for postmortems, including noisy
+        # headers and full response bodies that would be too much for the CLI.
+        headers = getattr(response, "headers", {})
+        header_lines = (
+            "\n".join(f"{key}: {value}" for key, value in headers.items()) if hasattr(headers, "items") else ""
+        )
+        body = str(getattr(response, "text", "") or "")
+        self.logger.debug(
+            "Full Shopify collection JSON failure for %s\nURL: %s\nStatus: %s\nReason: %s\nHeaders:\n%s\nBody:\n%s",
+            self.SOURCE_NAME,
+            url,
+            getattr(response, "status_code", "unknown"),
+            str(getattr(response, "reason", "") or "").strip() or "(none)",
+            header_lines or "(none)",
+            body or "(empty)",
+        )
 
     def _product_from_collection_json(self, product_data: dict[str, Any]) -> dict[str, Any]:
         """Normalize collection-feed product JSON to the product-page JSON shape."""

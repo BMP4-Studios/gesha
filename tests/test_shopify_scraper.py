@@ -1,5 +1,7 @@
 """Tests for behavior shared by JSON-backed Shopify scraper adapters."""
 
+import logging
+
 from bs4 import BeautifulSoup
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
@@ -13,11 +15,20 @@ from gesha.scrapers.shopify_scraper import (
 class FakeShopifyResponse:
     """Small response fixture for Shopify collection feed tests."""
 
-    def __init__(self, json_data: dict | None = None, status_code: int = 200, text: str = "") -> None:
+    def __init__(
+        self,
+        json_data: dict | None = None,
+        status_code: int = 200,
+        text: str = "",
+        headers: dict[str, str] | None = None,
+        reason: str = "",
+    ) -> None:
         """Create a response with optional JSON payload."""
         self._json_data = json_data
         self.status_code = status_code
         self.text = text
+        self.headers = headers or {}
+        self.reason = reason
 
     def raise_for_status(self) -> None:
         """Mirror the HTTP failure behavior the scraper expects."""
@@ -135,6 +146,43 @@ def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(
 
     assert coffees == []
     assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+
+
+def test_shopify_collection_json_failure_logs_summary_and_full_response(monkeypatch, caplog) -> None:
+    """The CLI warning stays short while the log file can keep response details."""
+    headers = {
+        "Retry-After": "120",
+        "x-request-id": "request-123",
+        "cf-ray": "ray-456-YUL",
+        "shopify-complexity-score": "950",
+        "shopify-complexity-score-v2": "95",
+        "set-cookie": "diagnostic-cookie=value",
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return a detailed 429 response from the collection feed."""
+        return FakeShopifyResponse(
+            status_code=429,
+            reason="Too Many Requests",
+            headers=headers,
+            text="<html>blocked by storefront</html>",
+        )
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    with caplog.at_level(logging.DEBUG, logger="gesha.scrapers.shopify_scraper"):
+        coffees = scraper.scrape()
+
+    assert coffees == []
+    assert (
+        "Failed to fetch Shopify collection JSON for Traffic: HTTP 429 Too Many Requests, "
+        "Retry-After: 120, request-id: request-123, cf-ray: ray-456-YUL, complexity: 950, complexity-v2: 95"
+        in caplog.text
+    )
+    assert "Full Shopify collection JSON failure for Traffic" in caplog.text
+    assert "set-cookie: diagnostic-cookie=value" in caplog.text
+    assert "Body:\n<html>blocked by storefront</html>" in caplog.text
 
 
 def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch) -> None:
