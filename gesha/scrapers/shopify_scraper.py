@@ -39,6 +39,7 @@ def _first_non_blank(*values: str | None) -> str | None:
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
+    USE_COLLECTION_JSON = True
     PRODUCTS_JSON_LIMIT = 250
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     PRODUCT_LINK_ATTRIBUTES: tuple[str, ...] = ("href", "data-url")
@@ -79,9 +80,10 @@ class ShopifyScraper(BaseScraper):
 
     def scrape(self) -> list[CoffeeData]:
         """Prefer Shopify's collection JSON feed to avoid product-page bursts."""
-        coffees = self._scrape_collection_json()
-        if coffees is not None:
-            return coffees
+        if self.USE_COLLECTION_JSON:
+            coffees = self._scrape_collection_json()
+            if coffees is not None:
+                return coffees
         return super().scrape()
 
     def _collection_products_json_url(self, page: int = 1) -> str:

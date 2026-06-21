@@ -13,11 +13,11 @@ from gesha.scrapers.shopify_scraper import (
 class FakeShopifyResponse:
     """Small response fixture for Shopify collection feed tests."""
 
-    def __init__(self, json_data: dict | None = None, status_code: int = 200) -> None:
+    def __init__(self, json_data: dict | None = None, status_code: int = 200, text: str = "") -> None:
         """Create a response with optional JSON payload."""
         self._json_data = json_data
         self.status_code = status_code
-        self.text = ""
+        self.text = text
 
     def raise_for_status(self) -> None:
         """Mirror the HTTP failure behavior the scraper expects."""
@@ -132,6 +132,58 @@ def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(
 
     assert coffees == []
     assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+
+
+def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch) -> None:
+    """Colorfull opts out of collection JSON because those feeds omit useful facts."""
+    calls: list[str] = []
+    collection_html = '<a href="/products/apple-fritter-blend">Apple Fritter</a>'
+    product_html = """
+    <div class="mt-8 text-scheme-text">
+      <ul>
+        <li><span>Process: Natural</span></li>
+        <li><span>Tasting notes: Candied Apple - Cinnamon - Green Jolly Rancher</span></li>
+      </ul>
+    </div>
+    """
+    product_payload = {
+        "title": "Apple Fritter - Blend",
+        "handle": "apple-fritter-blend",
+        "price": 3400,
+        "available": True,
+        "type": "",
+        "tags": [],
+        "description": "",
+        "variants": [{"id": 133, "title": "250g", "price": 3400, "available": True}],
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return old-path responses and fail if collection JSON is requested."""
+        calls.append(url)
+        if "products.json" in url:
+            raise AssertionError(f"Unexpected collection JSON request: {url}")
+        if url == "https://colorfullcoffee.com/collections/all":
+            return FakeShopifyResponse(text=collection_html)
+        if url == "https://colorfullcoffee.com/products/apple-fritter-blend":
+            return FakeShopifyResponse(text=product_html)
+        if url == "https://colorfullcoffee.com/products/apple-fritter-blend.js":
+            return FakeShopifyResponse(product_payload)
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = ColorfullScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert calls == [
+        "https://colorfullcoffee.com/collections/all",
+        "https://colorfullcoffee.com/products/apple-fritter-blend",
+        "https://colorfullcoffee.com/products/apple-fritter-blend.js",
+    ]
+    assert len(coffees) == 1
+    assert coffees[0].name == "apple fritter - blend"
+    assert coffees[0].process == "natural"
+    assert coffees[0].tasting_notes == ["candied apple", "cinnamon", "green jolly rancher"]
 
 
 def test_shopify_product_json_parses_labeled_specs() -> None:
