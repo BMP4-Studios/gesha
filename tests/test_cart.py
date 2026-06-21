@@ -132,6 +132,25 @@ def test_recommendations_prioritize_included_keyword_order() -> None:
     assert candidates[0].overspend_cents == 600
 
 
+def test_recommendation_items_are_ordered_by_preference_fit() -> None:
+    """Rows inside the chosen cart put stronger keyword matches first."""
+    items = [
+        _item(1, 2400, 800, ("funky",)),
+        _item(2, 2400, 800, ("natural",)),
+        _item(3, 2400, 800, ("natural", "floral")),
+    ]
+
+    candidate = recommend_carts(
+        items,
+        7000,
+        max_bags=3,
+        limit=1,
+        keyword_priority=("natural", "floral", "funky"),
+    )[0]
+
+    assert [item.coffee_id for item in candidate.items] == [3, 2, 1]
+
+
 def test_cart_permalink_prefills_canadian_checkout_destination() -> None:
     """Shopify variant IDs and a postal code produce a usable cart URL."""
     candidate = recommend_carts([_item(1, 5000, 1000, ("natural",))], 4500, limit=1)[0]

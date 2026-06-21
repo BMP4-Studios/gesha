@@ -221,6 +221,17 @@ def _priority_coverage(matched_keywords: tuple[str, ...], keyword_priority: tupl
     return tuple(1 if keyword in matched else 0 for keyword in keyword_priority)
 
 
+def _cart_item_sort_key(item: CartItem, keyword_priority: tuple[str, ...]) -> tuple[tuple[int, ...], int, int, int]:
+    """Order cart rows from strongest preference fit to weakest."""
+    priority_coverage = _priority_coverage(item.matched_keywords, keyword_priority)
+    return (
+        tuple(-covered for covered in priority_coverage),
+        -len(item.matched_keywords),
+        item.price_per_100g_cents,
+        item.coffee_id,
+    )
+
+
 def recommend_carts(
     items: list[CartItem],
     threshold_cents: int,
@@ -240,14 +251,17 @@ def recommend_carts(
             if subtotal < threshold_cents:
                 continue
 
-            keyword_union = _ordered_keyword_union(combination, priority_keywords)
+            ordered_combination = tuple(
+                sorted(combination, key=lambda item: _cart_item_sort_key(item, priority_keywords))
+            )
+            keyword_union = _ordered_keyword_union(ordered_combination, priority_keywords)
             candidates.append(
                 CartCandidate(
-                    items=combination,
+                    items=ordered_combination,
                     subtotal_cents=subtotal,
                     threshold_cents=threshold_cents,
                     matched_keywords=keyword_union,
-                    preference_score=sum(len(item.matched_keywords) for item in combination),
+                    preference_score=sum(len(item.matched_keywords) for item in ordered_combination),
                     priority_coverage=_priority_coverage(keyword_union, priority_keywords),
                 )
             )

@@ -174,6 +174,15 @@ def main(ctx: typer.Context) -> None:
     """Refresh and list the Gesha catalog when no subcommand is provided."""
     if ctx.invoked_subcommand is None:
         _refresh_catalog("all")
+        cart(
+            source="all",
+            preferences=DEFAULT_PREFERENCES_PATH,
+            province=None,
+            postal_code=None,
+            threshold=None,
+            max_bags=6,
+            refresh_shipping=True,
+        )
 
 
 @app.command()
@@ -276,13 +285,10 @@ def show(coffee_id: int) -> None:
 def _print_cart_candidate(
     candidate: CartCandidate,
     destination: Destination,
-    *,
-    rank: int,
 ) -> None:
     """Render one ranked recommendation and its Shopify cart permalink."""
     table = Table(
-        title=f"Cart {rank}: {price_display(candidate.subtotal_cents)} "
-        f"({price_display(candidate.overspend_cents)} over threshold)",
+        title=f"Cart: {price_display(candidate.subtotal_cents)} ({price_display(candidate.overspend_cents)} over threshold)",
         show_header=True,
         header_style="bold magenta",
     )
@@ -348,7 +354,6 @@ def cart(
         min=1,
         help="Maximum number of distinct smallest-size bags in a recommendation.",
     ),
-    limit: int = typer_option(3, "--limit", min=1, help="Maximum recommendations shown per roaster."),
     refresh_shipping: bool = typer_option(
         True,
         "--refresh-shipping/--no-refresh-shipping",
@@ -459,7 +464,7 @@ def cart(
                 items,
                 threshold_cents,
                 max_bags=max_bags,
-                limit=limit,
+                limit=1,
                 keyword_priority=preference_config.keywords,
             )
 
@@ -475,8 +480,7 @@ def cart(
                 )
                 continue
 
-            for rank, candidate in enumerate(candidates, start=1):
-                _print_cart_candidate(candidate, destination, rank=rank)
+            _print_cart_candidate(candidates[0], destination)
 
 
 @app.command()

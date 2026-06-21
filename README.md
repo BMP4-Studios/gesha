@@ -170,9 +170,10 @@ For each roaster, Gesha:
 1. Removes coffees that match any `!` exclusion keyword.
 2. Selects the smallest available retail variant of each coffee that matches at least one include keyword.
 3. Finds combinations of distinct coffees that reach the free-shipping threshold.
-4. Ranks carts by ordered include-keyword coverage, then lowest amount above the threshold, then distinct keyword
+4. Selects the single best cart by ordered include-keyword coverage, then lowest amount above the threshold, then distinct keyword
    coverage, total match count, lower combined price per 100 grams, and stable product ID order.
-5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a
+5. Orders the coffees inside that cart by how strongly they match the include keywords.
+6. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a
    pre-filled Shopify cart link.
 
 Gesha checks each roaster's public shipping page and falls back to a configured threshold if the page cannot be
@@ -180,7 +181,7 @@ read or its wording is not recognized. Shipping eligibility remains an estimate 
 restrictions, and checkout rules can change; confirm the final shipping rate at checkout. Use
 `--no-refresh-shipping` for an offline recommendation or `--threshold` to supply a known amount.
 
-Run `gesha cart --help` for controls such as `--max-bags`, `--limit`, and an alternate `--preferences` file.
+Run `gesha cart --help` for controls such as `--max-bags` and an alternate `--preferences` file.
 
 ## Development
 
