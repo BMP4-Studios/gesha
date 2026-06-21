@@ -76,6 +76,76 @@ def test_cart_item_uses_smallest_variant_and_matches_all_metadata() -> None:
     assert item.matched_keywords == ("wilton benitez", "peach")
 
 
+def test_cart_item_skips_bags_larger_than_one_pound() -> None:
+    """Sold-out small bags do not promote an expensive 2lb cart item."""
+    coffee = Coffee(
+        id=9,
+        name="Traffic Fruit Bomb",
+        process="Natural",
+        url="https://example.test/products/fruit-bomb",
+        roaster=Roaster(name="Test Roaster"),
+        tasting_notes=[TastingNote(name="mango")],
+        variants=[
+            CoffeeVariant(
+                shopify_variant_id="sold-out-small",
+                name="250g",
+                price_cents=2500,
+                bag_size="250g",
+                weight_grams=250,
+                availability=False,
+            ),
+            CoffeeVariant(
+                shopify_variant_id="one-pound",
+                name="1lb",
+                price_cents=4200,
+                bag_size="1lb",
+                weight_grams=454,
+                availability=True,
+            ),
+            CoffeeVariant(
+                shopify_variant_id="two-pound",
+                name="2lb",
+                price_cents=7800,
+                bag_size="2lb",
+                weight_grams=907,
+                availability=True,
+            ),
+        ],
+    )
+
+    item = cart_item_for_coffee(coffee, ("natural", "mango"))
+
+    assert item is not None
+    assert item.variant_id == "one-pound"
+    assert item.bag_size == "1lb"
+
+
+def test_cart_item_excludes_coffee_when_only_large_bags_are_available() -> None:
+    """A coffee is omitted if every purchasable variant is larger than 1lb."""
+    coffee = Coffee(
+        id=10,
+        name="Traffic Fruit Barrel",
+        process="Natural",
+        url="https://example.test/products/fruit-barrel",
+        roaster=Roaster(name="Test Roaster"),
+        tasting_notes=[TastingNote(name="mango")],
+        variants=[
+            CoffeeVariant(
+                shopify_variant_id="two-pound",
+                name="2lb",
+                price_cents=7800,
+                bag_size="2lb",
+                weight_grams=907,
+                availability=True,
+            ),
+        ],
+    )
+
+    item = cart_item_for_coffee(coffee, ("natural", "mango"))
+
+    assert item is None
+
+
 def test_cart_item_excludes_coffees_matching_negative_keywords() -> None:
     """A negative match removes a coffee even when it also matches preferences."""
     coffee = Coffee(

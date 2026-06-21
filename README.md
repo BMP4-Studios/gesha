@@ -168,7 +168,8 @@ normalized, and used to infer its province when no province is supplied. Ontario
 For each roaster, Gesha:
 
 1. Removes coffees that match any `!` exclusion keyword.
-2. Selects the smallest available retail variant of each coffee that matches at least one include keyword.
+2. Selects the smallest available retail variant of each coffee that matches at least one include keyword, capped at
+   roughly 1 lb / 454 g.
 3. Adds all matching coffees to one roaster-specific cart.
 4. Orders the coffees inside that cart by how strongly they match the include keywords.
 5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a

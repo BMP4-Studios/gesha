@@ -31,6 +31,7 @@ DEFAULT_PREFERENCE_KEYWORDS = (
     "wine",
     "funky",
 )
+MAX_CART_BAG_WEIGHT_GRAMS = 500
 
 
 @dataclass(frozen=True)
@@ -174,7 +175,8 @@ def matched_keywords(coffee: Coffee, keywords: tuple[str, ...]) -> tuple[str, ..
 def smallest_available_variant(coffee: Coffee) -> CoffeeVariant | None:
     """Return the lightest available variant with price and weight data."""
     # Cart links and unit prices need a real purchasable variant. Wholesale/B2B
-    # variants are filtered out because they are not normal consumer bags.
+    # variants and bags above roughly 1 lb are filtered out because they are not
+    # normal consumer bags for these recommendations.
     usable = [
         variant
         for variant in coffee.variants
@@ -182,6 +184,7 @@ def smallest_available_variant(coffee: Coffee) -> CoffeeVariant | None:
         and variant.price_cents is not None
         and variant.weight_grams is not None
         and variant.weight_grams > 0
+        and variant.weight_grams <= MAX_CART_BAG_WEIGHT_GRAMS
         and is_retail_variant(variant.name)
     ]
 
