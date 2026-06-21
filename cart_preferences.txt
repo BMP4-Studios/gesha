@@ -15,6 +15,8 @@ natural
 anaerobic
 co-ferment
 coferment
+cofermentation
+gesha
 floral
 funky
 

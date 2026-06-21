@@ -532,7 +532,6 @@ def cart(
 
         # Print the fixed header before per-roaster sections so empty roasters
         # still make it clear which destination/preferences were used.
-        console.print()
         console.print(
             Align.center(
                 Text(
