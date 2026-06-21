@@ -15,14 +15,19 @@ SQLITE_URL = "sqlite:///gesha.db"
 
 # Keep one engine and factory at module scope; commands create short sessions.
 engine = create_engine(SQLITE_URL, echo=False, future=True)
+
+# ``expire_on_commit=False`` lets CLI rendering read objects after service
+# methods commit without forcing implicit reloads.
 SessionLocal: sessionmaker[Session] = sessionmaker(bind=engine, future=True, expire_on_commit=False)
 
 
 def init_db() -> None:
     """Create database tables before the first scrape or explicit ``init``."""
+    # SQLAlchemy only creates missing tables; it does not drop user data.
     Base.metadata.create_all(engine)
 
 
 def get_session() -> Session:
     """Return a session used by CLI commands and persistence services."""
+    # The caller owns the session lifetime, usually via ``with get_session()``.
     return SessionLocal()

@@ -5,6 +5,7 @@ from gesha.measurements import is_retail_variant, parse_weight_grams, price_per_
 
 def test_weight_conversion_supports_common_shopify_units() -> None:
     """Metric and imperial variant sizes normalize to rounded grams."""
+    # Shopify stores may expose weights in any of these units.
     assert weight_to_grams(250, "g") == 250
     assert weight_to_grams(1, "kg") == 1000
     assert weight_to_grams(12, "oz") == 340
@@ -20,6 +21,7 @@ def test_weight_parser_reads_free_form_variant_labels() -> None:
 
 def test_price_per_100g_uses_integer_cents() -> None:
     """Unit prices remain stable and currency-safe for CLI comparison."""
+    # Results are rounded cents because the CLI displays currency, not floats.
     assert price_per_100g_cents(2600, 300) == 867
     assert price_per_100g_cents(2500, 250) == 1000
     assert price_per_100g_cents(2500, None) is None

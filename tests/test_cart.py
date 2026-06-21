@@ -16,6 +16,9 @@ from gesha.shipping import Destination
 def test_preference_file_supports_destination_directives(tmp_path: Path) -> None:
     """Keywords remain one-per-line while destination settings stay explicit."""
     path = tmp_path / "preferences.txt"
+
+    # Mix comments, directives, duplicate includes, and exclusions to exercise
+    # the same file shape a user would maintain by hand.
     path.write_text(
         "# My coffee profile\n@province QC\n@postal-code H2X 1Y4\nnatural\npeach\nnatural\n!decaf\n! dark roast\n",
         encoding="utf-8",
@@ -31,6 +34,8 @@ def test_preference_file_supports_destination_directives(tmp_path: Path) -> None
 
 def test_cart_item_uses_smallest_variant_and_matches_all_metadata() -> None:
     """A producer or tasting-note match can qualify the lightest bag."""
+    # Build a real ORM-shaped coffee because cart item creation reads
+    # relationships, variants, and tasting-note rows.
     coffee = Coffee(
         id=7,
         name="Las Flores",
@@ -99,6 +104,7 @@ def test_cart_item_excludes_coffees_matching_negative_keywords() -> None:
 
 def test_recommendations_minimize_overspend_before_preference_tiebreakers() -> None:
     """The first cart clears shipping with the smallest extra subtotal."""
+    # Items 1+2 beat item 3+2 because they cross the threshold with less extra spend.
     items = [
         _item(1, 2600, 867, ("natural", "berry")),
         _item(2, 2300, 767, ("peach",)),
@@ -114,6 +120,8 @@ def test_recommendations_minimize_overspend_before_preference_tiebreakers() -> N
 
 def test_recommendations_prioritize_included_keyword_order() -> None:
     """A higher-list keyword outranks lower-only matches before cost tiebreakers."""
+    # ``natural`` is first in the preference list, so it beats the cheaper/lower
+    # overspend implications that would otherwise matter.
     items = [
         _item(1, 4500, 900, ("floral", "funky")),
         _item(2, 4600, 920, ("natural",)),
@@ -153,6 +161,7 @@ def test_recommendation_items_are_ordered_by_preference_fit() -> None:
 
 def test_cart_permalink_prefills_canadian_checkout_destination() -> None:
     """Shopify variant IDs and a postal code produce a usable cart URL."""
+    # Use a one-item candidate so the expected permalink is easy to inspect.
     candidate = recommend_carts([_item(1, 5000, 1000, ("natural",))], 4500, limit=1)[0]
 
     url = build_cart_permalink(candidate, Destination(province="ON", postal_code="M5V 3A8"))
@@ -171,6 +180,7 @@ def _item(
     keywords: tuple[str, ...],
 ) -> CartItem:
     """Create a compact optimizer item for combination tests."""
+    # Tests that focus on ranking do not need full ORM objects.
     return CartItem(
         coffee_id=coffee_id,
         roaster_name="Test Roaster",

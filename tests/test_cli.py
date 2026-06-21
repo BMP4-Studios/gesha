@@ -17,8 +17,10 @@ def test_test_command_runs_pytest_with_active_python(monkeypatch: pytest.MonkeyP
         calls.append((args, check))
         return SimpleNamespace(returncode=7)
 
+    # Avoid recursively starting pytest from inside pytest.
     monkeypatch.setattr(cli_main.subprocess, "run", fake_run)
 
+    # Typer commands signal process exit by raising ``typer.Exit``.
     with pytest.raises(cli_main.typer.Exit) as exc_info:
         cli_main.test_command()
 

@@ -28,6 +28,7 @@ from gesha.scrapers.base_scraper import BaseScraper
 
 def _first_non_blank(*values: str | None) -> str | None:
     """Return the first source value that carries actual content."""
+    # Product-page facts, JSON facts, and title facts are passed in precedence order.
     for value in values:
         if value:
             cleaned = value.strip()
@@ -39,12 +40,24 @@ def _first_non_blank(*values: str | None) -> str | None:
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
-    USE_COLLECTION_JSON = True
+    # Source subclasses can set this to False when collection feeds omit richer
+    # product-page metadata needed by the catalog.
+    USE_COLLECTION_JSON: bool = True
+
+    # Shopify limits collection JSON pages; current roaster collections fit in one.
     PRODUCTS_JSON_LIMIT = 250
+
+    # Product links may be plain ``/products/x`` or collection-scoped
+    # ``/collections/coffee/products/x`` links.
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     PRODUCT_LINK_ATTRIBUTES: tuple[str, ...] = ("href", "data-url")
+
+    # Stores with reliable tags can require coffee tags; stores without them
+    # opt out by setting INCLUDE_TAGS to an empty tuple.
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
+
+    # Shared label dictionaries can be extended or narrowed per roaster.
     PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
     PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
@@ -56,6 +69,8 @@ class ShopifyScraper(BaseScraper):
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
+        # This is the old/product-page path: start from collection HTML and then
+        # visit each discovered product URL.
         soup = BeautifulSoup(html, "html.parser")
         urls: list[str] = []
 
@@ -80,6 +95,8 @@ class ShopifyScraper(BaseScraper):
 
     def scrape(self) -> list[CoffeeData]:
         """Prefer Shopify's collection JSON feed to avoid product-page bursts."""
+        # The JSON feed usually gives title, tags, description, and variants in
+        # one request. If disabled or unavailable, fall back to BaseScraper.
         if self.USE_COLLECTION_JSON:
             coffees = self._scrape_collection_json()
             if coffees is not None:
@@ -88,15 +105,24 @@ class ShopifyScraper(BaseScraper):
 
     def _collection_products_json_url(self, page: int = 1) -> str:
         """Build Shopify's public collection products JSON endpoint."""
+        # Preserve the configured collection path so each roaster can choose
+        # ``collections/coffee``, ``collections/all``, or another storefront route.
         parsed = urlparse(self.COLLECTION_URL)
         path = parsed.path.rstrip("/")
         return urljoin(self.BASE_URL, f"{path}/products.json?limit={self.PRODUCTS_JSON_LIMIT}&page={page}")
 
     def _scrape_collection_json(self) -> list[CoffeeData] | None:
         """Fetch a whole Shopify collection from one JSON endpoint when available."""
+        # One collection-feed request replaces many per-product page requests.
         response = self.session.get(self._collection_products_json_url(), timeout=15)
+
+        # A 404 means the store/theme does not expose this endpoint; allow the
+        # caller to fall back to the older product-page path.
         if response.status_code == 404:
             return None
+
+        # Other HTTP failures are treated as a failed source refresh. Falling
+        # back to many product requests could make rate limiting worse.
         if response.status_code >= 400:
             self.logger.warning(
                 "Failed to fetch Shopify collection JSON for %s: HTTP %s",
@@ -107,6 +133,8 @@ class ShopifyScraper(BaseScraper):
         response.raise_for_status()
 
         try:
+            # Some storefronts may return HTML from this URL; that is not usable
+            # as a Shopify collection feed.
             payload = response.json()
         except ValueError:
             return None
@@ -119,6 +147,7 @@ class ShopifyScraper(BaseScraper):
 
         coffees: list[CoffeeData] = []
         for raw_product in products:
+            # Collection JSON is external data, so validate shape before casting.
             if not isinstance(raw_product, dict):
                 continue
 
@@ -126,6 +155,7 @@ class ShopifyScraper(BaseScraper):
             if not self._is_coffee_product(product_data):
                 continue
 
+            # Shopify handles are enough to build canonical product URLs.
             handle = str(product_data.get("handle") or "").strip()
             if not handle:
                 continue
@@ -136,16 +166,28 @@ class ShopifyScraper(BaseScraper):
 
     def _product_from_collection_json(self, product_data: dict[str, Any]) -> dict[str, Any]:
         """Normalize collection-feed product JSON to the product-page JSON shape."""
+        # Copy before adapting so tests and callers can reuse their raw fixture.
         product = dict(product_data)
+
+        # Collection JSON calls this field ``body_html``; product ``.js`` calls
+        # the equivalent field ``description``.
         if "description" not in product and "body_html" in product:
             product["description"] = product["body_html"]
+
+        # Product type is named differently across Shopify endpoints.
         if "type" not in product and "product_type" in product:
             product["type"] = product["product_type"]
+
+        # Collection feeds can omit product-level availability, so infer it from
+        # variants when possible.
         if "available" not in product:
             variants = self._raw_variants(product)
             product["available"] = (
                 any(bool(variant.get("available", True)) for variant in variants) if variants else True
             )
+
+        # Collection variant prices are usually decimal dollars; normalize to
+        # integer cents so the rest of the parser sees one shape.
         if "price" not in product:
             product["price"] = self._first_variant_price_cents(product)
         return product
@@ -179,16 +221,20 @@ class ShopifyScraper(BaseScraper):
 
     def parse_product(self, html: str, url: str) -> CoffeeData:
         """Prevent the base HTML parser path for JSON-driven Shopify products."""
+        # Shopify product HTML is not parsed directly; ``scrape_product`` pairs
+        # HTML facts with the product ``.js`` payload.
         raise NotImplementedError("ShopifyScraper parses product JSON instead of product HTML.")
 
     def _canonical_product_url(self, url: str) -> str:
         """Strip collection prefixes so one Shopify item has one stored URL."""
+        # The final path component is the product handle in both URL shapes.
         parsed = urlparse(url)
         handle = parsed.path.rstrip("/").rsplit("/", 1)[-1]
         return urljoin(self.BASE_URL, f"/products/{handle}")
 
     def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
         """Return lowercase Shopify tags independent of API string/list shape."""
+        # Product ``.js`` and collection feeds can expose tags as CSV text or a list.
         raw_tags = product_data.get("tags") or []
         if isinstance(raw_tags, str):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
@@ -196,6 +242,7 @@ class ShopifyScraper(BaseScraper):
 
     def _is_excluded_handle(self, handle: str) -> bool:
         """Return whether a product handle belongs to a non-catalog item."""
+        # Handles tend to be stable even when product copy changes.
         return any(keyword in handle for keyword in self.EXCLUDE_HANDLE_KEYWORDS)
 
     def _is_coffee_product(self, product_data: dict[str, Any]) -> bool:
@@ -251,6 +298,9 @@ class ShopifyScraper(BaseScraper):
             page_facts=page_facts,
             json_facts=json_facts,
         )
+
+        # Variants are parsed before choosing display price/size because the
+        # smallest available retail bag is the canonical cart choice.
         variants = self._extract_variants(product_data)
         default_variant = self._smallest_available_variant(variants)
 
@@ -274,11 +324,13 @@ class ShopifyScraper(BaseScraper):
 
     def _description_text(self, product_data: dict[str, Any]) -> str:
         """Flatten Shopify's HTML description into label-searchable text."""
+        # Newlines preserve paragraph/list boundaries for loose note fallbacks.
         html = str(product_data.get("description") or "")
         return BeautifulSoup(html, "html.parser").get_text("\n", strip=True)
 
     def _extract_details(self, description: str) -> dict[str, str]:
         """Extract labeled metadata exposed in Shopify descriptions."""
+        # This handles the text form of product facts after HTML tags are removed.
         return extract_labeled_product_facts_from_text(
             description,
             label_aliases=self.PRODUCT_FACT_LABELS,
@@ -401,20 +453,28 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_price(self, product_data: dict[str, Any]) -> int | None:
         """Read Shopify's integer-cent product price when it is supplied."""
+        # Product-level price is a fallback when variant-specific prices are absent.
         return self._price_cents(product_data.get("price"))
 
     def _price_cents(self, value: object) -> int | None:
         """Normalize Shopify ``.js`` cent prices and collection dollar prices."""
+        # Product ``.js`` usually uses integer cents.
         if isinstance(value, int):
             return value
+
+        # Collection feeds can expose decimal dollar values.
         if isinstance(value, float):
             return round(value * 100)
         if isinstance(value, str):
             stripped = value.strip().replace(",", "")
             if not stripped:
                 return None
+
+            # All digits means cents, matching Shopify product ``.js`` shape.
             if re.fullmatch(r"\d+", stripped):
                 return int(stripped)
+
+            # Decimal strings mean dollars, matching collection JSON feeds.
             if re.fullmatch(r"\d+(?:\.\d{1,2})?", stripped):
                 return round(float(stripped) * 100)
         return None
@@ -422,6 +482,8 @@ class ShopifyScraper(BaseScraper):
     def _first_variant_price_cents(self, product_data: dict[str, Any]) -> int | None:
         """Use the first available variant price as a product-level fallback."""
         variants = self._raw_variants(product_data)
+
+        # Prefer available variants so sold-out sizes do not set the display price.
         ordered_variants = sorted(variants, key=lambda variant: not bool(variant.get("available", True)))
         for variant in ordered_variants:
             price = self._price_cents(variant.get("price"))
@@ -444,10 +506,12 @@ class ShopifyScraper(BaseScraper):
 
     def _variant_weight_grams(self, variant: dict[str, object]) -> int | None:
         """Read reliable weight fields before falling back to variant labels."""
+        # Collection feeds often include exact grams directly.
         grams = variant.get("grams")
         if isinstance(grams, int | float) and grams > 0:
             return round(float(grams))
 
+        # Product ``.js`` often exposes weight plus a unit.
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
         if isinstance(weight, int | float) and isinstance(unit, str):
@@ -455,6 +519,7 @@ class ShopifyScraper(BaseScraper):
             if converted is not None:
                 return converted
 
+        # Variant labels are the final fallback, e.g. "300g" or "2lb".
         for field in ("title", "public_title", "option1", "sku", "name"):
             raw_value = variant.get(field)
             if isinstance(raw_value, str):
@@ -465,6 +530,7 @@ class ShopifyScraper(BaseScraper):
 
     def _variant_bag_size(self, variant: dict[str, object], weight_grams: int | None) -> str | None:
         """Preserve a source bag label, or synthesize one from gram weight."""
+        # Prefer the storefront's visible size label when it is present.
         for field in ("title", "public_title", "option1", "sku", "name"):
             raw_value = variant.get(field)
             if isinstance(raw_value, str):
@@ -472,6 +538,7 @@ class ShopifyScraper(BaseScraper):
                 if match:
                     return match.group(0).replace(" ", "")
 
+        # A normalized gram label is still better than displaying no size.
         if weight_grams is not None:
             return f"{weight_grams}g"
         return None
@@ -483,12 +550,19 @@ class ShopifyScraper(BaseScraper):
         variants: list[CoffeeVariantData] = []
 
         for index, raw_variant in enumerate(self._raw_variants(product_data), start=1):
+            # Parse weight and bag size first because they drive cart selection.
             weight_grams = self._variant_weight_grams(raw_variant)
             bag_size = self._variant_bag_size(raw_variant, weight_grams)
+
+            # Keep Shopify's human-visible variant title when available.
             raw_title = raw_variant.get("title")
             title = raw_title.strip() if isinstance(raw_title, str) and raw_title.strip() else None
+
+            # Variant price wins over product price; product price is a fallback.
             raw_price = raw_variant.get("price")
             price_cents = self._price_cents(raw_price) or product_price
+
+            # External IDs may arrive as ints or strings depending on endpoint.
             raw_id = raw_variant.get("id")
             variant_id = str(raw_id) if isinstance(raw_id, int | str) and str(raw_id) else None
 
@@ -506,7 +580,11 @@ class ShopifyScraper(BaseScraper):
 
     def _smallest_available_variant(self, variants: list[CoffeeVariantData]) -> CoffeeVariantData | None:
         """Choose the lightest in-stock variant with enough data for a cart."""
+        # Exclude wholesale/B2B options before choosing the smallest bag.
         available = [variant for variant in variants if variant.availability and is_retail_variant(variant.name)]
+
+        # Weight-aware variants can be compared directly; otherwise fall back to
+        # the first available variant from Shopify's source order.
         weighted = [variant for variant in available if variant.weight_grams is not None]
         if weighted:
             return min(weighted, key=lambda variant: variant.weight_grams or 0)
@@ -514,6 +592,7 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_bag_size(self, product_data: dict[str, Any]) -> str | None:
         """Find the smallest available bag size in Shopify variants."""
+        # Product-level bag size mirrors the cart-default variant when possible.
         selected = self._smallest_available_variant(self._extract_variants(product_data))
         if selected is not None:
             return selected.bag_size
@@ -524,6 +603,8 @@ class ShopifyScraper(BaseScraper):
 class PorteBleueScraper(ShopifyScraper):
     """Shopify configuration for Porte Bleue products."""
 
+    # These subclasses are mostly declarative: they tell the shared Shopify
+    # scraper which storefront URL and source labels to use.
     BASE_URL = "https://portebleue.ca"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Porte Bleue"
@@ -533,6 +614,10 @@ class PorteBleueScraper(ShopifyScraper):
 class ColorfullScraper(ShopifyScraper):
     """Shopify configuration for Colorfull, whose products lack coffee tags."""
 
+    # Colorfull's products are not consistently tagged as coffee, so accepts are
+    # based on exclusions rather than INCLUDE_TAGS.
+    # Its collection JSON omits tasting notes, so use the richer product-page path.
+    USE_COLLECTION_JSON = False
     BASE_URL = "https://colorfullcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all"
     SOURCE_NAME = "Colorfull"
@@ -554,6 +639,8 @@ class AngryRoasterScraper(ShopifyScraper):
 class TrafficScraper(ShopifyScraper):
     """Shopify configuration for Traffic products."""
 
+    # Traffic stores rich facts inside a product description block; the selector
+    # prevents unrelated page text from being scanned first.
     BASE_URL = "https://www.trafficcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Traffic"
@@ -566,6 +653,8 @@ class TrafficScraper(ShopifyScraper):
 class DeMelloScraper(ShopifyScraper):
     """Shopify configuration for De Mello products."""
 
+    # De Mello uses a metafield block for origin/process details and has a few
+    # non-coffee handles that should never enter the catalog.
     BASE_URL = "https://hellodemello.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
     SOURCE_NAME = "De Mello"

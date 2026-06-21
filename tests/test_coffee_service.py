@@ -9,12 +9,16 @@ from sqlalchemy.orm import sessionmaker
 
 def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
     """A refreshed roaster loses vanished products without affecting others."""
+    # Use an in-memory database so the test exercises real SQLAlchemy behavior
+    # without touching the user's local ``gesha.db``.
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
 
     with Session() as session:
         service = CoffeeService(session)
+
+        # Current and old rows share a roaster; only the old URL should disappear.
         kept = service.create_or_update_coffee(
             CoffeeData(
                 roaster="Test Roaster",
@@ -37,6 +41,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
             )
         )
 
+        # The current URL set represents one successful scrape of Test Roaster.
         removed_count = service.delete_stale_coffees(
             "Test Roaster",
             ["https://example.test/current-coffee"],
@@ -54,6 +59,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
 
 def test_delete_stale_coffees_skips_empty_url_set() -> None:
     """An empty scrape result cannot erase previously useful cached data."""
+    # Empty URL sets are treated as "do not know" rather than "everything vanished".
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
@@ -79,6 +85,7 @@ def test_delete_stale_coffees_skips_empty_url_set() -> None:
 
 def test_create_or_update_coffee_replaces_shopify_variants() -> None:
     """Variant snapshots keep cart IDs, weights, prices, and stock current."""
+    # This checks the variant relationship path used later by cart optimization.
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)

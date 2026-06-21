@@ -29,6 +29,7 @@ class FakeResponse:
 
 def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
     """One failed Traffic product does not discard other parsed products."""
+    # The collection exposes one good product and one product that will 404.
     collection_html = (
         '<a href="/collections/coffee/products/test-coffee">Test Coffee</a>'
         '<a href="/collections/coffee/products/bad-page">Bad Page</a>'
@@ -38,6 +39,9 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
     def fake_get(url: str, *args, **kwargs) -> FakeResponse:
         """Return fixture responses for each requested Traffic URL."""
         calls.append(url)
+
+        # Force the old product-page path so this test stays focused on
+        # BaseScraper's per-product failure isolation.
         if url == "https://www.trafficcoffee.com/collections/coffee":
             return FakeResponse(collection_html)
         if url == "https://www.trafficcoffee.com/products/test-coffee":
@@ -59,6 +63,7 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
         return FakeResponse("", status_code=404)
 
     scraper = TrafficScraper()
+    scraper.USE_COLLECTION_JSON = False
     monkeypatch.setattr(scraper.session, "get", fake_get)
 
     coffees = scraper.scrape()

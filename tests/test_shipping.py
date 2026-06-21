@@ -25,12 +25,14 @@ def test_nunavut_postal_code_uses_its_specific_fsa_mapping() -> None:
 
 def test_conflicting_province_and_postal_code_are_rejected() -> None:
     """An inconsistent destination cannot silently choose the wrong threshold."""
+    # M5V belongs to Ontario, so pairing it with Quebec should be a hard error.
     with pytest.raises(ValueError, match="belongs to ON, not QC"):
         resolve_destination(province="QC", postal_code="M5V 3A8")
 
 
 def test_traffic_threshold_depends_on_destination() -> None:
     """Traffic's published policy distinguishes Ontario from the rest of Canada."""
+    # The same policy text contains two amounts; destination chooses the regex.
     text = (
         "To qualify for free shipping in Quebec and Ontario, you'd have to spend 40$+ per order. "
         "For the rest of Canada, it's 50$+."

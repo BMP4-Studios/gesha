@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 CANADIAN_POSTAL_CODE = re.compile(r"^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z]\s?\d[ABCEGHJ-NPRSTV-Z]\d$", re.IGNORECASE)
 PROVINCE_BY_FIRST_LETTER: Final[dict[str, str]] = {
+    # Canadian postal codes encode province/territory in the first letter.
     "A": "NL",
     "B": "NS",
     "C": "PE",
@@ -31,6 +32,7 @@ PROVINCE_BY_FIRST_LETTER: Final[dict[str, str]] = {
     "Y": "YT",
 }
 CANADIAN_PROVINCES: Final[set[str]] = {
+    # Accepted Canada Post province and territory abbreviations.
     "AB",
     "BC",
     "MB",
@@ -84,6 +86,8 @@ class ShippingThreshold:
 
 
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
+    # These are known fallbacks plus regexes for refreshing against public
+    # policy pages. Fallbacks keep cart optimization useful when pages change.
     "De Mello Coffee": ShippingPolicy(
         roaster_name="De Mello Coffee",
         policy_url="https://hellodemello.com/pages/faq",
@@ -123,15 +127,20 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
 
 def normalize_postal_code(value: str) -> str:
     """Validate and format a Canadian postal code as ``A1A 1A1``."""
+    # Remove user-entered spacing before validating against the Canada Post form.
     compact = re.sub(r"\s+", "", value).upper()
     if CANADIAN_POSTAL_CODE.fullmatch(compact) is None:
         raise ValueError(f"'{value}' is not a valid Canadian postal code.")
+
+    # Store and display postal codes with the standard middle space.
     return f"{compact[:3]} {compact[3:]}"
 
 
 def province_for_postal_code(postal_code: str) -> str:
     """Infer the province or territory represented by a postal-code FSA."""
     normalized = normalize_postal_code(postal_code)
+
+    # ``X`` covers three northern territories; these FSAs are Nunavut-specific.
     if normalized[:3] in {"X0A", "X0B", "X0C"}:
         return "NU"
     return PROVINCE_BY_FIRST_LETTER[normalized[0]]
@@ -139,28 +148,38 @@ def province_for_postal_code(postal_code: str) -> str:
 
 def resolve_destination(province: str | None = None, postal_code: str | None = None) -> Destination:
     """Resolve explicit and inferred destination values, defaulting to Ontario."""
+    # A postal code is optional, but when present it can infer province and
+    # prefill Shopify checkout links.
     normalized_postal = normalize_postal_code(postal_code) if postal_code else None
     inferred_province = province_for_postal_code(normalized_postal) if normalized_postal else None
     normalized_province = province.upper() if province else None
 
+    # Validate explicit province values before using them in policy lookups.
     if normalized_province and normalized_province not in CANADIAN_PROVINCES:
         raise ValueError(f"'{province}' is not a valid Canadian province or territory abbreviation.")
+
+    # Do not silently accept contradictory destination inputs.
     if normalized_province and inferred_province and normalized_province != inferred_province:
         raise ValueError(f"Postal code {normalized_postal} belongs to {inferred_province}, not {normalized_province}.")
 
+    # Ontario is the project default when the user gives no destination at all.
     return Destination(province=normalized_province or inferred_province or "ON", postal_code=normalized_postal)
 
 
 def _detected_threshold_cents(policy: ShippingPolicy, text: str, destination: Destination) -> int | None:
     """Extract a destination-appropriate dollar amount from policy-page text."""
+    # Some roasters publish province-specific thresholds; fall back to national
+    # patterns when no province-specific pattern exists.
     patterns = policy.patterns_for(destination.province)
     if patterns is None:
         return None
 
+    # Flatten page text before regex matching so HTML line breaks do not matter.
     normalized_text = re.sub(r"\s+", " ", text).lower()
     for pattern in patterns:
         match = re.search(pattern, normalized_text, flags=re.IGNORECASE)
         if match:
+            # Regexes capture dollar values; the rest of the app stores cents.
             return round(float(match.group(1)) * 100)
     return None
 
@@ -173,25 +192,32 @@ def resolve_shipping_threshold(
     timeout: float = 8,
 ) -> ShippingThreshold | None:
     """Refresh a published threshold when possible, then use the known fallback."""
+    # Unknown roasters simply cannot produce free-shipping recommendations.
     policy = SHIPPING_POLICIES.get(roaster_name)
     if policy is None:
         return None
 
     if refresh:
         try:
+            # Policy pages are ordinary web pages, not Shopify APIs.
             response = requests.get(
                 policy.policy_url,
                 headers={"User-Agent": "Mozilla/5.0 (compatible; Gesha cart optimizer)"},
                 timeout=timeout,
             )
             response.raise_for_status()
+
+            # BeautifulSoup removes markup so regexes operate on human-visible text.
             text = BeautifulSoup(response.text, "html.parser").get_text(" ", strip=True)
             detected = _detected_threshold_cents(policy, text, destination)
             if detected is not None:
                 return ShippingThreshold(detected, policy.policy_url, detected_live=True)
         except requests.RequestException:
+            # Network failures should not prevent cart recommendations when a
+            # configured fallback is available.
             pass
 
+    # Fallbacks are marked as not live so the CLI can be honest about provenance.
     fallback = policy.threshold_for(destination.province)
     if fallback is None:
         return None

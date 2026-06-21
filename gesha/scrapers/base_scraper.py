@@ -19,10 +19,15 @@ from gesha.coffee_data import CoffeeData
 class BaseScraper(ABC):
     """Fetch one roaster's listing and transform its products into DTOs."""
 
+    # Concrete scrapers provide these values; the base workflow only knows how
+    # to fetch a collection URL and ask subclasses how to parse it.
     BASE_URL: str
     COLLECTION_URL: str
     SOURCE_NAME: str
     ROASTER_NAME: str
+
+    # Use browser-like headers because some Shopify storefronts block default
+    # Python HTTP clients more aggressively than normal browsers.
     DEFAULT_HEADERS = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -92,9 +97,11 @@ class BaseScraper(ABC):
     @abstractmethod
     def extract_product_urls(self, html: str) -> list[str]:
         """Extract product URLs; implemented for each storefront's markup."""
+        # The base class cannot know each theme's product-card markup.
         raise NotImplementedError
 
     @abstractmethod
     def parse_product(self, html: str, url: str) -> CoffeeData:
         """Normalize one product page; implemented by source-specific parsers."""
+        # Subclasses return ``CoffeeData`` so the rest of the app is scraper-agnostic.
         raise NotImplementedError

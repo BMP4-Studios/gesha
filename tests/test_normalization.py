@@ -11,6 +11,7 @@ def test_price_display_handles_zero_cents() -> None:
 
 def test_normalize_tasting_notes_from_string() -> None:
     """Delimited cup-note text becomes a stable list of note values."""
+    # Cover the separators seen across current roaster fixtures.
     assert normalize_tasting_notes("berry; chocolate; floral") == ["berry", "chocolate", "floral"]
     assert normalize_tasting_notes("Maple, spice") == ["maple", "spice"]
     assert normalize_tasting_notes("Apricot • Honey • Orange") == ["apricot", "honey", "orange"]
@@ -19,6 +20,7 @@ def test_normalize_tasting_notes_from_string() -> None:
 
 def test_normalize_search_text() -> None:
     """Searchable catalog labels are cleaned and lowercased."""
+    # Decorative Unicode is removed, but meaningful punctuation like pipes remains.
     assert normalize_search_text("LOVEBUZZ 😵‍💫 💙") == "lovebuzz"
     assert normalize_search_text("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". bouquet. blossomed edition"
 

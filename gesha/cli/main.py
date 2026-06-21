@@ -38,6 +38,7 @@ from rich.table import Table
 from rich.text import Text
 
 app = typer.Typer(
+    # Typer reads this object to build the installed ``gesha`` command.
     help=(
         "Gesha: A local-first specialty coffee discovery tool.\n\n"
         "This CLI scrapes supported Canadian roasters, normalizes their metadata "
@@ -49,9 +50,13 @@ app = typer.Typer(
 console = Console()
 DEFAULT_PREFERENCES_PATH = Path("cart_preferences.txt")
 
+# Typer's type stubs are stricter than its runtime API. These aliases keep
+# command signatures readable while avoiding noisy type-checking false positives.
 TyperParamFactory = Callable[..., Any]
 typer_argument = cast(TyperParamFactory, typer.Argument)
 typer_option = cast(TyperParamFactory, typer.Option)
+
+# Reuse the same option object anywhere a command accepts the preferences file.
 preferences_file_option = typer_option(
     DEFAULT_PREFERENCES_PATH,
     "--preferences",
@@ -62,9 +67,12 @@ preferences_file_option = typer_option(
 
 def _coffee_price_per_100g_cents(coffee: Coffee) -> int | None:
     """Calculate unit price from the smallest variant or legacy bag fields."""
+    # Prefer variant rows because they are the source of truth for cart links.
     variant = smallest_available_variant(coffee)
     if variant is not None:
         return price_per_100g_cents(variant.price_cents, variant.weight_grams)
+
+    # Older or partially scraped rows may still only have product-level fields.
     return price_per_100g_cents(coffee.price_cents, parse_weight_grams(coffee.bag_size))
 
 
@@ -172,8 +180,14 @@ def _refresh_catalog(source: str) -> None:
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     """Refresh and list the Gesha catalog when no subcommand is provided."""
+    # Typer invokes callbacks for both ``gesha`` and ``gesha <subcommand>``. The
+    # guard makes the default refresh/cart workflow run only when no subcommand
+    # was selected.
     if ctx.invoked_subcommand is None:
         _refresh_catalog("all")
+
+        # Call the command function with real defaults. Passing Typer's option
+        # objects through here would leak CLI metadata into normal Python code.
         cart(
             source="all",
             preferences=DEFAULT_PREFERENCES_PATH,
@@ -188,6 +202,7 @@ def main(ctx: typer.Context) -> None:
 @app.command()
 def init() -> None:
     """Create local SQLite database tables without running a scrape."""
+    # This is useful when checking the DB schema or preparing a fresh checkout.
     init_db()
     console.print("[green]Database initialized.[/green]")
 
@@ -205,6 +220,8 @@ def scrape(
     and deletes coffees that are no longer available on the roaster's site.
     It is also the network-backed counterpart to the read-only ``cache`` command.
     """
+    # All scrape orchestration lives in one helper so the no-argument callback
+    # and explicit ``gesha scrape`` command behave the same way.
     _refresh_catalog(source)
 
 
@@ -252,6 +269,7 @@ def list_coffees_command(
 @app.command()
 def show(coffee_id: int) -> None:
     """Show one cached coffee record selected by its table ID."""
+    # Open a read session for the lifetime of the rendered ORM object.
     with get_session() as session:
         service = CoffeeService(session)
 
@@ -287,6 +305,8 @@ def _print_cart_candidate(
     destination: Destination,
 ) -> None:
     """Render one ranked recommendation and its Shopify cart permalink."""
+    # Each recommendation is its own table because the cart subtotal and
+    # threshold overspend are part of the recommendation, not per-item data.
     table = Table(
         title=f"Cart: {price_display(candidate.subtotal_cents)} ({price_display(candidate.overspend_cents)} over threshold)",
         show_header=True,
@@ -301,6 +321,7 @@ def _print_cart_candidate(
     table.add_column("Notes")
     table.add_column("Matches")
 
+    # Items are already sorted by recommendation strength inside ``CartCandidate``.
     for item in candidate.items:
         name_display = f"[link={item.product_url}]{item.name}[/link]"
         table.add_row(
@@ -316,6 +337,9 @@ def _print_cart_candidate(
 
     console.print(table)
     console.print(f"Preference keywords covered: {', '.join(candidate.matched_keywords)}")
+
+    # The cart link is optional because older cached rows may lack Shopify
+    # variant IDs; the recommendation itself can still be useful without it.
     cart_url = build_cart_permalink(candidate, destination)
     if cart_url:
         console.print(f"[link={cart_url}][bold blue]Open cart![/bold blue][/link]")
@@ -361,14 +385,20 @@ def cart(
     ),
 ) -> None:
     """Recommend preference-matched carts that reach free shipping."""
+    # Keep source validation before preference parsing so typo errors are clear.
     if source not in supported_sources():
         console.print(f"[red]Error: '{source}' is not a supported roaster.[/red]")
         raise typer.Exit(code=1)
 
     try:
+        # The default preferences file is optional, but an explicitly provided
+        # path should fail loudly if it does not exist.
         if preferences != DEFAULT_PREFERENCES_PATH and not preferences.exists():
             raise ValueError(f"Preference file not found: {preferences}")
         preference_config = read_preference_config(preferences)
+
+        # CLI flags override file directives. A postal code can infer province,
+        # so ignore the file province when an explicit postal code is supplied.
         selected_postal_code = postal_code or preference_config.postal_code
         selected_province = province if province is not None else (None if postal_code else preference_config.province)
         destination = resolve_destination(
@@ -383,6 +413,8 @@ def cart(
         console.print("[red]Error: Add at least one preference keyword.[/red]")
         raise typer.Exit(code=1)
 
+    # The shipping policy table is keyed by roaster display names, while CLI
+    # arguments use short source keys such as ``traffic``.
     selected_roasters = list(SHIPPING_POLICIES) if source == "all" else [get_scraper(source).ROASTER_NAME]
     override_cents = round(threshold * 100) if threshold is not None else None
 
@@ -392,6 +424,8 @@ def cart(
         coffees = service.list_coffees(available=True)
         shipping_thresholds = {}
 
+        # Shipping lookups are independent per roaster, so run them concurrently
+        # without mixing them into the database session work.
         if override_cents is None:
             roasters_with_coffee = {
                 roaster_name
@@ -412,6 +446,8 @@ def cart(
                     roaster_name: future.result() for roaster_name, future in threshold_futures.items()
                 }
 
+        # Print the fixed header before per-roaster sections so empty roasters
+        # still make it clear which destination/preferences were used.
         console.print()
         console.print(
             Align.center(
@@ -430,11 +466,14 @@ def cart(
             console.print(f"[bold]Excluded keywords:[/bold] {', '.join(preference_config.excluded_keywords)}")
 
         for roaster_name in selected_roasters:
+            # Work one roaster at a time because Shopify carts cannot mix stores.
             roaster_coffees = [coffee for coffee in coffees if coffee.roaster.name == roaster_name]
             if not roaster_coffees:
                 console.print(f"\n[yellow]{roaster_name}: no cached available coffees.[/yellow]")
                 continue
 
+            # A manual threshold is useful when the live policy page is missing,
+            # ambiguous, or temporarily unavailable.
             if override_cents is not None:
                 threshold_cents = override_cents
                 threshold_source = "command-line override"
@@ -448,6 +487,8 @@ def cart(
                 threshold_source = "live policy page" if shipping_threshold.detected_live else "configured fallback"
                 policy_url = shipping_threshold.policy_url
 
+            # Convert cached coffees into optimizer items. Coffees with no
+            # preference match, excluded keywords, or missing variant data drop out.
             items = [
                 item
                 for coffee in roaster_coffees
@@ -460,6 +501,9 @@ def cart(
                 )
                 is not None
             ]
+
+            # We currently show one best cart per roaster; internals still rank
+            # candidates so this can be expanded later without changing scoring.
             candidates = recommend_carts(
                 items,
                 threshold_cents,
@@ -487,6 +531,7 @@ def cart(
 def debug(coffee_id: int) -> None:
     """Fetch raw source responses for a cached coffee to help parser debugging."""
 
+    # The cached row gives us the canonical URL that the scraper stored.
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
@@ -499,6 +544,8 @@ def debug(coffee_id: int) -> None:
             console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
             raise typer.Exit(code=1)
 
+        # One debug file contains both JSON and HTML so parser fixtures can be
+        # derived from a single capture when a roaster changes its page shape.
         output_path = Path("debug") / f"debug_{coffee_id}.txt"
         output_path.parent.mkdir(exist_ok=True)
         output: list[str] = []

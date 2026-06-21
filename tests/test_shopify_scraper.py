@@ -67,6 +67,9 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
 def test_shopify_scrape_uses_collection_json_feed(monkeypatch) -> None:
     """The primary scrape path reads one collection JSON feed, not each product page."""
     calls: list[str] = []
+
+    # This payload uses collection-feed field names so the adapter has to
+    # normalize ``body_html``, ``product_type``, decimal prices, and variants.
     payload = {
         "products": [
             {
@@ -137,6 +140,8 @@ def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(
 def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch) -> None:
     """Colorfull opts out of collection JSON because those feeds omit useful facts."""
     calls: list[str] = []
+
+    # Colorfull's useful facts live in product-page HTML, not the collection feed.
     collection_html = '<a href="/products/apple-fritter-blend">Apple Fritter</a>'
     product_html = """
     <div class="mt-8 text-scheme-text">
@@ -160,6 +165,9 @@ def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch
     def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
         """Return old-path responses and fail if collection JSON is requested."""
         calls.append(url)
+
+        # This assertion is the important part of the test: Colorfull should use
+        # the old collection HTML -> product page -> .js path.
         if "products.json" in url:
             raise AssertionError(f"Unexpected collection JSON request: {url}")
         if url == "https://colorfullcoffee.com/collections/all":
@@ -225,6 +233,7 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
 
 def test_shopify_product_defaults_to_smallest_available_variant() -> None:
     """Product-level display fields follow the lightest purchasable bag."""
+    # Put the larger bag first to prove the scraper sorts by weight, not source order.
     product = {
         "title": "Smallest Bag",
         "price": 2600,
@@ -271,6 +280,7 @@ def test_colorfull_allows_products_without_type_or_tags() -> None:
 
 def test_shopify_product_prefers_labeled_html_product_facts() -> None:
     """Product-page label sections beat less complete JSON description text."""
+    # JSON says "Washed"; the product page says the richer Colorfull process.
     product = {
         "title": "Apple Crumble",
         "price": 3200,
@@ -378,6 +388,7 @@ def test_traffic_product_uses_shopify_json_labeled_description() -> None:
 
 def test_demello_product_uses_shopify_description_and_metafield_details() -> None:
     """De Mello's small quirks are handled by Shopify config and shared facts."""
+    # Description carries notes/roast hints while the metafield carries facts.
     product = {
         "title": "Dancing Goats",
         "handle": "dancing-goats",
