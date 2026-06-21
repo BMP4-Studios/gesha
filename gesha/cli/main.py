@@ -221,7 +221,6 @@ def main(ctx: typer.Context) -> None:
             province=None,
             postal_code=None,
             threshold=None,
-            max_bags=6,
             refresh_shipping=True,
         )
 
@@ -332,10 +331,17 @@ def _print_cart_candidate(
     destination: Destination,
 ) -> None:
     """Render one ranked recommendation and its Shopify cart permalink."""
+    threshold_delta = candidate.overspend_cents
+    threshold_text = (
+        f"{price_display(threshold_delta)} over threshold"
+        if threshold_delta >= 0
+        else f"{price_display(abs(threshold_delta))} under threshold"
+    )
+
     # Each recommendation is its own table because the cart subtotal and
-    # threshold overspend are part of the recommendation, not per-item data.
+    # threshold delta are part of the recommendation, not per-item data.
     table = Table(
-        title=f"Cart: {price_display(candidate.subtotal_cents)} ({price_display(candidate.overspend_cents)} over threshold)",
+        title=f"Cart: {price_display(candidate.subtotal_cents)} ({threshold_text})",
         show_header=True,
         header_style="bold magenta",
     )
@@ -398,12 +404,6 @@ def cart(
         "--threshold",
         min=0.01,
         help="Override the published free-shipping threshold in CAD.",
-    ),
-    max_bags: int = typer_option(
-        6,
-        "--max-bags",
-        min=1,
-        help="Maximum number of distinct smallest-size bags in a recommendation.",
     ),
     refresh_shipping: bool = typer_option(
         True,
@@ -529,13 +529,9 @@ def cart(
                 is not None
             ]
 
-            # We currently show one best cart per roaster; internals still rank
-            # candidates so this can be expanded later without changing scoring.
             candidates = recommend_carts(
                 items,
                 threshold_cents,
-                max_bags=max_bags,
-                limit=1,
                 keyword_priority=preference_config.keywords,
             )
 
@@ -546,8 +542,8 @@ def cart(
 
             if not candidates:
                 console.print(
-                    "[yellow]No matching combination reaches the threshold with the current keywords, exclusions, "
-                    "and bag limit. A fresh scrape may also be needed to populate variant weights and prices.[/yellow]"
+                    "[yellow]No cached coffees match the current keywords and exclusions with usable variant data. "
+                    "A fresh scrape may be needed to populate variant weights and prices.[/yellow]"
                 )
                 continue
 

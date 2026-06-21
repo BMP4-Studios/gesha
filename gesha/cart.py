@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 import re
 import unicodedata
 from dataclasses import dataclass
@@ -66,7 +65,7 @@ class CartItem:
 
 @dataclass(frozen=True)
 class CartCandidate:
-    """A ranked combination of distinct coffees from one roaster."""
+    """One ranked cart containing distinct coffees from one roaster."""
 
     items: tuple[CartItem, ...]
     subtotal_cents: int
@@ -77,7 +76,7 @@ class CartCandidate:
 
     @property
     def overspend_cents(self) -> int:
-        """Return the subtotal above the target free-shipping threshold."""
+        """Return the subtotal relative to the target free-shipping threshold."""
         return self.subtotal_cents - self.threshold_cents
 
 
@@ -283,61 +282,45 @@ def recommend_carts(
     items: list[CartItem],
     threshold_cents: int,
     *,
-    max_bags: int = 6,
-    limit: int = 3,
     keyword_priority: tuple[str, ...] | None = None,
 ) -> list[CartCandidate]:
-    """Rank distinct-coffee combinations that reach free shipping."""
-    candidates: list[CartCandidate] = []
-    maximum_size = min(max_bags, len(items))
+    """Build one cart containing every item that already matched preferences.
+
+    Args:
+        items: Candidate coffees that already matched the user's include
+            keywords, avoided excluded keywords, and have enough variant data to
+            be placed in a Shopify cart.
+        threshold_cents: Free-shipping target in integer cents. The returned
+            cart records this value for display, but coffees are not removed
+            when the subtotal is below the threshold.
+        keyword_priority: Optional ordered preference list used to rank carts
+            and rows. Earlier keywords are treated as more important than later
+            keywords.
+
+    Returns:
+        A single cart containing all supplied items, or an empty list when no
+        items were supplied.
+    """
     priority_keywords = keyword_priority or ()
+    if not items:
+        return []
 
-    # Try every cart size up to the configured bag limit. This is brute force,
-    # but the item counts are tiny and the scoring is easier to reason about.
-    for size in range(1, maximum_size + 1):
-        for combination in itertools.combinations(items, size):
-            subtotal = sum(item.price_cents for item in combination)
-            if subtotal < threshold_cents:
-                continue
+    # Display the full cart from strongest preference fit to weakest.
+    ordered_items = tuple(sorted(items, key=lambda item: _cart_item_sort_key(item, priority_keywords)))
+    keyword_union = _ordered_keyword_union(ordered_items, priority_keywords)
 
-            # Display each accepted cart from best-matching coffee to weakest so
-            # one roaster produces a single ranked cart table.
-            ordered_combination = tuple(
-                sorted(combination, key=lambda item: _cart_item_sort_key(item, priority_keywords))
-            )
-            keyword_union = _ordered_keyword_union(ordered_combination, priority_keywords)
-
-            # Store all score ingredients on the candidate so rendering can stay
-            # simple and tests can assert the ranking behavior directly.
-            candidates.append(
-                CartCandidate(
-                    items=ordered_combination,
-                    subtotal_cents=subtotal,
-                    threshold_cents=threshold_cents,
-                    matched_keywords=keyword_union,
-                    preference_score=sum(len(item.matched_keywords) for item in ordered_combination),
-                    priority_coverage=_priority_coverage(keyword_union, priority_keywords),
-                )
-            )
-
-    # Ranking priorities:
-    # 1. cover earlier user keywords,
-    # 2. overspend as little as possible,
-    # 3. cover more distinct keywords,
-    # 4. prefer carts with more total keyword hits,
-    # 5. prefer lower unit prices,
-    # 6. make ties deterministic by coffee ID.
-    candidates.sort(
-        key=lambda candidate: (
-            tuple(-covered for covered in candidate.priority_coverage),
-            candidate.overspend_cents,
-            -len(candidate.matched_keywords),
-            -candidate.preference_score,
-            sum(item.price_per_100g_cents for item in candidate.items),
-            tuple(item.coffee_id for item in candidate.items),
+    # The function still returns a list so the CLI shape remains compatible with
+    # older callers, but there is now at most one cart per roaster.
+    return [
+        CartCandidate(
+            items=ordered_items,
+            subtotal_cents=sum(item.price_cents for item in ordered_items),
+            threshold_cents=threshold_cents,
+            matched_keywords=keyword_union,
+            preference_score=sum(len(item.matched_keywords) for item in ordered_items),
+            priority_coverage=_priority_coverage(keyword_union, priority_keywords),
         )
-    )
-    return candidates[:limit]
+    ]
 
 
 def build_cart_permalink(candidate: CartCandidate, destination: Destination) -> str | None:

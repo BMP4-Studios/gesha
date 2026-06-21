@@ -102,26 +102,26 @@ def test_cart_item_excludes_coffees_matching_negative_keywords() -> None:
     assert item is None
 
 
-def test_recommendations_minimize_overspend_before_preference_tiebreakers() -> None:
-    """The first cart clears shipping with the smallest extra subtotal."""
-    # Items 1+2 beat item 3+2 because they cross the threshold with less extra spend.
+def test_recommendations_include_all_matching_items_even_below_threshold() -> None:
+    """The single cart keeps every eligible coffee instead of searching combinations."""
     items = [
         _item(1, 2600, 867, ("natural", "berry")),
         _item(2, 2300, 767, ("peach",)),
         _item(3, 3000, 1000, ("natural", "mango")),
     ]
 
-    candidates = recommend_carts(items, 4500, max_bags=3, limit=2)
+    candidates = recommend_carts(items, 10000)
 
-    assert [item.coffee_id for item in candidates[0].items] == [1, 2]
-    assert candidates[0].subtotal_cents == 4900
-    assert candidates[0].overspend_cents == 400
+    assert len(candidates) == 1
+    assert [item.coffee_id for item in candidates[0].items] == [1, 3, 2]
+    assert candidates[0].subtotal_cents == 7900
+    assert candidates[0].overspend_cents == -2100
 
 
-def test_recommendations_prioritize_included_keyword_order() -> None:
-    """A higher-list keyword outranks lower-only matches before cost tiebreakers."""
-    # ``natural`` is first in the preference list, so it beats the cheaper/lower
-    # overspend implications that would otherwise matter.
+def test_recommendations_prioritize_included_keyword_order_in_one_cart() -> None:
+    """A higher-list keyword sorts rows above lower-only matches."""
+    # ``natural`` is first in the preference list, so it appears above coffees
+    # that match only later preferences.
     items = [
         _item(1, 4500, 900, ("floral", "funky")),
         _item(2, 4600, 920, ("natural",)),
@@ -130,14 +130,12 @@ def test_recommendations_prioritize_included_keyword_order() -> None:
     candidates = recommend_carts(
         items,
         4000,
-        max_bags=1,
-        limit=2,
         keyword_priority=("natural", "floral", "funky"),
     )
 
-    assert [item.coffee_id for item in candidates[0].items] == [2]
-    assert candidates[0].matched_keywords == ("natural",)
-    assert candidates[0].overspend_cents == 600
+    assert [item.coffee_id for item in candidates[0].items] == [2, 1]
+    assert candidates[0].matched_keywords == ("natural", "floral", "funky")
+    assert candidates[0].overspend_cents == 5100
 
 
 def test_recommendation_items_are_ordered_by_preference_fit() -> None:
@@ -151,18 +149,21 @@ def test_recommendation_items_are_ordered_by_preference_fit() -> None:
     candidate = recommend_carts(
         items,
         7000,
-        max_bags=3,
-        limit=1,
         keyword_priority=("natural", "floral", "funky"),
     )[0]
 
     assert [item.coffee_id for item in candidate.items] == [3, 2, 1]
 
 
+def test_recommendations_return_no_cart_when_no_items_match() -> None:
+    """No eligible coffees means no cart recommendation."""
+    assert recommend_carts([], 4500) == []
+
+
 def test_cart_permalink_prefills_canadian_checkout_destination() -> None:
     """Shopify variant IDs and a postal code produce a usable cart URL."""
     # Use a one-item candidate so the expected permalink is easy to inspect.
-    candidate = recommend_carts([_item(1, 5000, 1000, ("natural",))], 4500, limit=1)[0]
+    candidate = recommend_carts([_item(1, 5000, 1000, ("natural",))], 4500)[0]
 
     url = build_cart_permalink(candidate, Destination(province="ON", postal_code="M5V 3A8"))
 

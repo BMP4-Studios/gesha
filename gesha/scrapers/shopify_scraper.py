@@ -42,7 +42,7 @@ class ShopifyScraper(BaseScraper):
 
     # Using the collection json is faster and probably less prone to rate limits, but some stores omit tasting notes from the JSON feed.
     # When enabled, the scraper tries the JSON feed first and falls back to product pages if it is unavailable or fails to parse.
-    USE_COLLECTION_JSON: bool = False
+    USE_COLLECTION_JSON: bool = True
 
     # Shopify limits collection JSON pages; current roaster collections fit in one.
     PRODUCTS_JSON_LIMIT = 250
