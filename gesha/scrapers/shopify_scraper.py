@@ -1,8 +1,8 @@
 """Shopify-oriented scraping and adapters for several supported roasters.
 
-The generic ``ShopifyScraper`` uses product-page HTML plus Shopify product
-JSON by default because product pages usually carry the richest tasting notes.
-A source can opt into collection JSON feeds later if the feed has enough data.
+The generic ``ShopifyScraper`` prefers Shopify collection JSON because several
+storefront collection pages currently trigger Cloudflare challenges. A source
+can still opt out when product pages are required for reliable metadata.
 """
 
 from __future__ import annotations
@@ -39,8 +39,8 @@ def _first_non_blank(*values: str | None) -> str | None:
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
-    # Collection JSON is faster, but it often omits or flattens tasting notes.
-    # Keep it off globally until a source explicitly opts in after fixture proof.
+    # Collection JSON avoids the collection-page Cloudflare challenge for most
+    # stores. Source configs can opt out if collection JSON is too incomplete.
     USE_COLLECTION_JSON: bool = True
 
     # Shopify limits collection JSON pages; current roaster collections fit in one.
@@ -93,9 +93,9 @@ class ShopifyScraper(BaseScraper):
         return sorted(dict.fromkeys(urls))
 
     def scrape(self) -> list[CoffeeData]:
-        """Use collection JSON only for sources that explicitly opt in."""
+        """Prefer collection JSON, unless a source explicitly opts out."""
         # The JSON feed can give title, tags, description, and variants in one
-        # request. With the default switch off, BaseScraper uses product pages.
+        # request. Opted-out sources use BaseScraper's product-page workflow.
         if self.USE_COLLECTION_JSON:
             coffees = self._scrape_collection_json()
             if coffees is not None:
@@ -271,7 +271,7 @@ class ShopifyScraper(BaseScraper):
         """Merge product-page facts, Shopify JSON, and title fallbacks."""
         # Extract every source of structured facts before choosing precedence.
         description = self._description_text(product_data)
-        json_facts = self._extract_details(description)
+        json_facts = self._extract_json_product_facts(product_data, description)
         page_facts = html_facts or (self._extract_html_product_facts(html_soup) if html_soup else {})
         title = normalize_search_text(str(product_data.get("title") or "Unknown coffee")) or "unknown coffee"
         title_facts = self._extract_details_from_title(title)
@@ -337,6 +337,10 @@ class ShopifyScraper(BaseScraper):
             label_aliases=self.PRODUCT_FACT_LABELS,
             stop_labels=self.PRODUCT_FACT_STOP_LABELS,
         )
+
+    def _extract_json_product_facts(self, product_data: dict[str, Any], description: str) -> dict[str, str]:
+        """Extract product facts from Shopify JSON description fields."""
+        return self._extract_details(description)
 
     def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
         """Read product-page label/value sections before JSON fallbacks."""
@@ -649,6 +653,19 @@ class TrafficScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     PRODUCT_FACT_STOP_LABELS = (*DEFAULT_PRODUCT_FACT_STOP_LABELS, "ABOUT")
     PRODUCT_FACT_SELECTORS = ("div.product-block-description",)
+
+    def _extract_json_product_facts(self, product_data: dict[str, Any], description: str) -> dict[str, str]:
+        """Parse Traffic collection JSON descriptions as HTML fact rows."""
+        raw_html = str(product_data.get("description") or "")
+        if raw_html.strip():
+            facts = extract_labeled_product_facts_from_html(
+                BeautifulSoup(raw_html, "html.parser"),
+                label_aliases=self.PRODUCT_FACT_LABELS,
+                stop_labels=self.PRODUCT_FACT_STOP_LABELS,
+            )
+            if facts:
+                return facts
+        return super()._extract_json_product_facts(product_data, description)
 
 
 class DeMelloScraper(ShopifyScraper):

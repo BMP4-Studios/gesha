@@ -85,7 +85,7 @@ def test_scrape_skips_failed_traffic_product_urls(monkeypatch) -> None:
 
 
 def test_collection_failure_logs_summary_and_full_response(monkeypatch, caplog) -> None:
-    """Collection-page 429s get the same diagnostics as optional JSON failures."""
+    """Traffic collection JSON 429s log CLI-sized and full diagnostics."""
     headers = {
         "retry-after": "180",
         "x-request-id": "collection-request-123",
@@ -95,7 +95,7 @@ def test_collection_failure_logs_summary_and_full_response(monkeypatch, caplog) 
     }
 
     def fake_get(url: str, *args, **kwargs) -> FakeResponse:
-        """Return a detailed 429 from the collection page."""
+        """Return a detailed 429 from the collection JSON feed."""
         return FakeResponse(
             "<html>rate limited collection</html>",
             status_code=429,
@@ -111,9 +111,9 @@ def test_collection_failure_logs_summary_and_full_response(monkeypatch, caplog) 
 
     assert coffees == []
     assert (
-        "Failed to fetch collection for Traffic: HTTP 429 Too Many Requests, Retry-After: 180, "
+        "Failed to fetch Shopify collection JSON for Traffic: HTTP 429 Too Many Requests, Retry-After: 180, "
         "request-id: collection-request-123, cf-ray: collection-ray-YUL, complexity-v2: 77" in caplog.text
     )
-    assert "Full HTTP failure while attempting to fetch collection for Traffic" in caplog.text
+    assert "Full HTTP failure while attempting to fetch Shopify collection JSON for Traffic" in caplog.text
     assert "set-cookie: private-cookie=value" in caplog.text
     assert "Body:\n<html>rate limited collection</html>" in caplog.text

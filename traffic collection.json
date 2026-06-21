@@ -1,0 +1,3279 @@
+{
+    "products": [
+        {
+            "id": 8257466892354,
+            "title": "MARCELO ANAEROBIC 1606",
+            "handle": "marcelo-flavio-competition-lot",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eMarcelo Assis \u0026amp; Flavio Silva\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eCampos Altos, Brazil\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess: \u003c\/strong\u003eAnaerobic Natural\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eParaïso\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003elight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003eorange wine, lemon verbena, plum\u003c\/p\u003e\n\u003cp\u003eMarcelo's coffee is nothing new on our menu. This lot, however, is. This is a sort of comp lot he has offered us. The process for this coffee is as follows...\u003c\/p\u003e\n\u003cp\u003eAnaerobic fermentation in stainless steel tankes, temp controlled to not\u003cbr\u003eexceed 28o C. Dried in thick layers on cement patios for 2 days before being spread into thinner layers for 5 - 8 more days. \u003c\/p\u003e\n\u003cp\u003eThis has given the coffee an incredible mouthfeel and sweetness beyond the normal Marcelo offering. Tons of cherryluxardo cherry, orange wine, \u0026amp; soft florals make this a VERY easy to drink Brazilian offering that has more than just the peanut butter\/chocolate bomb we're accustomed to. Enjoy it early \u0026amp; often! \u003c\/p\u003e",
+            "published_at": "2026-06-19T10:55:54-04:00",
+            "created_at": "2026-05-29T13:42:30-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43799310532674,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-COMP-2K26-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8257466892354,
+                    "created_at": "2026-05-29T13:42:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799310565442,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-COMP-2K26-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "65.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8257466892354,
+                    "created_at": "2026-05-29T13:42:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799310598210,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-COMP-2K26-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 8257466892354,
+                    "created_at": "2026-05-29T13:42:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33341376299074,
+                    "created_at": "2025-04-10T14:41:53-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T14:41:55-04:00",
+                    "product_id": 8257466892354,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/COMPETITION.png?v=1744310515",
+                    "width": 4000,
+                    "height": 4000
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8257451720770,
+            "title": "SUPER SUCRÉ 2K26",
+            "handle": "super-sucre-2k26",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eDavid Sabillon\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eLas Flores, Honduras\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess: \u003c\/strong\u003ehoney\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eParaneima\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003emedium\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003emaple taffy, milk chocolate, persimmon\u003c\/p\u003e",
+            "published_at": "2026-06-19T10:55:53-04:00",
+            "created_at": "2026-05-29T13:32:52-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43799258038338,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SUPERSUCRE-2K26-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8257451720770,
+                    "created_at": "2026-05-29T13:32:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799258071106,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SUPERSUCRE-2K26-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "65.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8257451720770,
+                    "created_at": "2026-05-29T13:32:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799258103874,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SUPERSUCRE-2K26-5LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 8257451720770,
+                    "created_at": "2026-05-29T13:32:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33337863503938,
+                    "created_at": "2025-04-10T13:27:27-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T13:27:30-04:00",
+                    "product_id": 8257451720770,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/SUPERSUCRE.png?v=1744306050",
+                    "width": 4000,
+                    "height": 4000
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8257435729986,
+            "title": "SPRING BREAKERS 2K26",
+            "handle": "spring-breakers-2",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003cmeta charset=\"utf-8\"\u003e\u003c\/strong\u003eCesario \"Gio\" Fernandez\u003cstrong\u003e\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eLas Flores, Honduras\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess:\u003c\/strong\u003e natural\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eParaneima\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003elight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003emarmalade, pomegranate, Payday bar\u003c\/p\u003e",
+            "published_at": "2026-06-19T10:55:51-04:00",
+            "created_at": "2026-05-29T13:23:52-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43799172579394,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SPRINGBREAKERS-2K26-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "24.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8257435729986,
+                    "created_at": "2026-05-29T13:23:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799172612162,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SPRINGBREAKERS-2K26-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "74.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8257435729986,
+                    "created_at": "2026-05-29T13:23:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43799172644930,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SPRINGBREAKERS-2K26-5LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "160.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 8257435729986,
+                    "created_at": "2026-05-29T13:23:53-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33338465615938,
+                    "created_at": "2025-04-10T13:48:52-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T13:48:54-04:00",
+                    "product_id": 8257435729986,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/SPRING.png?v=1744307334",
+                    "width": 4000,
+                    "height": 4000
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8234188046402,
+            "title": "LEKALI ESTATE - ESPRESSO ROAST",
+            "handle": "lekali-estate-espresso-roast",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Nima Tenzing\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Nukawot, Nepal\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Mosto washed dry fermentation\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Bourbon \u0026amp; Caturra\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Superlight\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: mulberry, cranberry, Oolong tea\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e\n\u003cspan style=\"text-decoration: underline;\"\u003e\u003cb\u003eLekali Estate — Nima Tenzing\u003c\/b\u003e\u003c\/span\u003e\u003cbr\u003eProduced by \u003cb\u003eNima Tenzing at Lekali Estate in Nepal\u003c\/b\u003e, this VERY RARE Himalayan coffee is BIG funk, crisp apple like tartness \u0026amp; juicy berry notes…it’s something that, if you can afford it, you shouldn’t miss.\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-05-06T14:42:29-04:00",
+            "created_at": "2026-05-06T14:25:34-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43714344550466,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "LEKALI-SPRO-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "140.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8234188046402,
+                    "created_at": "2026-05-06T14:25:34-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43714344583234,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "LEKALI-SPRO-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "300.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8234188046402,
+                    "created_at": "2026-05-06T14:25:34-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35571001000002,
+                    "created_at": "2026-03-18T14:39:26-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-18T14:39:30-04:00",
+                    "product_id": 8234188046402,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/lekali.png?v=1773859170",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35571068862530,
+                    "created_at": "2026-03-18T15:23:48-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-18T15:23:49-04:00",
+                    "product_id": 8234188046402,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/LEKALI_156a328d-1960-4397-888c-ffa0adc9229d.png?v=1773861829",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8234150264898,
+            "title": "sɨmᵾłȺŧɨøn PEPE JIJON SY-OXY 🏔️ 100g",
+            "handle": "sɨmᵾlⱥtɨon-pepe-jijon-sy-oxy-🏔️",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Pepe Jijon\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eEcuador\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Anoxic \u0026amp; anaerobic washed\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003e\u003cspan class=\"community-quickinfo__item\"\u003eSidra\u003c\/span\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Superlight\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: mango, matcha, summiting\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-05-08T14:05:39-04:00",
+            "created_at": "2026-05-06T13:07:13-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43725853098050,
+                    "title": "100g",
+                    "option1": "100g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SIM-PEPEJIJON-SY-OXY-100G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "30.00",
+                    "grams": 0,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8234150264898,
+                    "created_at": "2026-05-08T11:06:07-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43725853130818,
+                    "title": "2lb - B2B Only",
+                    "option1": "2lb - B2B Only",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SIM-PEPEJIJON-SY-OXY-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "200.00",
+                    "grams": 0,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8234150264898,
+                    "created_at": "2026-05-08T11:06:07-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 36171075125314,
+                    "created_at": "2026-05-06T13:03:40-04:00",
+                    "position": 1,
+                    "updated_at": "2026-05-06T13:03:42-04:00",
+                    "product_id": 8234150264898,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/syoxy2.png?v=1778087022",
+                    "width": 3024,
+                    "height": 3024
+                },
+                {
+                    "id": 36171113070658,
+                    "created_at": "2026-05-06T13:10:23-04:00",
+                    "position": 2,
+                    "updated_at": "2026-05-06T13:10:24-04:00",
+                    "product_id": 8234150264898,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/PEPE_ANOXOIC_880ca1c9-6125-4775-ba1d-6322aa8c5594.png?v=1778087424",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "100g",
+                        "2lb - B2B Only"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 8234147512386,
+            "title": "sɨmᵾłȺŧɨøn MORKIE 75 🪻 100g",
+            "handle": "morkie-75",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eBura, Bensa, Sidama\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eEthiopia\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: 72h hand pulped white honey\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003e\u003cspan class=\"community-quickinfo__item\"\u003e74158 Heirloom\u003c\/span\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Superlight\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: mango candy, purple flowers, outer space\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-05-08T14:06:33-04:00",
+            "created_at": "2026-05-06T12:54:07-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43725849067586,
+                    "title": "100g",
+                    "option1": "100g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SIM-MORKIE75-100G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "30.00",
+                    "grams": 100,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 8234147512386,
+                    "created_at": "2026-05-08T11:01:14-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43725849100354,
+                    "title": "2lb - B2B Only",
+                    "option1": "2lb - B2B Only",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SIM-MORKIE75-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "200.00",
+                    "grams": 100,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 8234147512386,
+                    "created_at": "2026-05-08T11:01:14-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 36170956767298,
+                    "created_at": "2026-05-06T12:47:52-04:00",
+                    "position": 1,
+                    "updated_at": "2026-05-06T12:47:54-04:00",
+                    "product_id": 8234147512386,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/morkie.png?v=1778086074",
+                    "width": 3024,
+                    "height": 3024
+                },
+                {
+                    "id": 36171036950594,
+                    "created_at": "2026-05-06T12:57:27-04:00",
+                    "position": 2,
+                    "updated_at": "2026-05-06T12:57:28-04:00",
+                    "product_id": 8234147512386,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MORKIE_4b540bb8-0b25-40b5-bd2f-dfb1cac97eb1.png?v=1778086648",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "100g",
+                        "2lb - B2B Only"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7988636385346,
+            "title": "ＰＯＳＡ ＤＥ ＣＨＲＩＳＴＯ (STEEZUS)",
+            "handle": "il-est-parmis-nous-steezus-🌤-🏽‍-️",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eEdin Ever Sabillon, Nery Martinez, \u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eLas Flores, Santa Barbara, Honduras\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess: \u003c\/strong\u003ewashed \u0026amp; natural\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eParaneima\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003eLight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003ecacao nibs, lime zest, sangria\u003c\/p\u003e\n\u003cp\u003eThis spring, rise to the occasion \u0026amp; brew a coffee of nostalgic 32bit biblical proportions. Posa De Christo is made up of 2 different Paraneima lots, one washed \u0026amp; one natural from two producers; Nery \u0026amp; Edin. This coffee is full of that wild Paraneima flavour profile: The washed coffees often taste bright, tropical, \u0026amp; have this REALLY interesting tea-like note finish almost like sage\/thyme that we find so amazing while the naturals are heavy dark ripe fruits, cacao nibs, \u0026amp; massive body. When these two coffees are blended together, it creates the the best of both worlds...this one \u0026amp; the next ; )\u003c\/p\u003e\n\u003ch4 class=\"Polaris-Text--root Polaris-Text--headingLg Polaris-Text--semibold Polaris-Text--base\" tabindex=\"-1\"\u003e«Il est parmis nous !...STEEZUS» 🌤🧔🏽🛹\u003c\/h4\u003e\n\u003cp\u003e \u003c\/p\u003e\n\u003ch4\u003e\u003cstrong\u003ePARANEIMA\u003c\/strong\u003e\u003c\/h4\u003e\n\u003cp data-end=\"293\" data-start=\"111\"\u003e\u003cstrong data-end=\"124\" data-start=\"111\"\u003eParainema\u003c\/strong\u003e is a coffee varietal developed in Honduras by \u003cspan class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"\u003e\u003cspan class=\"whitespace-normal\"\u003eIHCAFE\u003c\/span\u003e\u003c\/span\u003e as part of a national effort to combat coffee leaf rust while improving cup quality.\u003c\/p\u003e\n\u003cp data-end=\"406\" data-start=\"295\"\u003eIt was \u003cstrong data-end=\"363\" data-start=\"302\"\u003eofficially released in the early 2000s (around 2002–2004)\u003c\/strong\u003e after years of field trials and selection.\u003c\/p\u003e\n\u003cp data-end=\"589\" data-start=\"408\"\u003eGenetically, it comes from \u003cstrong data-end=\"459\" data-start=\"435\"\u003eTimor Hybrid lineage\u003c\/strong\u003e (for rust resistance) crossed with traditional Arabica types—meaning it was built for resilience first, but with flavour in mind.\u003c\/p\u003e\n\u003ch4 data-end=\"620\" data-start=\"596\" data-section-id=\"1k594my\"\u003e\u003cspan role=\"text\"\u003e\u003cstrong data-end=\"620\" data-start=\"602\"\u003eWhere it grows\u003c\/strong\u003e\u003c\/span\u003e\u003c\/h4\u003e\n\u003cp data-end=\"685\" data-start=\"622\"\u003ePrimarily in \u003cspan class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"\u003e\u003cspan class=\"whitespace-normal\"\u003eHonduras\u003c\/span\u003e\u003c\/span\u003e, especially:\u003c\/p\u003e\n\u003cul data-end=\"718\" data-start=\"686\"\u003e\n\u003cli data-end=\"703\" data-start=\"686\" data-section-id=\"10wydfk\"\u003eSanta Bárbara\u003c\/li\u003e\n\u003cli data-end=\"718\" data-start=\"704\" data-section-id=\"1kpsroy\"\u003eEl Paraíso\u003c\/li\u003e\n\u003c\/ul\u003e\n\u003cp data-end=\"753\" data-start=\"720\"\u003eBest expression tends to show at:\u003c\/p\u003e\n\u003cul data-end=\"832\" data-start=\"754\"\u003e\n\u003cli data-end=\"774\" data-start=\"754\" data-section-id=\"w6adrh\"\u003e\u003cstrong data-end=\"774\" data-start=\"756\"\u003e1200–1700 MASL\u003c\/strong\u003e\u003c\/li\u003e\n\u003cli data-end=\"832\" data-start=\"775\" data-section-id=\"98nz6y\"\u003eCooler, slower-growing conditions → more complex sugars\u003c\/li\u003e\n\u003c\/ul\u003e",
+            "published_at": "2026-04-05T08:52:22-04:00",
+            "created_at": "2026-04-04T16:39:19-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43395792142402,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "STEEZUS-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "23.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7988636385346,
+                    "created_at": "2026-04-04T16:39:19-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43395792175170,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "STEEZUS-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "67.50",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7988636385346,
+                    "created_at": "2026-04-04T16:39:19-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43395792207938,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "STEEZUS-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "135.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7988636385346,
+                    "created_at": "2026-04-04T16:39:19-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35924269170754,
+                    "created_at": "2026-04-04T16:34:03-04:00",
+                    "position": 1,
+                    "updated_at": "2026-04-04T16:34:07-04:00",
+                    "product_id": 7988636385346,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/steezus.png?v=1775334847",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35924548124738,
+                    "created_at": "2026-04-04T17:14:57-04:00",
+                    "position": 2,
+                    "updated_at": "2026-04-04T17:14:59-04:00",
+                    "product_id": 7988636385346,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/STEEZUS_ba12b223-744c-49a1-818d-8349a8ad32a2.png?v=1775337299",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7732947681346,
+            "title": "LES FRUITS DU \"BLOOM\" 🍃",
+            "handle": "les-fruits-du-bloom-🍃",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eSebastian Ramirez\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eEl Placer, Colombia\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess:\u003c\/strong\u003e Anaerobic natural\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003ePink Bourbon\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast Level: \u003c\/strong\u003eSuperlight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003echocolate liqueur, purple flowers, grape jelly\u003c\/p\u003e\n\u003cp\u003eSebastien Ramirez is no stranger to us \u0026amp; not a new addition to our menu. This coffee in particular though, is ver much a new addition. Called \"Midnight Bloom\" by Seb, we thought it to be an obvious fit for our Fruits Du Bloom sku. \u003c\/p\u003e\n\u003cp\u003eThis coffee was produced using anaerobic fermentation on MOSTLY ripe cherries (5% semi ripe) \u0026amp; a LONG fermentation time of 200HOURS! We won't get into the nitty gritty but properly fermenting cherries for 200hrs without incurring mold \u0026amp; other negative impacting bacteria is SO HARD \u0026amp; requires meticulous monitoring.\u003c\/p\u003e\n\u003cp\u003e\u003cmeta charset=\"utf-8\"\u003e\u003cstrong data-start=\"42\" data-end=\"83\"\u003e\u003cspan class=\"hover:entity-accent entity-underline inline cursor-pointer align-baseline\"\u003e\u003cspan class=\"whitespace-normal\"\u003eSebastian Ramirez\u003c\/span\u003e\u003c\/span\u003e\u003c\/strong\u003e is a pioneering Colombian coffee producer known for pushing the boundaries of fermentation and flavor design. Working at the forefront of experimental processing, he combines high-Brix cherry selection with extended anaerobic and co-fermentation techniques to create intensely aromatic, fruit-driven coffees that challenge traditional definitions of terroir. His work has helped redefine what modern specialty coffee can taste like, earning recognition among top roasters and competitors worldwide.\u003c\/p\u003e",
+            "published_at": "2026-03-26T10:38:26-04:00",
+            "created_at": "2026-03-19T17:58:04-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43100051144770,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "FDB-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "35.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7732947681346,
+                    "created_at": "2026-03-19T17:58:04-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43100051177538,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "FDB-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "95.00",
+                    "grams": 908,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7732947681346,
+                    "created_at": "2026-03-19T17:58:04-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43100051210306,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "FDB-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "185.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7732947681346,
+                    "created_at": "2026-03-19T17:58:04-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35575880089666,
+                    "created_at": "2026-03-19T17:56:35-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-19T17:56:38-04:00",
+                    "product_id": 7732947681346,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/fdb_144985ba-3e34-444a-a9f1-26174951bf2a.png?v=1773957398",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35621282906178,
+                    "created_at": "2026-03-26T13:59:43-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-26T13:59:45-04:00",
+                    "product_id": 7732947681346,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/FDB_ee712e0e-c780-4690-9a61-d1a5b51cdc54.png?v=1774547985",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7732945223746,
+            "title": "BIG TREE",
+            "handle": "big-tree",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eBig Tree Estate family farm\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eKitale, Kenya\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess:\u003c\/strong\u003e Anaerobic Natural\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eSL28 \u0026amp; Batian\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast Level: \u003c\/strong\u003eSuperlight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003echerry soda, chocolate bar, apricot\u003c\/p\u003e",
+            "published_at": "2026-06-10T09:49:29-04:00",
+            "created_at": "2026-03-19T17:46:28-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43100046721090,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BIGTREE-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "24.50",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7732945223746,
+                    "created_at": "2026-03-19T17:46:28-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43100046753858,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BIGTREE-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "72.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7732945223746,
+                    "created_at": "2026-03-19T17:46:28-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43100046786626,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BIGTREE-5LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "165.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7732945223746,
+                    "created_at": "2026-03-19T17:46:28-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35575871438914,
+                    "created_at": "2026-03-19T17:42:20-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-19T17:42:24-04:00",
+                    "product_id": 7732945223746,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/bigtree.png?v=1773956544",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 36563092799554,
+                    "created_at": "2026-06-21T14:18:28-04:00",
+                    "position": 2,
+                    "updated_at": "2026-06-21T14:18:30-04:00",
+                    "product_id": 7732945223746,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/baobab.png?v=1782065910",
+                    "width": 1000,
+                    "height": 1000
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7732208926786,
+            "title": "LEKALI ESTATE",
+            "handle": "lekali-estate",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Nima Tenzing\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Nukawot, Nepal\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Mosto washed dry fermentation\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Bourbon \u0026amp; Caturra\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Superlight\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: mulberry, cranberry, Oolong tea\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e\n\u003cspan style=\"text-decoration: underline;\"\u003e\u003cb\u003eLekali Estate — Nima Tenzing\u003c\/b\u003e\u003c\/span\u003e\u003cbr\u003eProduced by \u003cb\u003eNima Tenzing at Lekali Estate in Nepal\u003c\/b\u003e, this VERY RARE Himalayan coffee is BIG funk, crisp apple like tartness \u0026amp; juicy berry notes…it’s something that, if you can afford it, you shouldn’t miss.\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-18T15:08:49-04:00",
+            "created_at": "2026-03-18T14:49:30-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43096832704578,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "LEKALI-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "47.50",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7732208926786,
+                    "created_at": "2026-03-18T14:49:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43096832737346,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "LEKALI-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "140.00",
+                    "grams": 0,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7732208926786,
+                    "created_at": "2026-03-18T14:49:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43096832770114,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "LEKALI-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "300.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7732208926786,
+                    "created_at": "2026-03-18T14:49:31-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35571001000002,
+                    "created_at": "2026-03-18T14:39:26-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-18T14:39:30-04:00",
+                    "product_id": 7732208926786,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/lekali.png?v=1773859170",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35571068862530,
+                    "created_at": "2026-03-18T15:23:48-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-18T15:23:49-04:00",
+                    "product_id": 7732208926786,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/LEKALI_156a328d-1960-4397-888c-ffa0adc9229d.png?v=1773861829",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7729500356674,
+            "title": "Odd Coffee - Collaboration avec Messorem",
+            "handle": "odd-coffee-collaboration-avec-messorem",
+            "body_html": "\u003cp\u003e\u003cmeta charset=\"utf-8\"\u003e\u003cspan\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Wilton Benitez \u0026amp; Eduardo Pereira\u003c\/span\u003e\u003cbr\u003e\u003cbr\u003e\u003cspan\u003e\u003cstrong\u003eOrigin:\u003c\/strong\u003e Brazil \u0026amp; Colombia\u003c\/span\u003e\u003cbr\u003e\u003cbr\u003e\u003cspan\u003e\u003cstrong\u003eProcess:\u003c\/strong\u003e Washed \u0026amp; Natural\u003c\/span\u003e\u003cbr\u003e\u003cbr\u003e\u003cspan\u003e\u003cstrong\u003eVarietals:\u003c\/strong\u003e Blend\u003c\/span\u003e\u003cbr\u003e\u003cbr\u003e\u003cspan\u003e\u003cstrong\u003eRoast level:\u003c\/strong\u003e Dark\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup:\u003c\/strong\u003e chocolate cake, almonds, cherries\u003c\/p\u003e",
+            "published_at": "2026-03-13T11:15:34-04:00",
+            "created_at": "2026-03-13T10:41:01-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43087678767170,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "ODDCOFFEE-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 0,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7729500356674,
+                    "created_at": "2026-03-13T10:41:02-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35551142019138,
+                    "created_at": "2026-03-13T10:37:39-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-13T10:37:43-04:00",
+                    "product_id": 7729500356674,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/messo.png?v=1773412663",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35551142051906,
+                    "created_at": "2026-03-13T10:37:39-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-13T10:37:43-04:00",
+                    "product_id": 7729500356674,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/messo2.png?v=1773412663",
+                    "width": 4000,
+                    "height": 4000
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7728392208450,
+            "title": "BEKELE YUTUTE COE \"AFRO FUNK #8\"",
+            "handle": "afro-funk-8",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer\u003cspan\u003e:\u003c\/span\u003e\u003c\/strong\u003e\u003cspan\u003e Bekele Yutute\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Sidamo, Ethiopia\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Natural anaerobic\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003e\u003cspan class=\"community-quickinfo__item\"\u003e74158 Heirloom\u003c\/span\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: boysenberry, honeydew melon, white strawberry\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003eIn 2024, Bekele Yutute placed 4th at Cup Of Excellence. This is a reproduction of that lot. An anaerobic natural with tons of incredible complexity. It needs lots of time to rest. It needs care when brewing, but it's such a rewarding, delicious coffee. Super sweet, floral, a tad funky...this coffee has everything in it. It's one of the best lots we had from that harvest. Please enjoy and drink often ; )\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e \u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eABOUT BEKELE\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp data-end=\"289\" data-start=\"35\"\u003eBekele Yutute farms just under \u003cstrong data-end=\"80\" data-start=\"66\"\u003e4 hectares\u003c\/strong\u003e in the \u003cstrong data-end=\"118\" data-start=\"88\"\u003ehighlands of Bensa, Sidama\u003c\/strong\u003e, at elevations reaching \u003cstrong data-end=\"165\" data-start=\"143\"\u003e2,300–2,350 meters\u003c\/strong\u003e. The farm, Denbi, grows primarily \u003cstrong data-end=\"209\" data-start=\"200\"\u003e74158\u003c\/strong\u003e, a JARC selection known for cup quality and resistance to coffee berry disease.\u003c\/p\u003e\n\u003cp data-end=\"491\" data-start=\"291\"\u003eFor many years Bekele sold cherries to cooperatives. In recent seasons he began \u003cstrong data-end=\"414\" data-start=\"371\"\u003eprocessing and exporting his own coffee\u003c\/strong\u003e, working with small family-run drying sites including \u003cstrong data-end=\"490\" data-start=\"469\"\u003eKokose and Murago\u003c\/strong\u003e.\u003c\/p\u003e\n\u003cp data-end=\"615\" data-start=\"493\"\u003eHis coffees are typically \u003cstrong data-end=\"551\" data-start=\"519\"\u003enatural or anaerobic natural\u003c\/strong\u003e, dried slowly on raised beds after meticulous cherry selection.\u003c\/p\u003e\n\u003cp data-is-only-node=\"\" data-is-last-node=\"\" data-end=\"835\" data-start=\"617\"\u003eThe lot we purchased is part of a wave of coffees from the region that are redefining what Ethiopian naturals can be.\u003c\/p\u003e",
+            "published_at": "2026-03-19T18:32:19-04:00",
+            "created_at": "2026-03-11T16:34:49-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [
+                "Anaerobic natural"
+            ],
+            "variants": [
+                {
+                    "id": 43082132815938,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "AFROFUNK8-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "32.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7728392208450,
+                    "created_at": "2026-03-11T16:34:49-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43082132848706,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "AFROFUNK8-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "91.50",
+                    "grams": 908,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7728392208450,
+                    "created_at": "2026-03-11T16:34:49-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43241309896770,
+                    "title": "5lb - B2B Only",
+                    "option1": "5lb - B2B Only",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "AFROFUNK8-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "221.50",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7728392208450,
+                    "created_at": "2026-03-30T15:06:25-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35538838650946,
+                    "created_at": "2026-03-11T16:30:17-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-11T16:30:20-04:00",
+                    "product_id": 7728392208450,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BYCOE.png?v=1773261020",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35538859294786,
+                    "created_at": "2026-03-11T16:41:18-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-11T16:41:19-04:00",
+                    "product_id": 7728392208450,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/AFROFUNK8.png?v=1773261679",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb - B2B Only"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7727587065922,
+            "title": "NATURALINK ꩜",
+            "handle": "naturalink",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Lenin Flores\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e: El Morito, Peru\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Washed\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: yellow Caturra\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: marmalade, almond roca, pancakes\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-13T15:32:33-04:00",
+            "created_at": "2026-03-10T17:12:50-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43077312413762,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "NATURALINK-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "20.00",
+                    "grams": 300,
+                    "compare_at_price": "22.00",
+                    "position": 1,
+                    "product_id": 7727587065922,
+                    "created_at": "2026-03-10T17:12:50-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077312446530,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "NATURALINK-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "65.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7727587065922,
+                    "created_at": "2026-03-10T17:12:50-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077312479298,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "NATURALINK-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "127.50",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7727587065922,
+                    "created_at": "2026-03-10T17:12:50-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35531092918338,
+                    "created_at": "2026-03-10T17:14:18-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-10T17:14:21-04:00",
+                    "product_id": 7727587065922,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/naturalink.png?v=1773177261",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35531100061762,
+                    "created_at": "2026-03-10T17:20:13-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-10T17:20:15-04:00",
+                    "product_id": 7727587065922,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/NATURALINK_e1a1e5ea-f618-4076-b49a-1f174b8e838e.png?v=1773177615",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7727581298754,
+            "title": "ROBERTA \u0026 EDUARDO",
+            "handle": "roberta-eduardo-pereira",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Roberta \u0026amp; Eduardo Soares Pereira\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Cerrado Mineiro, Brazil\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: anaerobic yeast fermentation\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Acaua Novo\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: chocolate ganache, violets, lulo\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-13T15:32:32-04:00",
+            "created_at": "2026-03-10T16:55:37-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43077286658114,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "R\u0026E-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "23.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7727581298754,
+                    "created_at": "2026-03-10T16:55:37-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077286690882,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "R\u0026E-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "67.50",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7727581298754,
+                    "created_at": "2026-03-10T16:55:37-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077286723650,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "R\u0026E-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "135.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7727581298754,
+                    "created_at": "2026-03-10T16:55:37-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35531059658818,
+                    "created_at": "2026-03-10T16:56:14-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-10T16:56:20-04:00",
+                    "product_id": 7727581298754,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/E_P.png?v=1773176180",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35531090231362,
+                    "created_at": "2026-03-10T17:10:48-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-10T17:10:49-04:00",
+                    "product_id": 7727581298754,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/ROB_ED_5e914f44-b61c-43f1-8142-5020b2b39898.png?v=1773177049",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7727575466050,
+            "title": "SOLARIS ☀️ Peru Natural",
+            "handle": "solaris",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Salomon Estela\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e: El Pino, Peru\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eMarshell\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003eLight\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003e7 UP, malt chocolate, cranberry\u003c\/p\u003e\n\u003cp\u003e \u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eABOUT SALOMON\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003eFarming at 1850–1870 masl, Salomon Estela is a second-generation coffee grower—and father to Miguel Estela—known for his hospitality, experience, and standout Marshell Naturals. Salomon’s farm sees more visitors than any other in the network, a testament to his welcoming presence and deep agronomic knowledge. His motivation is family, and his ambition is to see his coffee recognized in every market it reaches.\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-13T15:32:31-04:00",
+            "created_at": "2026-03-10T16:40:23-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43077270044738,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SOLARIS-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "23.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7727575466050,
+                    "created_at": "2026-03-10T16:40:23-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077270077506,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SOLARIS-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "67.50",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7727575466050,
+                    "created_at": "2026-03-10T16:40:23-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43077270110274,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SOLARIS-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "135.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7727575466050,
+                    "created_at": "2026-03-10T16:40:23-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35531038294082,
+                    "created_at": "2026-03-10T16:40:57-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-10T16:41:02-04:00",
+                    "product_id": 7727575466050,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/solaris.png?v=1773175262",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35531046322242,
+                    "created_at": "2026-03-10T16:48:10-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-10T16:48:11-04:00",
+                    "product_id": 7727575466050,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/SOLARIS_7b9a8217-9309-4e46-854f-ed389367bf67.png?v=1773175691",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7724211863618,
+            "title": "Marina Orellana",
+            "handle": "marina-orelana",
+            "body_html": "\u003cp\u003e\u003cstrong\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cspan\u003eFarmer: \u003c\/span\u003e\u003c\/strong\u003e\u003cspan\u003eMarina Orellana\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eLas Flores, Honduras\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: Washed\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Pacas\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: yellow plum, caramel popcorn, nougat - silky sweetness with a round, comforting finish.\u003c\/span\u003e\u003c\/p\u003e\n\u003cp dir=\"ltr\"\u003e\u003cspan\u003eNew producer alert! This is a nano lot from Marina and our first year working with her.\u003c\/span\u003e\u003c\/p\u003e\n\u003cp dir=\"ltr\"\u003e\u003cspan\u003eMarina farms coffee in Las Flores, Santa Bárbara, one of Honduras’ most celebrated coffee regions near Lake Yojoa. High elevations and volcanic soils produce sweet, balanced coffees with classic Central American structure\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-06T16:37:47-05:00",
+            "created_at": "2026-03-06T12:24:41-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43063882973250,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARINA-300g",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "20.00",
+                    "grams": 300,
+                    "compare_at_price": "23.00",
+                    "position": 1,
+                    "product_id": 7724211863618,
+                    "created_at": "2026-03-06T12:27:35-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35511727390786,
+                    "created_at": "2026-03-06T13:32:53-05:00",
+                    "position": 1,
+                    "updated_at": "2026-03-06T13:32:58-05:00",
+                    "product_id": 7724211863618,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/marina_orellana.png?v=1772821978",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35511818059842,
+                    "created_at": "2026-03-06T14:18:09-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-06T14:18:11-05:00",
+                    "product_id": 7724211863618,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MARINA.png?v=1772824691",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7724210356290,
+            "title": "Yellow Diamond",
+            "handle": "yellow-diamond",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eHabil Olakes\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eWest Rift Valley, Kenya\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: Anaerobic Natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003e\u003cspan class=\"community-quickinfo__item\"\u003eBatian \u0026amp; Ruiru 11\u003c\/span\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: plums, apple cider, honey cake - deep fruit, warm spice, and a syrupy finish\u003c\/span\u003e\u003c\/p\u003e\n\u003cp dir=\"ltr\"\u003e\u003cspan\u003eHabil Olakes moved his family out to Western Kenya to get away from the city, and back to his roots. They started farming \u003c\/span\u003e\u003cspan\u003ecorn and chickens, flowers and honey. They kept the latter two, but turned their focus to producing coffee after hearing \u003c\/span\u003e\u003cspan\u003ethe enthusiasm of a friend and neighbor of theirs—Stephen Nendela of Muinami Estate who you might recognize from Juice Bomb and other bags ; )\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-05-06T11:00:15-04:00",
+            "created_at": "2026-03-06T12:16:38-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43063873044546,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "YELLOWDIAMOND-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "27.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7724210356290,
+                    "created_at": "2026-03-06T12:16:38-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35511725555778,
+                    "created_at": "2026-03-06T13:31:32-05:00",
+                    "position": 1,
+                    "updated_at": "2026-03-06T13:31:36-05:00",
+                    "product_id": 7724210356290,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/YellowDiamondAA_anaerobicnaturalfromHabilOlakes.png?v=1772821896",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35511818190914,
+                    "created_at": "2026-03-06T14:18:11-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-06T14:18:12-05:00",
+                    "product_id": 7724210356290,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/YELLOW_DIAMOND.png?v=1772824692",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7724205178946,
+            "title": "𝐓𝐄𝐂𝐇𝐍𝐎𝐍𝐀𝐓𝐔𝐑𝐄",
+            "handle": "techno-nature",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer:\u003c\/strong\u003e Dominga Carrasco\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: El Amenecer, Peru\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Washed\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: yellow Caturra\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: cherry soda, chocolate bar, apricot\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-03-13T15:32:30-04:00",
+            "created_at": "2026-03-06T11:56:15-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 43063856234562,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "TECHNO-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "23.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7724205178946,
+                    "created_at": "2026-03-06T11:56:15-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43063856267330,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "TECHNO-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "67.50",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7724205178946,
+                    "created_at": "2026-03-06T11:56:15-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43063856300098,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "TECHNO-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "135.00",
+                    "grams": 2270,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7724205178946,
+                    "created_at": "2026-03-06T11:56:15-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35511584096322,
+                    "created_at": "2026-03-06T11:51:29-05:00",
+                    "position": 1,
+                    "updated_at": "2026-03-06T11:51:32-05:00",
+                    "product_id": 7724205178946,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/techno.png?v=1772815892",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35531036983362,
+                    "created_at": "2026-03-10T16:38:53-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-10T16:38:55-04:00",
+                    "product_id": 7724205178946,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/TECHNONATURE.png?v=1773175135",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7672874860610,
+            "title": "‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃",
+            "handle": "bouquet-𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹-𝑒𝒹𝒾𝓉𝒾𝑜𝓃",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: Jairo Arcila, \u003cmeta charset=\"utf-8\"\u003eEliyas Dukamo \u0026amp; Atiklit Dejene\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eColombia \u0026amp; Ethiopia\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: honey \u0026amp; co-ferment\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: 2000\u003c\/span\u003e\u003cspan\u003emasl\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003e\u003cspan class=\"community-quickinfo__item\"\u003e74110 and Pink Bourbon\u003c\/span\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: light\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: rose petals, white chocolate, love letters\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003eThis is a new blend from the cupping lab here at Traffic. We have some beautiful Ethiopians blended with a very novel, very FLORAL, Rose petal co-fermented pink bourbon! The result is the most floral cup of coffee you have ever had!\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2026-01-20T18:33:33-05:00",
+            "created_at": "2026-01-16T08:12:51-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 42898331271234,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BLOSSOMED-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "26.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7672874860610,
+                    "created_at": "2026-01-16T08:12:51-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42898331304002,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BLOSSOMED-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "75.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7672874860610,
+                    "created_at": "2026-01-16T08:12:51-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42898331336770,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BLOSSOMED-5LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "160.00",
+                    "grams": 2275,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7672874860610,
+                    "created_at": "2026-01-16T08:12:51-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35150780923970,
+                    "created_at": "2026-01-14T12:17:51-05:00",
+                    "position": 1,
+                    "updated_at": "2026-01-14T12:18:03-05:00",
+                    "product_id": 7672874860610,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/blossomed.png?v=1768411083",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130895426,
+                    "created_at": "2026-03-04T14:31:33-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:35-05:00",
+                    "product_id": 7672874860610,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BLOSSOMED_f5b9afc8-452d-475d-8384-ee49be0b206e.png?v=1772652695",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7589738938434,
+            "title": "«Collab» avec Béton Armé 🔥🤘🔥 100g",
+            "handle": "beton-arme-100g",
+            "body_html": "\u003cp\u003e\u003cspan style=\"color: rgb(255, 42, 0);\"\u003e\u003cstrong\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cspan style=\"color: rgb(0, 0, 0);\"\u003eWhoah WHOAH WHOAH!!! ✊\u003c\/span\u003e\u003c\/strong\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003e\u003cmeta charset=\"utf-8\"\u003eVoici notre nouvelle « collab » avec la scène musicale émergente Montréalaise : BÉTON ARMÉ X TRAFFIC\u003c\/strong\u003e\u003c\/span\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003e\u003c\/strong\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003ehttps:\/\/open.spotify.com\/intl-fr\/artist\/7B9AYoMBJAGlHtB97cPt9z?si=7kAvRFekTeKQMyEeRiPo8w\u003c\/strong\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003eComme vous savez, notre team est un belle gang de fervants de musique, de « guit » électrique , de ballade dans les mosh pit et on aime notre ville: Montréal notre cité 🖤\u003cbr\u003e\u003cbr\u003eDans le cadre de leur prochaine tournée aux USA 🇺🇸, Béton Armé, ce band de malade à la réputation incroyable et internationale (ça n’est presque plus émergent à ce point ci 🤔…) On a crée avec eux et leur artiste fétiche \u003ca class=\"x1i10hfl xjbqb8w x1ejq31n x18oe1m7 x1sy0etr xstzfhl x972fbf x10w94by x1qhh985 x14e42zd x9f619 x1ypdohk xt0psk2 x3ct3a4 xdj266r x14z9mp xat24cr x1lziwak xexx8yu xyri2b x18d9i69 x1c1uobl x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz notranslate _a6hd\" href=\"https:\/\/www.instagram.com\/beanmash\/\" role=\"link\" style=\"color: rgb(0, 0, 0);\" tabindex=\"0\"\u003e@beanmash\u003c\/a\u003e une super boite de café qui vous allez pouvoir retrouver à leur show pendant leur tournée aux USA 🇺🇸 (btw here’s a shortcut to get our coffee fellow american,, they’ll have our stuff all along their tour, Don’t miss out!!! 👀)\u003cbr\u003e\u003cbr\u003eMerci Béton 🖤 vous êtes vrais, votre musique tue avec tendresse. Bonne tournée!\u003cbr\u003e\u003cbr\u003e\u003ca class=\"x1i10hfl xjbqb8w x1ejq31n x18oe1m7 x1sy0etr xstzfhl x972fbf x10w94by x1qhh985 x14e42zd x9f619 x1ypdohk xt0psk2 x3ct3a4 xdj266r x14z9mp xat24cr x1lziwak xexx8yu xyri2b x18d9i69 x1c1uobl x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz  _aa9_ _a6hd\" href=\"https:\/\/www.instagram.com\/explore\/tags\/l\/\" role=\"link\" style=\"color: rgb(0, 0, 0);\" tabindex=\"0\"\u003el\u003c\/a\u003e’union fait la force 🤝\u003cbr\u003e\u003cbr\u003eCredit à JESSE RAMIREZ pour la photo de groupe\u003c\/strong\u003e\u003c\/span\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003e\u003c\/strong\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"color: rgb(0, 0, 0);\"\u003e\u003cstrong\u003eVoici le café\u003c\/strong\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: Wilton Benitez\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: La Macarena\u003c\/span\u003e\u003cspan\u003e, Cauca, Colombia\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: 1800\u003c\/span\u003e\u003cspan\u003em\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Washed\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Castillo\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eNotes\u003c\/strong\u003e: tangerine, amande grillés, chocolat\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast: \u003c\/strong\u003eLight\u003c\/p\u003e",
+            "published_at": "2026-03-02T11:22:34-05:00",
+            "created_at": "2025-11-06T10:59:59-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 42589878517826,
+                    "title": "100g",
+                    "option1": "100g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BETON-100",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "10.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7589738938434,
+                    "created_at": "2025-11-06T11:00:00-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 34723501932610,
+                    "created_at": "2025-11-06T11:03:20-05:00",
+                    "position": 1,
+                    "updated_at": "2025-11-06T11:03:22-05:00",
+                    "product_id": 7589738938434,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/B.A..png?v=1762445002",
+                    "width": 3024,
+                    "height": 3024
+                },
+                {
+                    "id": 34723511468098,
+                    "created_at": "2025-11-06T11:03:41-05:00",
+                    "position": 2,
+                    "updated_at": "2025-11-06T11:03:43-05:00",
+                    "product_id": 7589738938434,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/IMG_1080.jpg?v=1762445023",
+                    "width": 1206,
+                    "height": 1045
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "100g"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7548898181186,
+            "title": "Édition limité de la ST-JEAN-Guy ⚜️⚜️⚜️",
+            "handle": "jean-guy",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: Wilton Benitez \u0026amp; Eduardo Pereira\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eFarm: \u003c\/strong\u003eGranja Paraiso 92 \u0026amp; Bioma Cafe\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Colombia, Brazil\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: Natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: ~1750-2050m\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: 74110\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Medium-dark\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: \u003cmeta charset=\"utf-8\"\u003eLuxardo, dark chocolate cake, coffee on the patio\u003c\/span\u003e\u003c\/p\u003e\n\u003cp class=\"p1\"\u003e\u003cstrong\u003e\u003cspan class=\"s1\"\u003eJean Guy.\u003c\/span\u003e\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp class=\"p1\"\u003e\u003cspan class=\"s1\"\u003eGrowing up this name was such a big part of our lives here in Quebec. Maybe your bus driver had that name, or the guy that worked at the depanneur near your house, or maybe it was a neighbour or relative. To us it’s kind of that name that is synonymous with the every day “habitant” Québécois. This coffee was born of memories, \"des souvenirs\" of so many different things…the beginnings of Quebec \u0026amp; Montréal, our very distinct \u0026amp; celebrated seasons, and the traditions that come along with them. This is not a light roast coffee because most people in Quebec are not light roast people. They’re old school. What this coffee does differently is that there is an extra layer…a “ché PAS, maaan” of jammy floral fruit that represents the wonderful fruit harvests that we are privy to in this province. Think wild berries from Saguenay \u0026amp; île d’orléans \u0026amp; baies d’argousiers from Kamouraska. That extra layer also represents the uniqueness that makes us different here in “La Belle Province.” So it is a dark roast, but it’s not a dark roast that you’ve ever had before. \u003c\/span\u003e\u003c\/p\u003e\n\u003cp class=\"p3\"\u003e\u003cspan class=\"s2\"\u003eThe packaging was inspired by the road trips that we all have taken throughout \"La Belle Province\", the flora and Fauna that we are able to witness come, go, and evolve throughout the years, and the customs that we all continue to pass on today.\u003c\/span\u003e\u003c\/p\u003e\n\u003cp class=\"p3\"\u003e\u003cspan class=\"s2\"\u003eYou could say in some ways this coffee isn’t for you but instead for us. A little way of tooting our own horn over here in the Europe of Canada. You can always join in with us though because there’s always a log that you can pull up and sit down at this bonfire.\u003c\/span\u003e\u003c\/p\u003e",
+            "published_at": "2025-10-13T12:23:28-04:00",
+            "created_at": "2025-09-22T13:57:08-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 42471697809474,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "JEANGUY-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7548898181186,
+                    "created_at": "2025-09-24T12:17:41-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42471697842242,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "JEANGUY-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "65.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7548898181186,
+                    "created_at": "2025-09-24T12:17:41-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42471697875010,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "JEANGUY-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "130.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7548898181186,
+                    "created_at": "2025-09-24T12:17:41-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 36563089227842,
+                    "created_at": "2026-06-21T14:08:16-04:00",
+                    "position": 1,
+                    "updated_at": "2026-06-21T14:08:20-04:00",
+                    "product_id": 7548898181186,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/stjeanguy.png?v=1782065300",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 34486400712770,
+                    "created_at": "2025-09-19T18:39:58-04:00",
+                    "position": 2,
+                    "updated_at": "2025-09-19T18:40:01-04:00",
+                    "product_id": 7548898181186,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/JEAN-GUY_36f4f19c-fdfa-4998-847c-872c258fe345.png?v=1758321601",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35511818158146,
+                    "created_at": "2026-03-06T14:18:10-05:00",
+                    "position": 3,
+                    "updated_at": "2026-03-06T14:18:11-05:00",
+                    "product_id": 7548898181186,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/JEAN_GUY2.png?v=1772824691",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7484132917314,
+            "title": "PIE FACE V. 2 🥧",
+            "handle": "pie-face",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eFarmer: \u003c\/strong\u003eJairo Arcila\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eColombia\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess:\u003c\/strong\u003e Various co-ferments\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal: \u003c\/strong\u003eCastillo, Pink Bourbon, Caturra\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003eMedium-light\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003ecinnamon brioche, strawberry jam, chocolate tart\u003c\/p\u003e\n\u003cp\u003ePie Face is an experiment. It's a crazy explosion of flavours from combining some of our exceptional co-ferments. This blend is NOT for the faint of heart or anyone still upset about co-ferments existing. We think this is a cool coffee to stash in your freezer for an afternoon delight, \u0026amp; make your favourite coffee mocktails with \u0026amp; it continues to support the people we work with in other coffees that are more accessible and part of their less labour intensive harvests. \u003c\/p\u003e",
+            "published_at": "2026-03-26T13:07:15-04:00",
+            "created_at": "2025-05-23T12:17:43-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [
+                "pie"
+            ],
+            "variants": [
+                {
+                    "id": 43159971528770,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PF-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "36.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7484132917314,
+                    "created_at": "2026-03-27T15:21:08-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43237058674754,
+                    "title": "2lb - B2B Only",
+                    "option1": "2lb - B2B Only",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PF-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "105.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7484132917314,
+                    "created_at": "2026-03-30T10:44:17-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43237058707522,
+                    "title": "5lb - B2B Only",
+                    "option1": "5lb - B2B Only",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PF-5LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "205.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7484132917314,
+                    "created_at": "2026-03-30T10:44:17-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35621225103426,
+                    "created_at": "2026-03-26T13:08:41-04:00",
+                    "position": 1,
+                    "updated_at": "2026-03-26T13:08:45-04:00",
+                    "product_id": 7484132917314,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/pieface_66c8cb71-0e7c-4bd2-9935-a5f41574387a.png?v=1774544925",
+                    "width": 3750,
+                    "height": 3750
+                },
+                {
+                    "id": 35621251416130,
+                    "created_at": "2026-03-26T13:34:47-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-26T13:34:48-04:00",
+                    "product_id": 7484132917314,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/PIE_FACE.png?v=1774546488",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb - B2B Only",
+                        "5lb - B2B Only"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7454984175682,
+            "title": "Half-Caf PBJ",
+            "handle": "half-caf-pbj",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmers\u003c\/strong\u003e: Marcelo Assis \u0026amp; Flavio Silva\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Finca \u003c\/span\u003eOhlos D'agua, Cerrado Mineiro, Brazil\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: ~1206-1800m\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: pulped natural\/ethyl acetate\/co-fermentation\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Castillo, Paraiso, Colombia\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: light\/medium\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eNotes\u003c\/strong\u003e: banana, PB \u0026amp; jam\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003eEver want to drink a sandwich? Me neither! But wow! What a cool coffee this is.\u003c\/p\u003e\n\u003cp\u003eMade with a honey style processed BANANA co-ferment, this half-caf is an incredible afternoon delight. Try it over ice with coconut milk and a nice coconut cream whip if you dare!\u003c\/p\u003e",
+            "published_at": "2026-03-13T15:32:29-04:00",
+            "created_at": "2025-03-18T10:10:32-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 42059794546754,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PBJ-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "29.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7454984175682,
+                    "created_at": "2025-03-21T14:57:05-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42104772689986,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PBJ-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "82.50",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7454984175682,
+                    "created_at": "2025-04-16T10:52:46-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 43087928721474,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "PBJ-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "187.50",
+                    "grams": 2270,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7454984175682,
+                    "created_at": "2026-03-13T15:12:47-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35511574593602,
+                    "created_at": "2026-03-06T11:46:15-05:00",
+                    "position": 1,
+                    "updated_at": "2026-03-06T11:46:50-05:00",
+                    "product_id": 7454984175682,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/pbj.png?v=1772815610",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35551624233026,
+                    "created_at": "2026-03-13T15:57:07-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-13T15:57:09-04:00",
+                    "product_id": 7454984175682,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/PBJ_f4425b5b-e2c5-4ae8-b313-a1150cf20945.png?v=1773431829",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 7434540187714,
+            "title": "⋆｡°✩ Booty Call 2026 ✩°｡⋆",
+            "handle": "booty-call",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003e\u003cspan\u003eColombia \u0026amp; Honduras\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: ~1730m-2250m\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Honey co-ferment \u0026amp; washed\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Pink bourbon, Paraneima\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast Level\u003c\/strong\u003e: Light-medium\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: peach, coconut whipped cream, booty calls\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003eHere's a wild one for you \u0026amp; your valentine to brew together or you can brew it solo and give yourself all the love...it's your love to give or share as you choose. This blend is made up of a wonderful coffee from Santa Barbara, Honduras and Jairo Arcila's Honey processed peach co-ferment. It's a ridiculously juicy, THICCC cup that hits in all the right spots. Don't be too scared of co-ferments in this context. On their own they can be overwhelming, but in a blend like this, we think you're up to it. Do you accept the challenge? Hope so, we're aiming to be your fave booty call ; )\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e \u003c\/p\u003e",
+            "published_at": "2026-01-20T18:38:05-05:00",
+            "created_at": "2025-02-03T11:43:39-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 41987938025538,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOOTYCALL2K26-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "26.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 7434540187714,
+                    "created_at": "2025-02-12T10:54:03-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 41987938058306,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOOTYCALL2K26-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "78.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 7434540187714,
+                    "created_at": "2025-02-12T10:54:03-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42997110800450,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOOTYCALL2K26-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "145.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 7434540187714,
+                    "created_at": "2026-02-13T13:30:40-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35150754742338,
+                    "created_at": "2026-01-14T12:03:06-05:00",
+                    "position": 1,
+                    "updated_at": "2026-01-14T12:09:02-05:00",
+                    "product_id": 7434540187714,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/booty_d9146921-d4bc-40cb-a4e7-5807b5642af1.png?v=1768410542",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130338370,
+                    "created_at": "2026-03-04T14:31:31-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:33-05:00",
+                    "product_id": 7434540187714,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BOOTY_CALL.png?v=1772652693",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 6914115764290,
+            "title": "Vintërfika",
+            "handle": "vinterfika",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003eCosta Rica \u0026amp; Colombia\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess: \u003c\/strong\u003eAnaerobic natural \u0026amp; co-ferment\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eAltitude:\u003c\/strong\u003e 1525-2000 masl\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal:\u003c\/strong\u003e Castillo and Sarchimor\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003eMedium\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003eSwedish Cardamom buns, gingerbread cookie, milk chocolate\u003c\/p\u003e\n\u003cp\u003eAptly named \"Vintërfika\", this is THE perfect coffee for those cozy winter mornings at home, a brisk walk around the lake, or your \"Après Ski\" traditions at your favourite mountain! What can we say, we're canucks and we love winter! This blend is made with some really nice coffees, including one of Jairo's cardamom co-ferments that we've been waiting to receive. This coffee is NOT a super light roast, but it's still VERY fragrant, sweet, \u0026amp;amp; hits on a winters day like nothing else.\u0026amp;nbsp;\u003c\/p\u003e\n\u003cp\u003eGet your skis shined up and grab a stick of juicy fruit....or a bag of this Vintërfika, cuz it's gonna get gone real fast.\u003c\/p\u003e",
+            "published_at": "2026-01-20T18:33:05-05:00",
+            "created_at": "2023-04-27T13:52:27-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 40290695479362,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "VINT-300g",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "24.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 6914115764290,
+                    "created_at": "2023-04-27T13:52:27-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 41205457289282,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "VINT-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "68.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 6914115764290,
+                    "created_at": "2024-05-01T15:44:12-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 40290695512130,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "VINT-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "145.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 6914115764290,
+                    "created_at": "2023-04-27T13:52:27-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35150812184642,
+                    "created_at": "2026-01-14T12:42:59-05:00",
+                    "position": 1,
+                    "updated_at": "2026-01-14T12:43:23-05:00",
+                    "product_id": 6914115764290,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/vinterfika.png?v=1768412603",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130371138,
+                    "created_at": "2026-03-04T14:31:31-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:33-05:00",
+                    "product_id": 6914115764290,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/VINTERFIKA_18c0bfe8-2de4-44b4-a143-0b689e5e04ac.png?v=1772652693",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 6863228534850,
+            "title": "BASHA BEKELE DUWANCHO",
+            "handle": "bombe-duwancho",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: Basha Bekele \u0026amp; ~100 small farmers\u003c\/span\u003e\u003cstrong\u003e\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Bensa, Ethiopia\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: Natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: 74158 Heirloom\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: blood orange, Aperol, pear, long sunsets\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-start=\"113\" data-end=\"597\" class=\"\"\u003eFrom the same place and people that brought us Nguisse Nare comes BOMBE DUWANCHO. High up on a ridge at 2,300 MASL in Bombe, \u003cmeta charset=\"utf-8\"\u003e\u003cstrong data-start=\"154\" data-end=\"166\"\u003eDuwancho\u003c\/strong\u003e sits among the highest-altitude washing stations in all of Ethiopia. We’ve had our eyes (and cups) on this region for years, and it keeps delivering — consistently placing among the top performers in the \u003cstrong data-start=\"371\" data-end=\"402\"\u003eEthiopian Cup of Excellence\u003c\/strong\u003e. The elevation here pushes the coffee to develop exceptionally dense seeds, giving way to those vibrant, layered profiles we chase every season.\u003c\/p\u003e\n\u003cp data-start=\"551\" data-end=\"799\"\u003eProducer \u003cstrong data-start=\"560\" data-end=\"569\"\u003eBasha\u003c\/strong\u003e took home first place at the COE unsurprisingly but, we all knew it was inevitable. These coffees have become some of our all-time favourites — and clearly, we’re not the only ones.\u003c\/p\u003e",
+            "published_at": "2025-12-15T12:34:49-05:00",
+            "created_at": "2022-12-14T15:00:57-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 40136836186178,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOMBEDUWANCHO-300G",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": {
+                        "id": 34486395174978,
+                        "product_id": 6863228534850,
+                        "position": 1,
+                        "created_at": "2025-09-19T18:30:53-04:00",
+                        "updated_at": "2025-09-19T18:37:19-04:00",
+                        "alt": null,
+                        "width": 4000,
+                        "height": 4000,
+                        "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BOMBE.png?v=1758321439",
+                        "variant_ids": [
+                            40136836186178
+                        ]
+                    },
+                    "available": true,
+                    "price": "26.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 6863228534850,
+                    "created_at": "2022-12-19T10:09:23-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42140886138946,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOMBEDUWANCHO-2LB",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "74.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 6863228534850,
+                    "created_at": "2025-05-08T13:55:36-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 42471648460866,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "BOMBEDUWANCHO-5LBS",
+                    "requires_shipping": true,
+                    "taxable": true,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "145.00",
+                    "grams": 2275,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 6863228534850,
+                    "created_at": "2025-09-24T11:30:40-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 34486395174978,
+                    "created_at": "2025-09-19T18:30:53-04:00",
+                    "position": 1,
+                    "updated_at": "2025-09-19T18:37:19-04:00",
+                    "product_id": 6863228534850,
+                    "variant_ids": [
+                        40136836186178
+                    ],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BOMBE.png?v=1758321439",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130141762,
+                    "created_at": "2026-03-04T14:31:27-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:29-05:00",
+                    "product_id": 6863228534850,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/BOMBE_0a957104-ee74-4d5a-9b03-190ab706a05f.png?v=1772652689",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 6676654850114,
+            "title": "Santa Margarita",
+            "handle": "santa-margarita",
+            "body_html": "\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eFarmer\u003c\/strong\u003e: Santa Margarita \/ Camila Topke\u003cbr data-mce-fragment=\"1\"\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eOrigin\u003c\/strong\u003e\u003cspan data-mce-fragment=\"1\"\u003e: Chimaltenango, Acatenango\u003c\/span\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cbr data-mce-fragment=\"1\"\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eAltitude\u003c\/strong\u003e: 1640\u003c\/span\u003e\u003cspan data-mce-fragment=\"1\"\u003em\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eProcess\u003c\/strong\u003e: washed, dried on patios and on raised beds\u003c\/span\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cbr data-mce-fragment=\"1\"\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eVarietal\u003c\/strong\u003e: Caturra, Sarchimor, Catimor, Geisha\u003c\/span\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cbr data-mce-fragment=\"1\"\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eRoast level\u003c\/strong\u003e: DARK\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003e\u003cspan data-mce-fragment=\"1\"\u003e\u003cstrong data-mce-fragment=\"1\"\u003eNotes\u003c\/strong\u003e: molasses, dark chocolate, walnuts, buttery\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp data-mce-fragment=\"1\"\u003eThis super cool single origin is roasted real old school so, at home, it's a breeze to pull an espresso. This iteration of this coffee reminded us of our grandmothers, who back in the day, would eat molasses on bread as a dessert! Times were real tough back then in La Belle Province but \"Grandm'man\" made it through cuz they made em tough back in the day! Super delicious, produced uniquely by girl power in Guatemala, we hope to continue to have the privilege of buying from them and roasting up this great green as a 90's style throwback to old school coffee.\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003eFinca Santa Margarita is the family farm of Camila Topke, a trader at InterAmerican Coffee. Santa Margarita is in large part operated by women. In addition to women coffee pickers, women are in charge of the grafting program and of running the farm's school and health clinic.\u003c\/p\u003e\n\u003cp\u003eCamila is a member of the International Women's Coffee Alliance (\u003ca href=\"https:\/\/www.womenincoffee.org\/\" target=\"_blank\"\u003eIWCA\u003c\/a\u003e) and for a time was vice president of the IWCA Guatemala chapter. She was also instrumental in developing Santa Margarita's forward-looking environmental programs and is still very active in its management.\u003c\/p\u003e\n\u003ch4\u003eFinca Santa Margarita\u003c\/h4\u003e\n\u003cp\u003eThe farm was founded in 1838 by Thomas Wyld (Camila’s great grandfather) and has been in the family or four generations. Today, Santa Margarita is 2,320 hectares—812 of which are coffee farm—with Caturra, Sarchimor, Catimor and Geisha varieties. The rest is dedicated natural forest land, devoted to the promotion of natural species and wildlife biodiversity.\u003c\/p\u003e\n\u003cp\u003eThe farm has three springs, which are protected by environmental policies and provide water to the people living on the farm, as well as to the wet mill.\u003c\/p\u003e\n\u003cp\u003eEnvironmental sustainability is a key mission of Finca Santa Margarita, from the moment seeds are planted to the moment coffee leaves the farm. Its management practices are based on an agroforestry system that includes low intakes of agrochemicals, the use of organic, compost-based soil nutrition, high shade coverage and sustainable quality standards.\u003c\/p\u003e\n\u003cp\u003eThe farm also takes very seriously the quality of life of the workers on the farm. It houses an elementary school for children who live on Santa Margarita, as well as neighboring farms (there are 75 children in the school in total). The farm also includes a small church and health clinic that partner with the Guatemala Dept. of Health.\u003c\/p\u003e\n\u003ch4\u003eProcessing\u003c\/h4\u003e\n\u003cp\u003eCoffee is washed and dried on patios, as well as on raised African beds. A goal of the farm is to build a cupping facility on site and to train workers to cup and be advocates for quality.\u003c\/p\u003e",
+            "published_at": "2025-07-11T15:07:09-04:00",
+            "created_at": "2021-11-08T10:46:15-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 39604445577282,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SANTA-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "21.50",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 6676654850114,
+                    "created_at": "2021-11-09T15:51:24-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 40281030721602,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SANTA-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "60.50",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 6676654850114,
+                    "created_at": "2023-04-17T10:38:42-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 39778153398338,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "SANTA-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 6676654850114,
+                    "created_at": "2022-05-01T10:28:25-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33339932901442,
+                    "created_at": "2025-04-10T14:15:04-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T14:15:12-04:00",
+                    "product_id": 6676654850114,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/SANTA_a79ef83f-89b6-4185-b09d-711bbe22280b.png?v=1744308912",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130076226,
+                    "created_at": "2026-03-04T14:31:26-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:27-05:00",
+                    "product_id": 6676654850114,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/SANTA_e935b84a-34fe-4da7-8ee0-01d317da56a8.png?v=1772652687",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 4439469228098,
+            "title": "GOOD VIBRATIONS 🎵🎶",
+            "handle": "good-vibes",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eOrigin: \u003c\/strong\u003e\u003cspan\u003eColombia \u0026amp; Ethiopia\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e\n\u003cstrong\u003eProcess\u003c\/strong\u003e: Washed co-ferment \u0026amp; washed\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: ~1730-2250m\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: purple Caturra \u0026amp; 74111 Heirloom\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: Medium\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: watermelon, jasmine tea, \"rosé\" all day\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003e\u003cspan\u003eSpend winter on an island in the sun!\u003c\/span\u003e\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003eMaybe don't mix any of this with your Whiteclaw but, you can still make insane cold brew to bring to the beach or brew some up and chuck it in a tumbler for later. This blend is meant to bring 2 complimentary coffees together for a super unique experience. You see, with these crazy co-ferments, there are many times people don't want to have a full \"melt your face off\" (or \"melt your wallet\") cup of coffee but you still want to enjoy some insanely juicy\/funky\/special brew...what are the youth to do? Well, they can try one of these! This is the 1st of a whole array of blends we're coming in hot with that will feature our fave experimental coffees of the season.\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003ePlease do enjoy the \"Good Vibrations\" of this \"Assemblage de Plage\" any way you choose. It's a good thing.\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e \u003c\/p\u003e",
+            "published_at": "2026-04-01T13:25:20-04:00",
+            "created_at": "2020-01-23T14:11:32-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 31564986253378,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "GOODVIBES-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "26.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 4439469228098,
+                    "created_at": "2020-01-23T14:11:32-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 41536377192514,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "GOODVIBES-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "78.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 4439469228098,
+                    "created_at": "2024-07-17T16:42:54-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 41536377225282,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "GOODVIBES-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": false,
+                    "price": "145.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 4439469228098,
+                    "created_at": "2024-07-17T16:42:54-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 34556670640194,
+                    "created_at": "2025-10-08T15:17:15-04:00",
+                    "position": 1,
+                    "updated_at": "2025-10-08T15:17:33-04:00",
+                    "product_id": 4439469228098,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/GOOD_77258e6c-443b-44b7-8253-934842328468.png?v=1759951053",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130502210,
+                    "created_at": "2026-03-04T14:31:33-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:35-05:00",
+                    "product_id": 4439469228098,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/GOOD_VIBES.png?v=1772652695",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 4345266798658,
+            "title": "Marcelo Assis Nogueira",
+            "handle": "marcelo-assis",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: \u003c\/span\u003e\u003cspan\u003eMarcelo Assis Nogueira\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarm\u003c\/strong\u003e: Ohlos D'agua\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Campos Altos, \u003c\/span\u003e\u003cspan\u003eBrazil \u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eProcess\u003c\/strong\u003e: Natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: Paraïso \u0026amp; Arara\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: Reese's, pomegranate, thyme \u0026amp; apricot\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003eThis marks the 4th year we've bought the most exceptional coffee offered by Marcelo. Marcelo \u0026amp; Flavio's commitment to quality \u0026amp; excellence is why, for years to come, we will be working with them \u0026amp; Bioma\/Aequitas, on these farms. This year, this natural is so clean, you'd think it was a washed coffee. Sweet, rich, very heavy body that pairs beautifully with milk, \u0026amp; as an espresso, finishes with a very subtle lime\/tropical note. VERY low acidity coffee for those who aren't fond of bright cups ; )\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eAbout the Farm\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp style=\"font-weight: 400;\"\u003eBioma Café’s story begins back in 2001 when\u003cspan\u003e \u003c\/span\u003e\u003cspan\u003eMarcelo\u003c\/span\u003e\u003cspan\u003e \u003c\/span\u003eNogueira Assis and Flavio Marcio Silva met each other and committed their life purposes in farming. Both,\u003cspan\u003e \u003c\/span\u003e\u003cspan\u003eMarcelo\u003c\/span\u003e\u003cspan\u003e \u003c\/span\u003eand Flavio, were born in families that carry the agriculture DNA. Flavio who has vast experience in managing the family businesses met\u003cspan\u003e \u003c\/span\u003e\u003cspan\u003eMarcelo\u003c\/span\u003e\u003cspan\u003e \u003c\/span\u003ewho was a recent graduate in the technical school of agriculture and cattle and was eager to explore the farming universe. As a result, they formed a partnership based on love for agriculture, respect, and reciprocity.                       \u003cbr\u003e \u003c\/p\u003e\n\u003cp style=\"font-weight: 400;\"\u003eCoffee is a passion for most people that live in Cerrado, in the state of Minas Gerais and it wasn't different for the young entrepreneurs who were born and raised among coffee plantations. In 2010, an opportunity arose and they constituted the first farm, focused on specialty coffee production in Campos Altos region, Minas Gerais. They carefully evaluated each piece of land that would receive the coffee crops, after all the purpose was of producing extraordinary coffees. After a long period looking for the perfect terroir, the farm location was selected, a place that produces the most incredible coffees in the high plateaus of Cerrado Mineiro. The Cerrado is one of the richest biomes in the world in terms of biodiversity, and Bioma Café emerged with the purpose of producing specialty coffees maintaining the balance between agriculture and the Cerrado biome. \u003c\/p\u003e",
+            "published_at": "2025-04-10T14:23:59-04:00",
+            "created_at": "2019-11-07T14:07:11-05:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 31170432139330,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 4345266798658,
+                    "created_at": "2019-11-07T14:07:11-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 40163433939010,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "60.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 4345266798658,
+                    "created_at": "2023-01-12T13:42:22-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 31170432172098,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MARCELO-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 4345266798658,
+                    "created_at": "2019-11-07T14:07:11-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33340388704322,
+                    "created_at": "2025-04-10T14:21:24-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T14:21:32-04:00",
+                    "product_id": 4345266798658,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MARCELO_1.png?v=1744309292",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130928194,
+                    "created_at": "2026-03-04T14:31:34-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:35-05:00",
+                    "product_id": 4345266798658,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MARCELO_ea9ff68e-e532-4964-a31e-b65c665b6978.png?v=1772652695",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 4182398533698,
+            "title": "Minute Papillon DECAF",
+            "handle": "minutepapillon",
+            "body_html": "\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eFarmer\u003c\/strong\u003e: Grupo San Augustin Los Cauchos\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: \u003c\/span\u003e\u003cspan\u003eCauca, Colombia\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eProcess\u003c\/strong\u003e: washed, oxygen sugarcane decaf\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: 1800-2000m\u003c\/span\u003e\u003cspan\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: \u003c\/span\u003eCaturra \u0026amp; Typica\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eRoast level\u003c\/strong\u003e: M\u003c\/span\u003eedium\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eIn the cup\u003c\/strong\u003e: cookie dough, blood orange, afternoon yoga\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003eThis is NOT your regular decaf. None of the decaf coffees we source are. This one, however, holds a special place in our hearts. Years ago, when we still were trying to understand why decaf sucked so much, we found a few examples of really fantastically processed decafs but, we realized there had to be a few boxes ticked off every time.\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eOne\u003c\/strong\u003e - It had to be a great coffee to start with, not a coffee that didn't turn out \u0026amp; the only thing left was to make it a decaf.\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eTwo \u003c\/strong\u003e- It had to be decaffeinated at origin. Not only from a freshness perspective but also to reduce as much of the carbon footprint as possible. Coffee is already a product that travels across the world and sometimes back again, so any small element we can improve is a win.\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eThree\u003c\/strong\u003e - It had to be the best decaf we ever had. While this decaf remains the highest we've paid ever for a decaf, it IS by far the best decaf we've ever drank so, you get what you pay for. \u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eThe San Augustin \u0026amp; El Alto de Los Idolos\u003cbr\u003e\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003eAround 1.000 B.C. a pre-Colombian civilization known as San Agustín ﬂourished next to the mountains where the Magdalena River comes to life. The civilization disappeared mysteriously before the arrival of the Spanish Conquerors. Little is known as to exactly what happened and the only thing that was left behind were the burial sites. These sites were discovered in 1960 by explorers and the archaeological park “El Alto de Los Idolos”, the home to these burial sites, was founded.\u003c\/p\u003e\n\u003cp\u003eThe coffee growers from this region initially got together to share ideas and form groups to facilitate the sale of their coffees. The group has always been quality focused and members currently working on standardizing practices, improving their overall processes as well as their drying patios. They have managed to signiﬁcantly increase the quality of their coffee over time.\u003c\/p\u003e\n\u003cp\u003e\u003cbr\u003e\u003c\/p\u003e",
+            "published_at": "2025-05-05T20:17:58-04:00",
+            "created_at": "2019-10-07T14:59:37-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 30344323366978,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MP-DECAF-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 4182398533698,
+                    "created_at": "2019-10-07T14:59:37-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 32652669911106,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MP-DECAF-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "65.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 4182398533698,
+                    "created_at": "2021-02-01T10:33:57-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 41662925963330,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MP-DECAF-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "120.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 4182398533698,
+                    "created_at": "2024-09-20T15:35:41-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33489439522882,
+                    "created_at": "2025-05-08T13:22:13-04:00",
+                    "position": 1,
+                    "updated_at": "2025-05-08T13:22:40-04:00",
+                    "product_id": 4182398533698,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MINUTE_dc007356-5394-459f-990a-26b87323cbed.png?v=1746724960",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493183422530,
+                    "created_at": "2026-03-04T14:54:01-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:54:03-05:00",
+                    "product_id": 4182398533698,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/DECAF_3d0aa6c3-4a1d-49c0-96a4-1a6ef5576b9d.png?v=1772654043",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 1943363682370,
+            "title": "Olympus Espresso",
+            "handle": "olympus",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eOrigin:\u003c\/strong\u003e South America\u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eProcess: \u003c\/strong\u003eNatural\/washed\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level:\u003c\/strong\u003e Medium-dark\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eIn the cup: \u003c\/strong\u003eReese's chocolate, salted butter caramel, the early 2000s\u003c\/p\u003e\n\u003cp\u003eThe “Olympus” is that constant workhorse, ready to perform every day. It's an old-school vibe of big creamy peanut butter, chocolate, \u0026amp; toffee with a small bit of candied orange that accents the syrupy sweet notes. Cuts through milk like gangbusters so you're never drinking...well, just a cup of warm milk :\/\u003c\/p\u003e\n\u003cp\u003eThis blend is seasonal, as are all of our blends but we try to always keep the origins the same. Fresh Brazil from our favourite micro-lot projects and some super sweet Central \u0026amp; South American coffees that have won our cupping tables each quarter. Is this coffee super funky? NO. It's not supposed to be.\u003c\/p\u003e\n\u003cp\u003eIt's about the early 2000's at the beginning of specialty coffee in Montreal. It's your favourite pair of skate shoes. Your favourite Montreal Haunt. Your best friends.\u003c\/p\u003e\n\u003cp\u003eThis coffee is about the tried and true, the \"always there for you\".\u003c\/p\u003e",
+            "published_at": "2024-07-01T10:50:26-04:00",
+            "created_at": "2019-07-08T12:57:04-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 16025477349442,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "OLYMPUS-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "21.50",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 1943363682370,
+                    "created_at": "2019-07-08T12:57:04-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 39638420652098,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "OLYMPUS-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "60.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 1943363682370,
+                    "created_at": "2021-12-11T11:19:39-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 16025477382210,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "OLYMPUS-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 1943363682370,
+                    "created_at": "2019-07-08T12:57:04-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 34809837518914,
+                    "created_at": "2025-11-24T14:31:29-05:00",
+                    "position": 1,
+                    "updated_at": "2025-11-24T14:32:19-05:00",
+                    "product_id": 1943363682370,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/olympus_63196b85-bce7-477b-95b7-ca77f9fd52fc.png?v=1764012739",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130436674,
+                    "created_at": "2026-03-04T14:31:32-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:34-05:00",
+                    "product_id": 1943363682370,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/OLYMPUS_07511fe3-1775-4f82-a568-fbf8ebba1f4e.png?v=1772652694",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 1943359946818,
+            "title": "Dante Street Espresso",
+            "handle": "dante-street",
+            "body_html": "\u003cp\u003e\u003cspan style=\"font-weight: 400;\"\u003e\u003c\/span\u003e\u003cspan style=\"font-weight: 400;\"\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e: Central \u0026amp; South America + Africa\u003cbr\u003e\u003cbr\u003e\u003c\/span\u003e\u003cb\u003eProcess\u003c\/b\u003e: Natural \u0026amp; washed \u003cbr\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"font-weight: 400;\"\u003e\u003cstrong\u003eRoast level:\u003c\/strong\u003e Super dark\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"font-weight: 400;\"\u003e\u003cmeta charset=\"utf-8\"\u003e \u003cstrong\u003eIn the cup:\u003c\/strong\u003e dark chocolate, tobacco flower \u0026amp; liquorice \u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan style=\"font-weight: 400;\"\u003eThis sweet, rich, syrupy espresso is exactly what Nono \u0026amp; Nona will approve of. They’re harsh critics, \u0026amp; rightly so, it’s a tradition to uphold. While our interpretation of Italian roast contains no Robusta, this coffee is pushed to the deep, dark reaches of coffee roasting to give you that bold taste that pairs outstandingly with milk, or as an espresso with your favourite zeppoli!\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eThe Story behind \"Dante Street\"\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003eDante St. ….what can I say...I smell pizza, I smell cannolis, coffee....I feel like an Italian in my city. When I was a child my best friend's parents brought us to Quincallerie Dante (ON DANTE) it was such a polarizing shop, I thought. Guns \u0026amp; Kitchen gear. I was too young to make the distinction between hunting weapons \u0026amp; anything you’d see on COPS. Still, the store was magical to me \u0026amp; remains one of the places I visit every time I’m in Little Italy. That area is full of life, spirit, \u0026amp; that same unidentifiable quality I found so charming all those years ago. You could say this is my tip of the hat to the Italians I grew up with, \u0026amp; the ones that still put up with me today!\u003c\/p\u003e\n\u003cp\u003e\u003cbr\u003e\u003cbr\u003e\u003c\/p\u003e",
+            "published_at": "2024-07-01T10:32:44-04:00",
+            "created_at": "2019-07-08T12:54:39-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 16025451888706,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "DANTE-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "22.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 1943359946818,
+                    "created_at": "2019-07-08T12:54:39-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 39638209757250,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "DANTE-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "60.00",
+                    "grams": 1000,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 1943359946818,
+                    "created_at": "2021-12-10T21:18:49-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 16025451921474,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "DANTE-5LBS",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "125.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 1943359946818,
+                    "created_at": "2019-07-08T12:54:39-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 33339888697410,
+                    "created_at": "2025-04-10T14:14:15-04:00",
+                    "position": 1,
+                    "updated_at": "2025-04-10T14:14:25-04:00",
+                    "product_id": 1943359946818,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/DANTE_1.png?v=1744308865",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35493130403906,
+                    "created_at": "2026-03-04T14:31:32-05:00",
+                    "position": 2,
+                    "updated_at": "2026-03-04T14:31:34-05:00",
+                    "product_id": 1943359946818,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/DANTE_b94c9ee2-e7a9-4b8f-8783-5bd98cde9648.png?v=1772652694",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 1943356833858,
+            "title": "Milkshake Espresso",
+            "handle": "milkshakeespresso",
+            "body_html": "\u003cp\u003e\u003cstrong\u003eOrigin\u003c\/strong\u003e\u003cspan\u003e: Kenya \u0026amp; Ethiopia \u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cmeta charset=\"utf-8\"\u003e\n\u003cstrong\u003eProcess\u003c\/strong\u003e: washed \u0026amp; natural\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eAltitude\u003c\/strong\u003e: ~1700\u003c\/span\u003e\u003cspan\u003e-2200m\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eVarietal\u003c\/strong\u003e: various JARC Landraces \u0026amp; combination of SL's and ruiru 11, Batian\u003c\/span\u003e\u003cspan\u003e\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003eRoast level: \u003c\/strong\u003eMedium\u003c\/p\u003e\n\u003cp\u003e\u003cspan\u003e\u003cstrong\u003eNotes\u003c\/strong\u003e: upside down pineapple cake, raspberry, peach\u003cbr\u003e\u003c\/span\u003e\u003c\/p\u003e\n\u003cp\u003eOriginally an ode to one of our favourite espresso blends from the UK, the milkshake morphed into our tribute to a director that we love...David Lynch.\u003c\/p\u003e\n\u003cp\u003eIt's a dessert cart at your favourite old school diner, it's memories of your grandmothers angel food cake with cut-up strawberries and fresh cream in summer, it's nostalgic movies that make us feel good. This is easily one of the best blends we've made. It changes every year because the crops rotate but we will always aim to keep it fruit forward but round, juicy but not too bright.\u003c\/p\u003e\n\u003cp\u003eMade with coffees we'd serve as Single Origins, as usual, this blend is of the utmost quality. It's something we do differently here at Traffic...because we care ; )\u003c\/p\u003e\n\u003cp\u003ePrices may rise \u0026amp; fall throughout the year based on what kind of prices we receive as a final price for the coffees we're roasting for this blend. WHEN we can reduce the prices we will but, keep in mind, these are coffees from inherently expensive origins and we're sourcing from our long time partners so, they have final say in what their coffees are worth. We hope you agree : )\u003c\/p\u003e\n\u003cp\u003e\u003cstrong\u003ePULLING THE MILKSHAKE\u003c\/strong\u003e\u003c\/p\u003e\n\u003cp\u003eWe recommend larger shots, so, a larger ratio of dry to wet.\u003c\/p\u003e\n\u003cp\u003eEXAMPLE: 17g ground coffee = 42.5-45g of espresso (in 29-31 seconds)\u003c\/p\u003e\n\u003cp\u003e(This is a 1:2.5-2.75 ratio)\u003c\/p\u003e\n\u003cp\u003eIF you age this 2 months or + you can sometimes compress that ratio to close to a 1:2-1:2.25 ratio which is concentrated but PACKED with flavour! Both ways work, play with it!\u003c\/p\u003e\n\u003cp\u003eALSO, don't be afraid of making this coffee as a pour over or a batch of drip. It's awesome like that too!\u003c\/p\u003e",
+            "published_at": "2026-06-10T09:45:50-04:00",
+            "created_at": "2019-07-08T12:52:39-04:00",
+            "updated_at": "2026-06-21T15:36:10-04:00",
+            "vendor": "Traffic Coffee",
+            "product_type": "coffee",
+            "tags": [],
+            "variants": [
+                {
+                    "id": 16025429475394,
+                    "title": "300g",
+                    "option1": "300g",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MILK-300G",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "28.00",
+                    "grams": 300,
+                    "compare_at_price": null,
+                    "position": 1,
+                    "product_id": 1943356833858,
+                    "created_at": "2019-07-08T12:52:39-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 40736602521666,
+                    "title": "2lb",
+                    "option1": "2lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MILK-2LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "74.00",
+                    "grams": 907,
+                    "compare_at_price": null,
+                    "position": 2,
+                    "product_id": 1943356833858,
+                    "created_at": "2024-01-29T14:18:51-05:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                },
+                {
+                    "id": 16025429508162,
+                    "title": "5lb",
+                    "option1": "5lb",
+                    "option2": null,
+                    "option3": null,
+                    "sku": "MILK-5LB",
+                    "requires_shipping": true,
+                    "taxable": false,
+                    "featured_image": null,
+                    "available": true,
+                    "price": "138.00",
+                    "grams": 2268,
+                    "compare_at_price": null,
+                    "position": 3,
+                    "product_id": 1943356833858,
+                    "created_at": "2019-07-08T12:52:39-04:00",
+                    "updated_at": "2026-06-21T15:36:10-04:00"
+                }
+            ],
+            "images": [
+                {
+                    "id": 35511581507650,
+                    "created_at": "2026-03-06T11:50:02-05:00",
+                    "position": 1,
+                    "updated_at": "2026-03-06T11:50:21-05:00",
+                    "product_id": 1943356833858,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/milkshake_87033031-149f-4331-b46e-7a091976fe27.png?v=1772815821",
+                    "width": 4000,
+                    "height": 4000
+                },
+                {
+                    "id": 35609691062338,
+                    "created_at": "2026-03-25T13:39:12-04:00",
+                    "position": 2,
+                    "updated_at": "2026-03-25T13:39:13-04:00",
+                    "product_id": 1943356833858,
+                    "variant_ids": [],
+                    "src": "https:\/\/cdn.shopify.com\/s\/files\/1\/0085\/8977\/0818\/files\/MILKSHAKE_14d184b5-2318-4569-96bf-3d2c8320c35f.png?v=1774460353",
+                    "width": 2501,
+                    "height": 2501
+                }
+            ],
+            "options": [
+                {
+                    "name": "Size",
+                    "position": 1,
+                    "values": [
+                        "300g",
+                        "2lb",
+                        "5lb"
+                    ]
+                }
+            ]
+        }
+    ]
+}

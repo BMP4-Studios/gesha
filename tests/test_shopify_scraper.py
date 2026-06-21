@@ -81,16 +81,16 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     ]
 
 
-def test_shopify_scrape_defaults_to_product_page_path(monkeypatch) -> None:
-    """Shopify scrapers use product pages by default for richer tasting notes."""
+def test_shopify_scrape_defaults_to_collection_json_feed(monkeypatch) -> None:
+    """Shopify scrapers use collection JSON by default to avoid collection-page challenges."""
     calls: list[str] = []
 
     def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
-        """Fail if the default path unexpectedly requests collection JSON."""
+        """Return an empty collection feed and fail if product pages are requested."""
         calls.append(url)
-        if "products.json" in url:
-            raise AssertionError(f"Unexpected collection JSON request: {url}")
-        return FakeShopifyResponse(text="")
+        if url == "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1":
+            return FakeShopifyResponse({"products": []})
+        raise AssertionError(f"Unexpected request: {url}")
 
     scraper = TrafficScraper()
     monkeypatch.setattr(scraper.session, "get", fake_get)
@@ -98,7 +98,7 @@ def test_shopify_scrape_defaults_to_product_page_path(monkeypatch) -> None:
     coffees = scraper.scrape()
 
     assert coffees == []
-    assert calls == ["https://www.trafficcoffee.com/collections/coffee"]
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
 
 
 def test_shopify_scrape_can_opt_into_collection_json_feed(monkeypatch) -> None:
@@ -426,38 +426,45 @@ def test_shopify_title_pipe_facts_remain_supported() -> None:
     assert coffee.process == "washed"
 
 
-def test_traffic_product_uses_shopify_json_labeled_description() -> None:
-    """Traffic's Shopify JSON description contains the structured product facts."""
+def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
+    """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
     product = {
-        "title": "LITTLE SWAMPS AA",
-        "handle": "little-swamps-aa",
-        "price": 2600,
+        "title": "Milkshake Espresso",
+        "handle": "milkshakeespresso",
+        "price": 2800,
         "available": True,
         "type": "coffee",
         "tags": [],
         "description": (
-            "<p><strong>Origin</strong><span>: </span><span>Kitale, Kenya<br></span></p>"
-            "<p><span><strong>Process</strong>: Washed</span></p>"
-            "<p><span><strong>Varietal</strong>: AA </span><span>Batian &amp; Ruiru</span></p>"
-            "<p><span><strong>Roast level</strong>: Superlight</span></p>"
-            "<p><span><strong>In the cup</strong>: tangerine, blackberry jam, raspberry</span></p>"
+            "<p><strong>Origin</strong><span>: Kenya &amp; Ethiopia </span><span><br></span></p>"
+            "<p><span><strong>Process</strong>: washed &amp; natural</span></p>"
+            "<p><span><strong>Altitude</strong>: ~1700</span><span>-2200m</span></p>"
+            "<p><span><strong>Varietal</strong>: various JARC Landraces &amp; combination of SL's and ruiru 11, "
+            "Batian</span><span><br></span></p>"
+            "<p><strong>Roast level: </strong>Medium</p>"
+            "<p><span><strong>Notes</strong>: upside down pineapple cake, raspberry, peach<br></span></p>"
+            "<p>Originally an ode to one of our favourite espresso blends from the UK, the milkshake morphed into "
+            "our tribute to a director that we love...David Lynch.</p>"
+            "<p><strong>PULLING THE MILKSHAKE</strong></p>"
+            "<p>We recommend larger shots, so, a larger ratio of dry to wet.</p>"
         ),
         "variants": [{"title": "Default Title", "weight": 300, "weight_unit": "g"}],
     }
 
     coffee = TrafficScraper()._coffee_from_product(
         product,
-        "https://www.trafficcoffee.com/products/little-swamps-aa",
+        "https://www.trafficcoffee.com/products/milkshakeespresso",
     )
 
     assert coffee.roaster == "Traffic Coffee"
-    assert coffee.origin == "kitale, kenya"
-    assert coffee.process == "washed"
-    assert coffee.varietal == "AA Batian & Ruiru"
-    assert coffee.roast_style == "Superlight"
-    assert coffee.price_cents == 2600
+    assert coffee.origin == "kenya ethiopia"
+    assert coffee.process == "washed natural"
+    assert coffee.varietal == "various JARC Landraces & combination of SL's and ruiru 11, Batian"
+    assert coffee.altitude == "~1700 -2200m"
+    assert coffee.roast_style == "Medium"
+    assert coffee.price_cents == 2800
     assert coffee.bag_size == "300g"
-    assert coffee.tasting_notes == ["tangerine", "blackberry jam", "raspberry"]
+    assert coffee.tasting_notes == ["upside down pineapple cake", "raspberry", "peach"]
 
 
 def test_demello_product_uses_shopify_description_and_metafield_details() -> None:
