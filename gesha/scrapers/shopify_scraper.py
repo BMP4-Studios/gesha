@@ -610,6 +610,7 @@ class PorteBleueScraper(ShopifyScraper):
 
     # These subclasses are mostly declarative: they tell the shared Shopify
     # scraper which storefront URL and source labels to use.
+    USE_COLLECTION_JSON = False
     BASE_URL = "https://portebleue.ca"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Porte Bleue"
@@ -619,9 +620,7 @@ class PorteBleueScraper(ShopifyScraper):
 class ColorfullScraper(ShopifyScraper):
     """Shopify configuration for Colorfull, whose products lack coffee tags."""
 
-    # Colorfull's products are not consistently tagged as coffee, so accepts are
-    # based on exclusions rather than INCLUDE_TAGS.
-    # Its collection JSON omits tasting notes, so use the richer product-page path.
+    # Colorfull's collection JSON omits tasting notes, so use the richer product-page path.
     USE_COLLECTION_JSON = False
     BASE_URL = "https://colorfullcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all"

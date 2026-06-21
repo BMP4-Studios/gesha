@@ -7,6 +7,7 @@ coordinates scrapers and ``CoffeeService`` while Rich handles terminal output.
 from __future__ import annotations
 
 import concurrent.futures
+import json
 import logging
 import subprocess
 import sys
@@ -64,6 +65,11 @@ preferences_file_option = typer_option(
     "--preferences",
     "-p",
     help="Text file containing include/exclude preference keywords and optional destination settings.",
+)
+collection_json_output_dir_option = typer_option(
+    Path("."),
+    "--output-dir",
+    help="Directory where <roaster>.json should be written; defaults to the current repo directory.",
 )
 
 
@@ -249,6 +255,57 @@ def scrape(
     # All scrape orchestration lives in one helper so the no-argument callback
     # and explicit ``gesha scrape`` command behave the same way.
     _refresh_catalog(source)
+
+
+@app.command(name="json")
+def collection_json(
+    source: str = typer_argument(
+        ...,
+        help="The specific Shopify roaster collection to download (e.g., 'traffic').",
+    ),
+    output_dir: Path = collection_json_output_dir_option,
+) -> None:
+    """Download one roaster's Shopify collection JSON feed to ``<source>.json``."""
+    from gesha.scrapers.shopify_scraper import ShopifyScraper
+
+    # ``all`` is useful for scraping, but this command is meant for inspecting
+    # one exact raw feed at a time so failures stay obvious.
+    valid_sources = sorted([name for name in supported_sources() if name != "all"])
+    if source not in valid_sources:
+        console.print(f"[red]Error: '{source}' is not a supported roaster for collection JSON download.[/red]")
+        console.print("\n[bold]Available roasters:[/bold]")
+        for valid_source in valid_sources:
+            console.print(f" - {valid_source}")
+        raise typer.Exit(code=1)
+
+    scraper = get_scraper(source)
+    if not isinstance(scraper, ShopifyScraper):
+        console.print(f"[red]Error: '{source}' does not use Shopify collection JSON.[/red]")
+        raise typer.Exit(code=1)
+
+    # Use the same browser-impersonating scraper session as normal scraping.
+    collection_json_url = scraper._collection_products_json_url()
+    response = scraper.session.get(collection_json_url, timeout=15)
+    if response.status_code >= 400:
+        scraper._log_http_failure("download Shopify collection JSON", collection_json_url, response)
+        raise typer.Exit(code=1)
+    response.raise_for_status()
+
+    # Pretty-print real JSON so it is useful in an editor. If a storefront
+    # returns unexpected non-JSON text, still write it for debugging.
+    output_text = response.text
+    try:
+        parsed_json = json.loads(response.text)
+    except json.JSONDecodeError:
+        console.print("[yellow]Response was not valid JSON; writing the raw response body.[/yellow]")
+    else:
+        output_text = f"{json.dumps(parsed_json, indent=2, ensure_ascii=False)}\n"
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{source}.json"
+    output_path.write_text(output_text, encoding="utf-8")
+
+    console.print(f"[green]Collection JSON saved to {output_path}[/green]")
 
 
 def _query_cached_coffees(
