@@ -1,8 +1,9 @@
 """Shopify-oriented scraping and adapters for several supported roasters.
 
-The generic ``ShopifyScraper`` reads product-page label/value sections first
-and uses Shopify JSON as support data for price, variants, availability, and
-fallback description metadata.
+The generic ``ShopifyScraper`` prefers Shopify collection JSON feeds so a
+roaster can usually be refreshed with one request instead of one request per
+product page. The older product-page path remains as a fallback when a store
+does not expose collection JSON.
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ def _first_non_blank(*values: str | None) -> str | None:
 class ShopifyScraper(BaseScraper):
     """Extract coffee products from stores exposing Shopify product JSON."""
 
+    PRODUCTS_JSON_LIMIT = 250
     PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
     PRODUCT_LINK_ATTRIBUTES: tuple[str, ...] = ("href", "data-url")
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
@@ -74,6 +76,77 @@ class ShopifyScraper(BaseScraper):
                 # Canonicalize collection links before de-duping at the end.
                 urls.append(self._canonical_product_url(urljoin(self.BASE_URL, href)))
         return sorted(dict.fromkeys(urls))
+
+    def scrape(self) -> list[CoffeeData]:
+        """Prefer Shopify's collection JSON feed to avoid product-page bursts."""
+        coffees = self._scrape_collection_json()
+        if coffees is not None:
+            return coffees
+        return super().scrape()
+
+    def _collection_products_json_url(self, page: int = 1) -> str:
+        """Build Shopify's public collection products JSON endpoint."""
+        parsed = urlparse(self.COLLECTION_URL)
+        path = parsed.path.rstrip("/")
+        return urljoin(self.BASE_URL, f"{path}/products.json?limit={self.PRODUCTS_JSON_LIMIT}&page={page}")
+
+    def _scrape_collection_json(self) -> list[CoffeeData] | None:
+        """Fetch a whole Shopify collection from one JSON endpoint when available."""
+        response = self.session.get(self._collection_products_json_url(), timeout=15)
+        if response.status_code == 404:
+            return None
+        if response.status_code >= 400:
+            self.logger.warning(
+                "Failed to fetch Shopify collection JSON for %s: HTTP %s",
+                self.SOURCE_NAME,
+                response.status_code,
+            )
+            return []
+        response.raise_for_status()
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return None
+        if not isinstance(payload, dict):
+            return None
+
+        products = payload.get("products")
+        if not isinstance(products, list):
+            return None
+
+        coffees: list[CoffeeData] = []
+        for raw_product in products:
+            if not isinstance(raw_product, dict):
+                continue
+
+            product_data = self._product_from_collection_json(cast(dict[str, Any], raw_product))
+            if not self._is_coffee_product(product_data):
+                continue
+
+            handle = str(product_data.get("handle") or "").strip()
+            if not handle:
+                continue
+
+            url = self._canonical_product_url(urljoin(self.BASE_URL, f"/products/{handle}"))
+            coffees.append(self._coffee_from_product(product_data, url))
+        return coffees
+
+    def _product_from_collection_json(self, product_data: dict[str, Any]) -> dict[str, Any]:
+        """Normalize collection-feed product JSON to the product-page JSON shape."""
+        product = dict(product_data)
+        if "description" not in product and "body_html" in product:
+            product["description"] = product["body_html"]
+        if "type" not in product and "product_type" in product:
+            product["type"] = product["product_type"]
+        if "available" not in product:
+            variants = self._raw_variants(product)
+            product["available"] = (
+                any(bool(variant.get("available", True)) for variant in variants) if variants else True
+            )
+        if "price" not in product:
+            product["price"] = self._first_variant_price_cents(product)
+        return product
 
     def scrape_product(self, url: str) -> CoffeeData | None:
         """Fetch Shopify HTML first, then JSON support data for one product."""
@@ -326,8 +399,33 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_price(self, product_data: dict[str, Any]) -> int | None:
         """Read Shopify's integer-cent product price when it is supplied."""
-        price = product_data.get("price")
-        return int(price) if isinstance(price, int) else None
+        return self._price_cents(product_data.get("price"))
+
+    def _price_cents(self, value: object) -> int | None:
+        """Normalize Shopify ``.js`` cent prices and collection dollar prices."""
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return round(value * 100)
+        if isinstance(value, str):
+            stripped = value.strip().replace(",", "")
+            if not stripped:
+                return None
+            if re.fullmatch(r"\d+", stripped):
+                return int(stripped)
+            if re.fullmatch(r"\d+(?:\.\d{1,2})?", stripped):
+                return round(float(stripped) * 100)
+        return None
+
+    def _first_variant_price_cents(self, product_data: dict[str, Any]) -> int | None:
+        """Use the first available variant price as a product-level fallback."""
+        variants = self._raw_variants(product_data)
+        ordered_variants = sorted(variants, key=lambda variant: not bool(variant.get("available", True)))
+        for variant in ordered_variants:
+            price = self._price_cents(variant.get("price"))
+            if price is not None:
+                return price
+        return None
 
     def _raw_variants(self, product_data: dict[str, Any]) -> list[dict[str, object]]:
         """Return dictionary-shaped Shopify variants from an untyped payload."""
@@ -388,9 +486,7 @@ class ShopifyScraper(BaseScraper):
             raw_title = raw_variant.get("title")
             title = raw_title.strip() if isinstance(raw_title, str) and raw_title.strip() else None
             raw_price = raw_variant.get("price")
-            price_cents = (
-                int(raw_price) if isinstance(raw_price, int | str) and str(raw_price).isdigit() else product_price
-            )
+            price_cents = self._price_cents(raw_price) or product_price
             raw_id = raw_variant.get("id")
             variant_id = str(raw_id) if isinstance(raw_id, int | str) and str(raw_id) else None
 

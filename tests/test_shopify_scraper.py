@@ -10,6 +10,27 @@ from gesha.scrapers.shopify_scraper import (
 )
 
 
+class FakeShopifyResponse:
+    """Small response fixture for Shopify collection feed tests."""
+
+    def __init__(self, json_data: dict | None = None, status_code: int = 200) -> None:
+        """Create a response with optional JSON payload."""
+        self._json_data = json_data
+        self.status_code = status_code
+        self.text = ""
+
+    def raise_for_status(self) -> None:
+        """Mirror the HTTP failure behavior the scraper expects."""
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self) -> dict:
+        """Return the configured JSON payload."""
+        if self._json_data is None:
+            raise ValueError("No JSON data configured")
+        return self._json_data
+
+
 def test_shopify_collection_extracts_canonical_product_urls() -> None:
     """Collection-prefixed links collapse to one stable product URL form."""
     html = (
@@ -41,6 +62,76 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
         "https://hellodemello.com/products/coffee-one",
         "https://hellodemello.com/products/coffee-two",
     ]
+
+
+def test_shopify_scrape_uses_collection_json_feed(monkeypatch) -> None:
+    """The primary scrape path reads one collection JSON feed, not each product page."""
+    calls: list[str] = []
+    payload = {
+        "products": [
+            {
+                "title": "Little Swamps AA",
+                "handle": "little-swamps-aa",
+                "product_type": "coffee",
+                "tags": [],
+                "body_html": (
+                    "<p>Origin: Kitale, Kenya</p>"
+                    "<p>Process: Washed</p>"
+                    "<p>In the cup: tangerine, blackberry jam, raspberry</p>"
+                ),
+                "variants": [
+                    {
+                        "id": 123,
+                        "title": "300g",
+                        "price": "26.00",
+                        "grams": 300,
+                        "available": True,
+                    }
+                ],
+            }
+        ]
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return the collection feed and fail if product pages are requested."""
+        calls.append(url)
+        if url == "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1":
+            return FakeShopifyResponse(payload)
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+    assert len(coffees) == 1
+    assert coffees[0].name == "little swamps aa"
+    assert coffees[0].url == "https://www.trafficcoffee.com/products/little-swamps-aa"
+    assert coffees[0].origin == "kitale, kenya"
+    assert coffees[0].process == "washed"
+    assert coffees[0].price_cents == 2600
+    assert coffees[0].bag_size == "300g"
+    assert coffees[0].variants[0].shopify_variant_id == "123"
+    assert coffees[0].tasting_notes == ["tangerine", "blackberry jam", "raspberry"]
+
+
+def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(monkeypatch) -> None:
+    """A blocked collection feed stops cleanly instead of making many more requests."""
+    calls: list[str] = []
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return a rate limit from the collection feed."""
+        calls.append(url)
+        return FakeShopifyResponse(status_code=429)
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert coffees == []
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
 
 
 def test_shopify_product_json_parses_labeled_specs() -> None:
