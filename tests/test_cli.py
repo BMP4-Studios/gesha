@@ -48,6 +48,40 @@ class FakeSession:
         return None
 
 
+class FakeDebugResponse:
+    """Small HTTP response fixture for the debug command."""
+
+    def __init__(self, text: str) -> None:
+        """Store response text with an OK status."""
+        self.status_code = 200
+        self.text = text
+
+    def raise_for_status(self) -> None:
+        """Mirror the successful response method used by the command."""
+        return None
+
+
+class FakeDebugTransport:
+    """Capture debug HTTP requests made through a scraper session."""
+
+    def __init__(self) -> None:
+        """Track requests and expose browser-like headers."""
+        self.headers = {"User-Agent": "fake-browser"}
+        self.calls: list[tuple[str, dict[str, str] | None, int]] = []
+
+    def get(
+        self,
+        url: str,
+        headers: dict[str, str] | None = None,
+        timeout: int = 15,
+    ) -> FakeDebugResponse:
+        """Return deterministic JSON or HTML debug responses."""
+        self.calls.append((url, headers, timeout))
+        if url.endswith(".js"):
+            return FakeDebugResponse('{"title":"Debug Coffee"}')
+        return FakeDebugResponse("<html>Debug Coffee</html>")
+
+
 def test_test_command_runs_pytest_with_active_python(monkeypatch: pytest.MonkeyPatch) -> None:
     """The ``gesha test`` command delegates to pytest and returns its exit code."""
     calls: list[tuple[list[str], bool]] = []
@@ -182,3 +216,132 @@ def test_cart_debug_explains_unavailable_keyword_match(
     assert "gesha" in output
     assert "Coffee is marked unavailable" in output
     assert "unavailable" in output
+
+
+def test_refresh_catalog_continues_when_one_scraper_raises(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A failed scraper future does not abort the whole refresh command."""
+
+    class GoodScraper:
+        """Fixture scraper that returns an empty but successful catalog."""
+
+        SOURCE_NAME = "Good"
+        ROASTER_NAME = "Good Roaster"
+
+        def scrape(self) -> list[object]:
+            """Return a successful empty scrape."""
+            return []
+
+    class BadScraper:
+        """Fixture scraper that simulates a transport/parser crash."""
+
+        SOURCE_NAME = "Bad"
+        ROASTER_NAME = "Bad Roaster"
+
+        def scrape(self) -> list[object]:
+            """Raise like a real failed scraper can."""
+            raise RuntimeError("boom")
+
+    class FakeCoffeeService:
+        """Minimal service used by _refresh_catalog."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def list_coffees(self, *args: object, **kwargs: object) -> list[object]:
+            """Return no cached coffees for final rendering."""
+            return []
+
+        def create_or_update_coffee(self, coffee: object) -> None:
+            """Record no-op imports."""
+            return None
+
+        def delete_stale_coffees(self, roaster_name: str, current_urls: list[str]) -> int:
+            """Return no stale deletions."""
+            return 0
+
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "supported_sources", lambda: ["all", "good", "bad"])
+    monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [GoodScraper(), BadScraper()])
+
+    cli_main._refresh_catalog("all")
+
+    output = capsys.readouterr().out
+    assert "Failed Bad: boom" in output
+    assert "Finished Good" in output
+
+
+def test_cart_all_roasters_come_from_scraper_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    """cart all follows supported scrapers, not the shipping policy keys."""
+    monkeypatch.setattr(
+        cli_main,
+        "get_scrapers",
+        lambda source: [
+            SimpleNamespace(ROASTER_NAME="Registry Roaster A"),
+            SimpleNamespace(ROASTER_NAME="Registry Roaster B"),
+        ],
+    )
+
+    assert cli_main._selected_cart_roaster_names("all") == [
+        "Registry Roaster A",
+        "Registry Roaster B",
+    ]
+
+
+def test_debug_uses_scraper_transport(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    """Raw debug captures use the same scraper session as normal scraping."""
+    transport = FakeDebugTransport()
+    coffee = Coffee(
+        id=7,
+        name="Debug Coffee",
+        url="https://example.test/products/debug-coffee",
+        roaster=Roaster(name="Test Roaster"),
+    )
+
+    class FakeCoffeeService:
+        """Return the fixture coffee without touching a real database."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def get_coffee_by_id(self, coffee_id: int) -> Coffee | None:
+            """Return the requested fixture coffee."""
+            return coffee if coffee_id == 7 else None
+
+    fake_scraper = SimpleNamespace(ROASTER_NAME="Test Roaster", session=transport)
+
+    def fail_plain_requests(*args: object, **kwargs: object) -> None:
+        """Fail if debug falls back to plain requests for a known roaster."""
+        raise AssertionError("plain requests should not be used")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [fake_scraper])
+    monkeypatch.setattr(cli_main.requests, "get", fail_plain_requests)
+
+    cli_main.debug(7)
+
+    assert transport.calls == [
+        (
+            "https://example.test/products/debug-coffee.js",
+            {
+                "User-Agent": "fake-browser",
+                "Referer": "https://example.test/products/debug-coffee",
+            },
+            15,
+        ),
+        ("https://example.test/products/debug-coffee", None, 15),
+    ]
+    assert (tmp_path / "debug" / "debug_7.txt").read_text(encoding="utf-8") == (
+        '=== RAW JSON DATA ===\n{"title":"Debug Coffee"}\n\n=== RAW HTML DATA ===\n<html>Debug Coffee</html>'
+    )

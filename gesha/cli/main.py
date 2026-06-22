@@ -39,7 +39,7 @@ from gesha.measurements import is_retail_variant, parse_weight_grams, price_per_
 from gesha.normalization import NA_LABEL, price_display
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
-from gesha.shipping import SHIPPING_POLICIES, Destination, resolve_destination, resolve_shipping_threshold
+from gesha.shipping import Destination, resolve_destination, resolve_shipping_threshold
 from rich.align import Align
 from rich.console import Console
 from rich.table import Table
@@ -174,6 +174,25 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     console.print(table)
 
 
+def _scraper_for_roaster_name(roaster_name: str) -> BaseScraper | None:
+    """Find the configured scraper that owns one display roaster name."""
+    # Cached rows store display names such as "Traffic Coffee", while CLI
+    # source arguments use keys such as "traffic".
+    for scraper in get_scrapers("all"):
+        if scraper.ROASTER_NAME == roaster_name:
+            return scraper
+    return None
+
+
+def _selected_cart_roaster_names(source: str) -> list[str]:
+    """Resolve a cart source argument through the scraper registry."""
+    # The scraper registry defines supported roasters. Shipping policies are a
+    # secondary lookup and should not decide which roasters appear in cart all.
+    if source == "all":
+        return [scraper.ROASTER_NAME for scraper in get_scrapers("all")]
+    return [get_scraper(source).ROASTER_NAME]
+
+
 def _refresh_catalog(source: str) -> None:
     """Scrape one or all sources, persist results, and print refreshed records."""
     # Create the database on first execution so a refresh is immediately usable.
@@ -207,7 +226,19 @@ def _refresh_catalog(source: str) -> None:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
             future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
             for future in concurrent.futures.as_completed(future_to_scraper):
-                source_name, roaster_name, scraped_coffees = future.result()
+                scraper = future_to_scraper[future]
+                try:
+                    source_name, roaster_name, scraped_coffees = future.result()
+                except Exception as exc:
+                    # Keep full exception details in the log file while letting
+                    # the other roasters finish normally.
+                    logging.getLogger(__name__).debug(
+                        "Scraper failed for %s",
+                        scraper.SOURCE_NAME,
+                        exc_info=True,
+                    )
+                    console.print(f"[red]Failed {scraper.SOURCE_NAME}: {exc}[/red]")
+                    continue
 
                 # Upsert current products before trimming rows no longer found
                 # on this successfully returned roaster listing.
@@ -755,9 +786,9 @@ def cart(
         console.print("[red]Error: Add at least one preference keyword.[/red]")
         raise typer.Exit(code=1)
 
-    # The shipping policy table is keyed by roaster display names, while CLI
-    # arguments use short source keys such as ``traffic``.
-    selected_roasters = list(SHIPPING_POLICIES) if source == "all" else [get_scraper(source).ROASTER_NAME]
+    # Resolve through the scraper registry so cart all includes every supported
+    # roaster, even before a shipping policy has been configured for it.
+    selected_roasters = _selected_cart_roaster_names(source)
     override_cents = round(threshold * 100) if threshold is not None else None
 
     init_db()
@@ -888,11 +919,17 @@ def debug(coffee_id: int) -> None:
         output_path = Path("debug") / f"debug_{coffee_id}.txt"
         output_path.parent.mkdir(exist_ok=True)
         output: list[str] = []
+        scraper = _scraper_for_roaster_name(coffee.roaster.name)
+        transport = cast(Any, scraper.session if scraper is not None else requests)
 
         # Capture a Shopify-style JSON response when supported; a missing JSON
         # endpoint is tolerated because non-Shopify records are also debuggable.
         json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
-        res_json = requests.get(json_url, timeout=15)
+        json_headers = None
+        if scraper is not None:
+            json_headers = transport.headers.copy()
+            json_headers["Referer"] = coffee.url
+        res_json = transport.get(json_url, headers=json_headers, timeout=15)
         if res_json.status_code == 200:
             output.append("=== RAW JSON DATA ===\n")
             output.append(res_json.text)
@@ -900,7 +937,7 @@ def debug(coffee_id: int) -> None:
 
         # The HTML response is always included because each parser may depend
         # on selectors or embedded page payloads not represented in JSON.
-        res_html = requests.get(coffee.url, timeout=15)
+        res_html = transport.get(coffee.url, timeout=15)
         res_html.raise_for_status()
         output.append("=== RAW HTML DATA ===\n")
         output.append(res_html.text)
