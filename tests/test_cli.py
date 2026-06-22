@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import gesha.cli.main as cli_main
 import pytest
+from gesha.db.models import Coffee, CoffeeVariant, Roaster, TastingNote
 from gesha.scrapers.shopify_scraper import TrafficScraper
 
 
@@ -32,6 +33,18 @@ class FakeCollectionSession:
         """Return a deterministic collection JSON response."""
         self.calls.append((url, timeout))
         return FakeCollectionResponse()
+
+
+class FakeSession:
+    """Context manager fixture used by CLI commands that open a DB session."""
+
+    def __enter__(self) -> "FakeSession":
+        """Return the fake session object expected by CoffeeService."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """Close the fake session context."""
+        return None
 
 
 def test_test_command_runs_pytest_with_active_python(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -107,3 +120,54 @@ def test_rebuild_backs_up_resets_and_scrapes(
     with sqlite3.connect(str(backups[0])) as backup_connection:
         marker_count = backup_connection.execute("SELECT COUNT(*) FROM marker").fetchone()[0]
     assert marker_count == 1
+
+
+def test_cart_debug_explains_unavailable_keyword_match(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A matching coffee can still be skipped when availability/variants fail."""
+    preferences = tmp_path / "preferences.txt"
+    preferences.write_text("gesha\ncoferment\n! decaf\n", encoding="utf-8")
+    coffee = Coffee(
+        id=25,
+        name="Colombia Gesha",
+        availability=False,
+        url="https://example.test/products/colombia-gesha",
+        roaster=Roaster(name="Test Roaster"),
+        tasting_notes=[TastingNote(name="pineapple")],
+        variants=[
+            CoffeeVariant(
+                shopify_variant_id="variant-25",
+                name="250g",
+                price_cents=2800,
+                bag_size="250g",
+                weight_grams=250,
+                availability=False,
+            )
+        ],
+    )
+
+    class FakeCoffeeService:
+        """Return the fixture coffee without touching a real database."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def get_coffee_by_id(self, coffee_id: int) -> Coffee | None:
+            """Return the requested fixture coffee."""
+            return coffee if coffee_id == 25 else None
+
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+
+    cli_main.cart_debug(25, preferences=preferences)
+
+    output = capsys.readouterr().out
+    assert "Skipped" in output
+    assert "gesha" in output
+    assert "Coffee is marked unavailable" in output
+    assert "unavailable" in output

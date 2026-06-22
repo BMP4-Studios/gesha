@@ -115,6 +115,9 @@ gesha cart traffic --postal-code "M5V 3A8"
 # Override the published free-shipping threshold
 gesha cart demello --threshold 50
 
+# Explain why one cached coffee is included in or skipped from cart recommendations
+gesha cart-debug 25
+
 # Download a roaster's raw Shopify collection JSON to <roaster>.json
 gesha json traffic
 

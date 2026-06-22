@@ -20,18 +20,21 @@ from typing import Any, cast
 import requests
 import typer
 from gesha.cart import (
+    MAX_CART_BAG_WEIGHT_GRAMS,
     CartCandidate,
+    PreferenceConfig,
     build_cart_permalink,
     cart_item_for_coffee,
+    matched_keywords,
     read_preference_config,
     recommend_carts,
     smallest_available_variant,
 )
 from gesha.coffee_data import CoffeeData
 from gesha.coffee_service import CoffeeService
-from gesha.db.models import Coffee
+from gesha.db.models import Coffee, CoffeeVariant
 from gesha.db.session import DB_PATH, engine, get_session, init_db
-from gesha.measurements import parse_weight_grams, price_per_100g_cents
+from gesha.measurements import is_retail_variant, parse_weight_grams, price_per_100g_cents
 from gesha.normalization import NA_LABEL, price_display
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.base_scraper import BaseScraper
@@ -123,6 +126,15 @@ def _coffee_price_per_100g_cents(coffee: Coffee) -> int | None:
 
     # Older or partially scraped rows may still only have product-level fields.
     return price_per_100g_cents(coffee.price_cents, parse_weight_grams(coffee.bag_size))
+
+
+def _read_preferences_for_command(preferences: Path) -> PreferenceConfig:
+    """Load preference config and preserve explicit missing-file errors."""
+    # The default preferences file is optional, but an explicitly provided path
+    # should fail loudly if it does not exist.
+    if preferences != DEFAULT_PREFERENCES_PATH and not preferences.exists():
+        raise ValueError(f"Preference file not found: {preferences}")
+    return read_preference_config(preferences)
 
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
@@ -538,6 +550,137 @@ def _print_cart_candidate(
         )
 
 
+def _format_keyword_matches(keywords: Sequence[str]) -> str:
+    """Display matched keywords consistently in cart diagnostics."""
+    return ", ".join(keywords) if keywords else NA_LABEL
+
+
+def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
+    """Explain whether one variant can be selected for cart recommendations."""
+    reasons: list[str] = []
+    if not variant.availability:
+        reasons.append("unavailable")
+    if variant.price_cents is None:
+        reasons.append("missing price")
+    if variant.weight_grams is None:
+        reasons.append("missing weight")
+    elif variant.weight_grams <= 0:
+        reasons.append("non-positive weight")
+    elif variant.weight_grams > MAX_CART_BAG_WEIGHT_GRAMS:
+        reasons.append(f"over {MAX_CART_BAG_WEIGHT_GRAMS}g cap")
+    if not is_retail_variant(variant.name):
+        reasons.append("non-retail variant")
+
+    if reasons:
+        return False, ", ".join(reasons)
+    return True, "usable"
+
+
+@app.command(name="cart-debug")
+def cart_debug(
+    coffee_id: int,
+    preferences: Path = preferences_file_option,
+) -> None:
+    """Explain why one cached coffee is or is not eligible for cart output."""
+    try:
+        preference_config = _read_preferences_for_command(preferences)
+    except ValueError as exc:
+        console.print(f"[red]Error: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    init_db()
+    with get_session() as session:
+        service = CoffeeService(session)
+        coffee = service.get_coffee_by_id(coffee_id)
+        if coffee is None:
+            console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
+            raise typer.Exit(code=1)
+
+        include_matches = matched_keywords(coffee, preference_config.keywords)
+        exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
+        selected_variant = smallest_available_variant(coffee)
+        cart_item = cart_item_for_coffee(
+            coffee,
+            preference_config.keywords,
+            preference_config.excluded_keywords,
+        )
+
+        reasons: list[str] = []
+        warnings: list[str] = []
+        if not coffee.availability:
+            reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
+        if exclude_matches:
+            reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
+        if not include_matches:
+            reasons.append("Coffee does not match any include keyword.")
+        if coffee.url is None:
+            reasons.append("Coffee has no product URL.")
+        if not coffee.variants:
+            reasons.append("Coffee has no cached Shopify variants.")
+        elif selected_variant is None:
+            reasons.append(
+                "No variant is available, retail-sized, priced, weighted, and within the "
+                f"{MAX_CART_BAG_WEIGHT_GRAMS}g bag cap."
+            )
+        if cart_item is not None and cart_item.variant_id is None:
+            warnings.append("Selected variant has no Shopify variant ID, so a pre-filled cart link cannot be built.")
+
+        is_cart_eligible = coffee.availability and cart_item is not None
+        result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
+
+        console.print(f"[bold cyan]Cart debug for coffee #{coffee_id}[/bold cyan]")
+        summary = Table(show_header=False)
+        summary.add_row("Result", result)
+        summary.add_row("Roaster", coffee.roaster.name)
+        summary.add_row("Name", coffee.name)
+        summary.add_row("Availability", "yes" if coffee.availability else "no")
+        summary.add_row("Include matches", _format_keyword_matches(include_matches))
+        summary.add_row("Exclude matches", _format_keyword_matches(exclude_matches))
+        summary.add_row("URL", coffee.url or NA_LABEL)
+        if selected_variant is not None:
+            summary.add_row(
+                "Selected variant",
+                (
+                    f"{selected_variant.name} / {selected_variant.bag_size or NA_LABEL} / "
+                    f"{price_display(selected_variant.price_cents)} / {selected_variant.weight_grams}g"
+                ),
+            )
+        else:
+            summary.add_row("Selected variant", NA_LABEL)
+        console.print(summary)
+
+        if reasons:
+            console.print("[bold]Skip reason(s):[/bold]")
+            for reason in reasons:
+                console.print(f" - {reason}")
+        else:
+            console.print("[green]No skip reasons found.[/green]")
+
+        if warnings:
+            console.print("[bold yellow]Warning(s):[/bold yellow]")
+            for warning in warnings:
+                console.print(f" - {warning}")
+
+        variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
+        variants.add_column("Selected")
+        variants.add_column("Variant")
+        variants.add_column("Available")
+        variants.add_column("Weight", justify="right")
+        variants.add_column("Price", justify="right")
+        variants.add_column("Cart status")
+        for variant in coffee.variants:
+            _, status = _variant_cart_usability(variant)
+            variants.add_row(
+                "yes" if selected_variant is variant else "",
+                variant.name,
+                "yes" if variant.availability else "no",
+                f"{variant.weight_grams}g" if variant.weight_grams is not None else NA_LABEL,
+                price_display(variant.price_cents),
+                status,
+            )
+        console.print(variants)
+
+
 @app.command()
 def cart(
     source: str = typer_argument(
@@ -574,11 +717,7 @@ def cart(
         raise typer.Exit(code=1)
 
     try:
-        # The default preferences file is optional, but an explicitly provided
-        # path should fail loudly if it does not exist.
-        if preferences != DEFAULT_PREFERENCES_PATH and not preferences.exists():
-            raise ValueError(f"Preference file not found: {preferences}")
-        preference_config = read_preference_config(preferences)
+        preference_config = _read_preferences_for_command(preferences)
 
         # CLI flags override file directives. A postal code can infer province,
         # so ignore the file province when an explicit postal code is supplied.
