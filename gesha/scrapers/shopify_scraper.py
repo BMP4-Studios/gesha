@@ -79,9 +79,24 @@ class ShopifyScraper(BaseScraper):
     # Dash-separated title facts are source-specific and stay opt-in because
     # ``Origin - Name`` and ``Name - Process`` can otherwise look identical.
     EXTRACT_DASH_TITLE_FACTS = False
+
+    # Handle-derived process facts are also opt-in: product handles are stable,
+    # but words like "honey" can be either a process or a flavor note.
+    EXTRACT_HANDLE_PROCESS_FACTS = False
+    HANDLE_PROCESS_FACTS: tuple[tuple[str, str], ...] = (
+        ("anaerobic-natural", "anaerobic natural"),
+        ("anaerobic-washed", "anaerobic washed"),
+        ("semi-washed", "semi-washed"),
+        ("wet-hulled", "wet hulled"),
+        ("washed", "washed"),
+        ("natural", "natural"),
+        ("honey", "honey"),
+    )
+
     NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", "·", "•", "Â", "â")
     BULLET_NOTE_SEPARATORS = ("·", "•", "Â", "â")
     ROAST_SCALE_PATTERN = re.compile(r"\blight\b.*\bdark\b|[●○]", re.IGNORECASE)
+    META_TASTING_NOTES_PATTERN = re.compile(r"\btasting\s+notes?\s+of\s+(.+?)(?:[.!?]|$)", re.IGNORECASE)
 
     def extract_product_urls(self, html: str) -> list[str]:
         """Convert collection product links into canonical Shopify product URLs."""
@@ -375,12 +390,18 @@ class ShopifyScraper(BaseScraper):
         page_facts = html_facts or (self._extract_html_product_facts(html_soup) if html_soup else {})
         title = normalize_search_text(str(product_data.get("title") or "Unknown coffee")) or "unknown coffee"
         title_facts = self._extract_details_from_title(title)
+        handle_process = self._extract_process_from_handle(product_data, url)
 
         # Prefer explicit page labels, then Shopify description labels, then
-        # title heuristics only for fields titles can express safely.
+        # title/handle heuristics only for fields those sources express safely.
         origin = _first_non_blank(page_facts.get("origin"), json_facts.get("origin"), title_facts.get("origin"))
         producer = _first_non_blank(page_facts.get("producer"), json_facts.get("producer"))
-        process = _first_non_blank(page_facts.get("process"), json_facts.get("process"), title_facts.get("process"))
+        process = _first_non_blank(
+            page_facts.get("process"),
+            json_facts.get("process"),
+            title_facts.get("process"),
+            handle_process,
+        )
         varietal = _first_non_blank(page_facts.get("varietal"), json_facts.get("varietal"))
         altitude = _first_non_blank(page_facts.get("altitude"), json_facts.get("altitude"))
         roast_style = _first_non_blank(
@@ -528,6 +549,22 @@ class ShopifyScraper(BaseScraper):
 
         return details
 
+    def _extract_process_from_handle(self, product_data: dict[str, Any], url: str) -> str | None:
+        """Use opt-in Shopify handles as a final process fallback."""
+        if not self.EXTRACT_HANDLE_PROCESS_FACTS:
+            return None
+
+        raw_handle = str(product_data.get("handle") or "").strip()
+        handle = raw_handle or urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+        normalized_handle = re.sub(r"[^a-z0-9]+", "-", handle.lower()).strip("-")
+
+        # Match whole handle tokens so "washed" works in
+        # "ixhuatlan-mexico-washed" but not inside an unrelated word.
+        for slug, process in self.HANDLE_PROCESS_FACTS:
+            if re.search(rf"(?:^|-){re.escape(slug)}(?:-|$)", normalized_handle):
+                return process
+        return None
+
     def _extract_tasting_notes(
         self,
         description: str,
@@ -555,6 +592,10 @@ class ShopifyScraper(BaseScraper):
             selected_notes = self._extract_tasting_notes_from_selectors(html_soup)
             if selected_notes:
                 return selected_notes
+
+            meta_notes = self._extract_tasting_notes_from_meta(html_soup)
+            if meta_notes:
+                return meta_notes
 
         # Last chance: only accept very short note-like leading text.
         lines = [line.strip() for line in description.splitlines() if line.strip()]
@@ -606,6 +647,29 @@ class ShopifyScraper(BaseScraper):
             selected_notes,
         )
         return selected_notes
+
+    def _extract_tasting_notes_from_meta(self, html_soup: BeautifulSoup) -> list[str]:
+        """Read narrow SEO/meta note phrases when themes hide notes there."""
+        # Subtext writes notes as "tasting notes of ..." in page descriptions,
+        # while its Shopify JSON body contains only shipping text. Keep the
+        # regex phrase-specific so broad marketing copy is not treated as notes.
+        for selector in ("meta[name='description']", "meta[property='og:description']"):
+            element = html_soup.select_one(selector)
+            if element is None:
+                continue
+
+            content = element.get("content")
+            if not isinstance(content, str):
+                continue
+
+            match = self.META_TASTING_NOTES_PATTERN.search(content)
+            if not match:
+                continue
+
+            notes = normalize_tasting_notes(match.group(1))
+            if notes:
+                return notes
+        return []
 
     def _append_unique_notes_from_selectors(
         self,
@@ -919,24 +983,35 @@ class KohiScraper(ShopifyScraper):
 class SubtextScraper(ShopifyScraper):
     """Shopify configuration for Subtext products."""
 
+    # Subtext's collection JSON body is mostly shipping copy. The real coffee
+    # specs are rendered on product pages in Shogun rich-text rows, while notes
+    # live in the SEO/meta description handled by the shared meta fallback.
     BASE_URL = "https://www.subtext.coffee"
     COLLECTION_URL = f"{BASE_URL}/collections/filter-coffee-beans"
     SOURCE_NAME = "Subtext"
     ROASTER_NAME = "Subtext Coffee"
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    HYDRATE_COLLECTION_PRODUCTS = True
+    EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "sample-box", "test-batch")
+    PRODUCT_FACT_SELECTORS = (
+        "div.shg-rich-text.shg-default-text-content:has(p:-soup-contains('Region'))"
+        ":has(p:-soup-contains('Process'))",
+    )
 
 
 class ArteryScraper(ShopifyScraper):
     """Shopify configuration for The Artery Community Roasters products."""
 
     # The by-the-bag collection is already coffee-focused; product types and tags
-    # are blank, so rely on the collection path plus shared gift/subscription excludes.
+    # are blank, so rely on the collection path plus shared gift/subscription
+    # excludes. Their screen-printed shirt also appears there, so handle-filter it.
     BASE_URL = "https://thearterycommunityroasters.com"
     COLLECTION_URL = f"{BASE_URL}/collections/by-the-bag"
     SOURCE_NAME = "The Artery"
     ROASTER_NAME = "The Artery Community Roasters"
     INCLUDE_TAGS = ()
+    EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "shirt")
 
 
 class EthicaScraper(ShopifyScraper):
@@ -954,11 +1029,15 @@ class RabbitHoleScraper(ShopifyScraper):
     """Shopify configuration for Rabbit Hole products."""
 
     # Rabbit Hole's all-coffee collection can carry wholesale-only tags, but
-    # those products should not enter consumer cart recommendations.
+    # those products should not enter consumer cart recommendations. Their
+    # tasting boxes are coffee-adjacent bundles, not a single orderable bag.
+    # A few single origins publish process in the handle/title but not the body,
+    # so enable the conservative handle-process fallback for this source.
     BASE_URL = "https://www.rabbitholeroasters.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
     SOURCE_NAME = "Rabbit Hole"
     ROASTER_NAME = "Rabbit Hole Roasters"
     INCLUDE_TAGS = ("All Coffee",)
     INCLUDE_PRODUCT_TYPES = ("Coffee",)
-    EXCLUDE_TAGS = ("wholesale-only",)
+    EXCLUDE_TAGS = ("wholesale-only", "experience boxes")
+    EXTRACT_HANDLE_PROCESS_FACTS = True

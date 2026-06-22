@@ -23,11 +23,11 @@ https://narval.cafe/en/collections/all
 ===========================================================
 
 Added this round:
-- [x] roguewave: got proper tasting notes
-- [x] houseoffunk: should be good -- need to double check
-- [ ] quietly: no notes, origin is a long description
-- [ ] kohi: everything is a bit noisy
-- [ ] subtext: missing process and origin, not sure there are any tasting notes online
-- [ ] artery: some noise in the process, and maybe skip the 125g bags? Tasting notes on point!
-- [ ] ethica: a bit like traffic, there's a few tasting notes then a big long description
-- [ ] rabbithole: no tasting notes, big description in the process
+- [x] roguewave
+- [x] houseoffunk
+- [x] quietly
+- [ ] kohi: not quite there
+- [x] subtext: looking pretty good, should probably spot check
+- [x] artery: looking pretty good, should probably spot check
+- [x] ethica: looking pretty good, should probably spot check
+- [x] rabbithole: looking pretty good, should probably spot check

@@ -16,6 +16,7 @@ COMMON_TASTING_NOTE_LABELS = [
     "Notes",
     "Tasting Notes",
     "Taste",
+    "Impressions",
     "In the cup",
     "Reminds us of",
     "flavour Profile",
@@ -40,7 +41,7 @@ PRODUCT_FACT_FIELDS = (
 
 DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
     # Map normalized catalog fields to the storefront labels that may describe them.
-    "origin": ("Origin", "Origins", "Country", "Region", "Place"),
+    "origin": ("Origin", "Origins", "Country", "Region", "Place", "Location"),
     "producer": ("Producer", "Producers", "Coffee Producers", "Farmer", "Farm"),
     "process": ("Process", "Method"),
     "varietal": ("Varietal", "Variety", "Varieties", "Cultivar"),
@@ -50,7 +51,16 @@ DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
     "tasting_notes": tuple(COMMON_TASTING_NOTE_LABELS),
 }
 
-DEFAULT_PRODUCT_FACT_STOP_LABELS = ("About", "Description", "Story")
+DEFAULT_PRODUCT_FACT_STOP_LABELS = (
+    "About",
+    "Description",
+    "Story",
+    "Importer",
+    "Import Partner",
+    "Partner Importer",
+    "Export Partner",
+    "Best After",
+)
 
 
 def _label_pattern(label: str) -> str:
@@ -190,6 +200,32 @@ def extract_labeled_product_facts_from_text(
     return facts
 
 
+def _extract_labeled_fact_from_loose_row_text(
+    text: str,
+    *,
+    label_aliases: Mapping[str, Sequence[str]],
+) -> dict[str, str]:
+    """Extract one ``Label value`` fact from a compact spec row."""
+    # Shogun-style rows sometimes omit punctuation but still start with a known
+    # label, such as "Region     Chelbesa, Gedeb". Keep this row-only so prose
+    # paragraphs that merely mention a label are not treated as specs.
+    cleaned = _clean_fact_text(text)
+    if cleaned is None:
+        return {}
+
+    for field, labels in label_aliases.items():
+        for label in sorted(labels, key=len, reverse=True):
+            pattern = rf"^{_label_pattern(label)}\s+(.+)$"
+            match = re.match(pattern, cleaned, flags=re.IGNORECASE)
+            if not match:
+                continue
+
+            value = _clean_fact_text(match.group(1))
+            if value:
+                return {field: value}
+    return {}
+
+
 def extract_labeled_product_facts_from_html(
     soup: BeautifulSoup | Tag,
     *,
@@ -226,14 +262,20 @@ def extract_labeled_product_facts_from_html(
                     )
                 )
 
+        row_text = _text_from_row(row)
+
         # Plain row text handles "Process: Washed" and nested strong/span labels.
         merge(
             extract_labeled_product_facts_from_text(
-                _text_from_row(row),
+                row_text,
                 label_aliases=aliases,
                 stop_labels=stop_labels,
             )
         )
+
+        # Some product builders render spec rows as "Region     Colombia"
+        # without punctuation. Limit this to row elements, not whole sections.
+        merge(_extract_labeled_fact_from_loose_row_text(row_text, label_aliases=aliases))
 
     # Definition lists show up on a few non-standard product detail sections.
     for term in soup.find_all("dt"):

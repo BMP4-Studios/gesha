@@ -490,6 +490,20 @@ def test_colorfull_allows_products_without_type_or_tags() -> None:
     assert ColorfullScraper()._is_coffee_product(product)
 
 
+def test_artery_excludes_collection_apparel_by_handle() -> None:
+    """Artery's bag collection can include apparel with no coffee facts."""
+    product = {"handle": "artery-screen-printed-shirt", "type": "", "tags": []}
+
+    assert not ArteryScraper()._is_coffee_product(product)
+
+
+def test_rabbit_hole_excludes_experience_boxes_by_tag() -> None:
+    """Rabbit Hole tasting boxes are bundles, not a single cart-optimized bag."""
+    product = {"handle": "the-curious-rabbit-box", "type": "Coffee", "tags": ["All Coffee", "experience boxes"]}
+
+    assert not RabbitHoleScraper()._is_coffee_product(product)
+
+
 def test_shopify_product_prefers_labeled_html_product_facts() -> None:
     """Product-page label sections beat less complete JSON description text."""
     # JSON says "Washed"; the product page says the richer Colorfull process.
@@ -702,6 +716,144 @@ def test_common_shopify_caption_selector_supplies_tasting_notes() -> None:
     )
 
     assert coffee.tasting_notes == ["peach", "honey", "jasmine"]
+
+
+def test_subtext_product_page_supplies_shogun_specs_and_meta_notes() -> None:
+    """Subtext combines page-rendered specs with SEO/meta tasting notes."""
+    product = {
+        "title": "Ethiopia Chelbesa Danche, Washed Kurume & Wolisho",
+        "handle": "ethiopia-chelbesa-danche-washed-kurume-wolisho",
+        "price": 2700,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        # The collection JSON body can be generic shipping text, so page
+        # hydration has to supply the coffee-specific metadata.
+        "description": "<p>Orders are roasted and shipped weekly.</p>",
+        "variants": [{"id": 123, "title": "250g", "price": 2700, "grams": 250, "available": True}],
+    }
+    html = """
+    <meta name="description"
+      content="Espresso roasted coffee beans from SNAP in Gedeb, Ethiopia with tasting notes of jasmine, white cherry and peach nectar.">
+    <div class="shg-rich-text shg-default-text-content">
+      <p><span>Producers SNAP &amp; Smallholders of Chelbesa</span></p>
+      <p><span>Station &nbsp; &nbsp; &nbsp; Chelbesa Danche</span></p>
+      <p><span>Region &nbsp; &nbsp; &nbsp; Chelbesa, Gedeb, Gedeo, Ethiopia</span></p>
+      <p><span>Harvest &nbsp; &nbsp; &nbsp; December '25-January '26</span></p>
+      <p><span>Varieties &nbsp; &nbsp; Kurume &amp; Wolisho</span></p>
+      <p><span>Process &nbsp; &nbsp; &nbsp; Washed</span></p>
+      <p><span>Altitude &nbsp; &nbsp; &nbsp; 2,200 masl</span></p>
+      <p><span>Importer &nbsp; &nbsp; Quest</span></p>
+    </div>
+    """
+
+    coffee = SubtextScraper()._coffee_from_product(
+        product,
+        "https://www.subtext.coffee/products/ethiopia-chelbesa-danche-washed-kurume-wolisho",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.origin == "chelbesa, gedeb, gedeo, ethiopia"
+    assert coffee.producer == "SNAP & Smallholders of Chelbesa"
+    assert coffee.process == "washed"
+    assert coffee.varietal == "Kurume & Wolisho"
+    assert coffee.altitude == "2,200 masl"
+    assert coffee.tasting_notes == ["jasmine", "white cherry", "peach nectar"]
+
+
+def test_rabbit_hole_description_impressions_and_location_labels_supply_facts() -> None:
+    """Rabbit Hole descriptions use Impressions and Country/Location labels."""
+    product = {
+        "title": "Ixhuatlan Mexico Washed",
+        "handle": "ixhuatlan-mexico-washed",
+        "price": 2400,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["All Coffee"],
+        "description": (
+            "<p>Impressions: cordial cherry, rustic cacao, baked apple, cajeta<br>"
+            "Roast degree: medium (3/5)<br>"
+            "Country: Mexico<br>"
+            "Location: Matlaquiahuitl, Ixhualtlán del café (Veracruz)<br>"
+            "Variety: mixed, field blend<br>"
+            "Process: Washed<br>"
+            "Farm: Alere &amp; Abuntia Coop.<br>"
+            "Farmer: Adalberto Campailla<br>"
+            "Import partner: Semilla</p>"
+        ),
+        "variants": [{"id": 123, "title": "250g", "price": 2400, "grams": 250, "available": True}],
+    }
+
+    coffee = RabbitHoleScraper()._coffee_from_product(
+        product,
+        "https://www.rabbitholeroasters.com/products/ixhuatlan-mexico-washed",
+    )
+
+    assert coffee.origin == "mexico"
+    assert coffee.process == "washed"
+    assert coffee.producer == "Alere & Abuntia Coop."
+    assert coffee.varietal == "mixed, field blend"
+    assert coffee.roast_style == "medium (3/5)"
+    assert coffee.tasting_notes == ["cordial cherry", "rustic cacao", "baked apple", "cajeta"]
+
+
+def test_rabbit_hole_can_use_handle_process_when_description_omits_it() -> None:
+    """Rabbit Hole sometimes keeps process in the handle instead of the body."""
+    product = {
+        "title": "Mengeshe Gumi",
+        "handle": "mengeshe-gumi-yirgacheffe-natural",
+        "price": 2450,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["All Coffee"],
+        "description": (
+            "<p>Impressions: Orange blossom, toffee, ground cherry, goji berry<br>"
+            "Roast degree: light (2/5)<br>"
+            "Country: Ethiopia<br>"
+            "Region: Yirgacheffe (Worka, Sakaro)<br>"
+            "Washing Station: Mengeshe Gumi<br>"
+            "Variety: Kurume, Dega, Wolisho<br>"
+            "Importer: Crop to Cup</p>"
+        ),
+        "variants": [{"id": 123, "title": "250g", "price": 2450, "grams": 250, "available": True}],
+    }
+
+    coffee = RabbitHoleScraper()._coffee_from_product(
+        product,
+        "https://www.rabbitholeroasters.com/products/mengeshe-gumi-yirgacheffe-natural",
+    )
+
+    assert coffee.origin == "ethiopia"
+    assert coffee.process == "natural"
+    assert coffee.varietal == "Kurume, Dega, Wolisho"
+    assert coffee.tasting_notes == ["orange blossom", "toffee", "ground cherry", "goji berry"]
+
+
+def test_ethica_best_after_label_stops_tasting_note_extraction() -> None:
+    """Ethica notes should not absorb the adjacent Best After guidance."""
+    product = {
+        "title": "Ethica Test Coffee",
+        "handle": "ethica-test-coffee",
+        "price": 2300,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": (
+            "<p>Origin: Colombia</p>"
+            "<p>Process: Washed</p>"
+            "<p>Notes: Chocolate, Hazelnut, Stone Fruits<br>Best After: 2 weeks post-roasting</p>"
+        ),
+        "variants": [{"id": 123, "title": "250g", "price": 2300, "grams": 250, "available": True}],
+    }
+
+    coffee = EthicaScraper()._coffee_from_product(
+        product,
+        "https://ethicaroasters.com/products/ethica-test-coffee",
+    )
+
+    assert coffee.origin == "colombia"
+    assert coffee.process == "washed"
+    assert coffee.tasting_notes == ["chocolate", "hazelnut", "stone fruits"]
 
 
 def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
