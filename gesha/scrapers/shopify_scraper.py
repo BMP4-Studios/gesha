@@ -827,8 +827,8 @@ class HouseOfFunkScraper(ShopifyScraper):
 
     # The coffee collection also exposes subscription and brew-gear products, so
     # use product type instead of the broad Coffee tag.
-    # Notes live in a two-sentence product-page blurb, so hydrate HTML and keep
-    # the whole short description rather than guessing which sentence is "real".
+    # House of Funk keeps structured coffee facts in a bare label/value grid,
+    # and notes can appear either there or in the two-sentence short blurb.
     BASE_URL = "https://www.houseoffunkbrewing.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "House of Funk"
@@ -836,7 +836,9 @@ class HouseOfFunkScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Coffee Beans",)
     HYDRATE_COLLECTION_PRODUCTS = True
+    PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
     TASTING_NOTE_TEXT_SELECTORS = (
+        "div.coffee-info-grid span.info-value-tasting-notes",
         "div.product-item__short-desc span.text-color--opacity",
         *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
     )

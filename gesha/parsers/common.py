@@ -94,6 +94,34 @@ def _is_inside_ignored_tree(element: Tag) -> bool:
     return element.find_parent(["script", "style", "noscript"]) is not None
 
 
+def _field_for_exact_label(label: str, aliases: Mapping[str, Sequence[str]]) -> tuple[str, int] | None:
+    """Map a standalone label node such as ``Origin`` to a catalog field."""
+    cleaned = _clean_fact_text(label)
+    if cleaned is None:
+        return None
+
+    # These sibling-pair labels do not include punctuation, so only exact
+    # case-insensitive matches are safe enough to accept.
+    normalized = re.sub(r"\s+", " ", cleaned).casefold()
+    for field, labels in aliases.items():
+        for priority, alias in enumerate(labels):
+            alias_normalized = re.sub(r"\s+", " ", alias.strip()).casefold()
+            if normalized == alias_normalized:
+                return field, priority
+    return None
+
+
+def _next_non_empty_sibling(element: Tag) -> Tag | None:
+    """Return the next sibling tag that carries visible text."""
+    sibling = element.next_sibling
+    while sibling is not None:
+        if isinstance(sibling, Tag) and not _is_inside_ignored_tree(sibling):
+            if _text_from_row(sibling):
+                return sibling
+        sibling = sibling.next_sibling
+    return None
+
+
 def extract_labeled_product_facts_from_text(
     text: str | None,
     *,
@@ -169,6 +197,7 @@ def extract_labeled_product_facts_from_html(
 ) -> dict[str, str]:
     """Extract product facts from repeated labeled rows on a product page."""
     facts: dict[str, str] = {}
+    aliases = label_aliases or DEFAULT_PRODUCT_FACT_LABELS
 
     # Merge in catalog-field order so earlier, more local values win.
     def merge(new_values: Mapping[str, str]) -> None:
@@ -191,7 +220,7 @@ def extract_labeled_product_facts_from_html(
                 merge(
                     extract_labeled_product_facts_from_text(
                         f"{label}: {value}",
-                        label_aliases=label_aliases,
+                        label_aliases=aliases,
                         stop_labels=stop_labels,
                     )
                 )
@@ -200,7 +229,7 @@ def extract_labeled_product_facts_from_html(
         merge(
             extract_labeled_product_facts_from_text(
                 _text_from_row(row),
-                label_aliases=label_aliases,
+                label_aliases=aliases,
                 stop_labels=stop_labels,
             )
         )
@@ -216,10 +245,41 @@ def extract_labeled_product_facts_from_html(
         merge(
             extract_labeled_product_facts_from_text(
                 f"{_text_from_row(term)}: {_text_from_row(definition)}",
-                label_aliases=label_aliases,
+                label_aliases=aliases,
                 stop_labels=stop_labels,
             )
         )
+
+    # Some themes render specs as adjacent bare nodes:
+    # <div>Origin</div><div>Colombia</div>. Exact label matching keeps this
+    # generic without turning every neighboring div into a product fact.
+    sibling_pair_facts: dict[str, tuple[int, str]] = {}
+    for label_node in soup.find_all(["div", "span"]):
+        if not isinstance(label_node, Tag) or _is_inside_ignored_tree(label_node):
+            continue
+
+        field_match = _field_for_exact_label(_text_from_row(label_node), aliases)
+        if field_match is None:
+            continue
+
+        field, priority = field_match
+        if field in facts:
+            continue
+
+        value_node = _next_non_empty_sibling(label_node)
+        if value_node is None:
+            continue
+
+        value = _clean_fact_text(_text_from_row(value_node))
+        if not value:
+            continue
+
+        # If a theme exposes both "Farm" and "Producer", prefer the alias that
+        # appears earlier in DEFAULT_PRODUCT_FACT_LABELS for that catalog field.
+        current_value = sibling_pair_facts.get(field)
+        if current_value is None or priority < current_value[0]:
+            sibling_pair_facts[field] = (priority, value)
+    merge({field: value for field, (_, value) in sibling_pair_facts.items()})
 
     # As a fallback, scan larger blocks and only accept ones with multiple facts.
     if len(facts) < 2:
@@ -230,7 +290,7 @@ def extract_labeled_product_facts_from_html(
             # treated as structured metadata.
             block_facts = extract_labeled_product_facts_from_text(
                 _text_from_row(block),
-                label_aliases=label_aliases,
+                label_aliases=aliases,
                 stop_labels=stop_labels,
             )
             if len(block_facts) >= 2:

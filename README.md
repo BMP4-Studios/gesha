@@ -209,6 +209,9 @@ TASTING_NOTE_TEXT_SELECTORS = (
     "div.product-item__short-desc span.text-color--opacity",
     *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
 )
+
+# Use this when a stable product-page block contains repeated product facts.
+PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
 ```
 
 To automate that evidence-gathering loop for cached products missing notes, use:

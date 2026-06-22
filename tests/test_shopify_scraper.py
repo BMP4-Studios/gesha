@@ -635,6 +635,48 @@ def test_house_of_funk_short_description_supplies_tasting_notes() -> None:
     ]
 
 
+def test_house_of_funk_coffee_info_grid_supplies_product_facts() -> None:
+    """House of Funk's coffee-info grid feeds the shared fact parser."""
+    product = {
+        "title": "Banana French Toast",
+        "handle": "banana-french-toast",
+        "price": 2300,
+        "available": True,
+        "type": "Coffee Beans",
+        "tags": ["Coffee"],
+        "description": "",
+        "variants": [{"id": 123, "title": "250g", "price": 2300, "grams": 250, "available": True}],
+    }
+    html = """
+    <div class="coffee-info-section">
+      <div class="coffee-info-grid">
+        <div class="tasting-notes-wrapper">
+          <span class="info-value-tasting-notes">Banana French Toast.</span>
+        </div>
+        <div class="info-label">Origin</div>   <div class="info-value">Quindio,&nbsp;Colombia</div>
+        <div class="info-label">Process</div>  <div class="info-value">Co-ferment Blend</div>
+        <div class="info-label">Farm</div>     <div class="info-value">Multiple</div>
+        <div class="info-label">Varietal</div> <div class="info-value">Variedad Colombia &amp; Castillo</div>
+        <div class="info-label">Producer</div> <div class="info-value">Jairo Arcila &amp; Leonid Ramirez</div>
+        <div class="info-label">Elevation</div><div class="info-value">1500-1800 masl</div>
+      </div>
+    </div>
+    """
+
+    coffee = HouseOfFunkScraper()._coffee_from_product(
+        product,
+        "https://www.houseoffunkbrewing.com/products/banana-french-toast",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.origin == "quindio, colombia"
+    assert coffee.process == "co-ferment blend"
+    assert coffee.producer == "Jairo Arcila & Leonid Ramirez"
+    assert coffee.varietal == "Variedad Colombia & Castillo"
+    assert coffee.altitude == "1500-1800 masl"
+    assert coffee.tasting_notes == ["banana french toast"]
+
+
 def test_common_shopify_caption_selector_supplies_tasting_notes() -> None:
     """Shared Shopify caption markup feeds the same selector note extractor."""
     product = {
