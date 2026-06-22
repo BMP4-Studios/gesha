@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from types import SimpleNamespace
 
 import gesha.cli.main as cli_main
@@ -71,3 +72,38 @@ def test_collection_json_command_writes_roaster_json(
     assert (tmp_path / "traffic.json").read_text(encoding="utf-8") == (
         '{\n  "products": [\n    {\n      "title": "Milkshake Espresso"\n    }\n  ]\n}\n'
     )
+
+
+def test_rebuild_backs_up_resets_and_scrapes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    """The rebuild command backs up the current DB before replacing it."""
+    db_path = tmp_path / "gesha.db"
+    backup_dir = tmp_path / "backups"
+
+    with sqlite3.connect(str(db_path)) as connection:
+        connection.execute("CREATE TABLE marker (id INTEGER PRIMARY KEY)")
+        connection.execute("INSERT INTO marker (id) VALUES (1)")
+
+    for sidecar_name in ("gesha.db-wal", "gesha.db-shm", "gesha.db-journal"):
+        (tmp_path / sidecar_name).write_text("sidecar", encoding="utf-8")
+
+    calls: list[str] = []
+    monkeypatch.setattr(cli_main, "DB_PATH", db_path)
+    monkeypatch.setattr(cli_main, "init_db", lambda: calls.append("init"))
+    monkeypatch.setattr(cli_main, "_refresh_catalog", lambda source: calls.append(f"scrape:{source}"))
+
+    cli_main.rebuild(yes=True, backup_dir=backup_dir, no_scrape=False)
+
+    assert calls == ["init", "scrape:all"]
+    assert not db_path.exists()
+    assert not (tmp_path / "gesha.db-wal").exists()
+    assert not (tmp_path / "gesha.db-shm").exists()
+    assert not (tmp_path / "gesha.db-journal").exists()
+
+    backups = list(backup_dir.glob("gesha-*.db"))
+    assert len(backups) == 1
+    with sqlite3.connect(str(backups[0])) as backup_connection:
+        marker_count = backup_connection.execute("SELECT COUNT(*) FROM marker").fetchone()[0]
+    assert marker_count == 1

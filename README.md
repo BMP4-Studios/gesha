@@ -91,6 +91,9 @@ gesha scrape
 # Refresh one roaster
 gesha scrape traffic
 
+# Back up gesha.db, wipe the cache, recreate tables, and scrape every roaster
+gesha rebuild
+
 # List previously scraped coffees without making network requests
 gesha list
 

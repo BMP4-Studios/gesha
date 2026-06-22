@@ -9,9 +9,11 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import sqlite3
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -28,7 +30,7 @@ from gesha.cart import (
 from gesha.coffee_data import CoffeeData
 from gesha.coffee_service import CoffeeService
 from gesha.db.models import Coffee
-from gesha.db.session import get_session, init_db
+from gesha.db.session import DB_PATH, engine, get_session, init_db
 from gesha.measurements import parse_weight_grams, price_per_100g_cents
 from gesha.normalization import NA_LABEL, price_display
 from gesha.scrapers import get_scraper, get_scrapers, supported_sources
@@ -70,6 +72,22 @@ collection_json_output_dir_option = typer_option(
     Path("."),
     "--output-dir",
     help="Directory where <roaster>.json should be written; defaults to the current repo directory.",
+)
+rebuild_yes_option = typer_option(
+    False,
+    "--yes",
+    "-y",
+    help="Skip the confirmation prompt before replacing the local database.",
+)
+rebuild_backup_dir_option = typer_option(
+    Path("backups"),
+    "--backup-dir",
+    help="Directory where the current database backup should be written.",
+)
+rebuild_no_scrape_option = typer_option(
+    False,
+    "--no-scrape",
+    help="Back up and recreate an empty database without scraping roaster websites.",
 )
 
 
@@ -208,6 +226,55 @@ def _refresh_catalog(source: str) -> None:
         _print_coffees(coffees)
 
 
+def _backup_path_for(db_path: Path, backup_dir: Path) -> Path:
+    """Build an unused timestamped backup path for the current database."""
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    candidate = backup_dir / f"{db_path.stem}-{timestamp}{db_path.suffix}"
+    if not candidate.exists():
+        return candidate
+
+    # If two rebuilds happen in the same second, keep both backups.
+    for suffix in range(2, 100):
+        candidate = backup_dir / f"{db_path.stem}-{timestamp}-{suffix}{db_path.suffix}"
+        if not candidate.exists():
+            return candidate
+    raise RuntimeError("Could not find an unused database backup filename.")
+
+
+def _backup_database(db_path: Path, backup_dir: Path) -> Path | None:
+    """Copy the current SQLite database into the backup directory."""
+    if not db_path.exists():
+        return None
+
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    backup_path = _backup_path_for(db_path, backup_dir)
+
+    # SQLite's backup API captures a consistent database image, including data
+    # that may currently be represented through WAL bookkeeping.
+    with sqlite3.connect(str(db_path)) as source:
+        with sqlite3.connect(str(backup_path)) as destination:
+            source.backup(destination)
+    return backup_path
+
+
+def _sqlite_database_files(db_path: Path) -> tuple[Path, Path, Path, Path]:
+    """Return the main SQLite file and sidecar files that should be reset."""
+    return (
+        db_path,
+        db_path.with_name(f"{db_path.name}-wal"),
+        db_path.with_name(f"{db_path.name}-shm"),
+        db_path.with_name(f"{db_path.name}-journal"),
+    )
+
+
+def _remove_database_files(db_path: Path) -> None:
+    """Dispose SQLAlchemy connections and remove the current SQLite files."""
+    engine.dispose()
+    for path in _sqlite_database_files(db_path):
+        if path.exists():
+            path.unlink()
+
+
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     """Refresh and list the Gesha catalog when no subcommand is provided."""
@@ -255,6 +322,38 @@ def scrape(
     # All scrape orchestration lives in one helper so the no-argument callback
     # and explicit ``gesha scrape`` command behave the same way.
     _refresh_catalog(source)
+
+
+@app.command()
+def rebuild(
+    yes: bool = rebuild_yes_option,
+    backup_dir: Path = rebuild_backup_dir_option,
+    no_scrape: bool = rebuild_no_scrape_option,
+) -> None:
+    """Back up, wipe, recreate, and refresh the local database."""
+    if not yes:
+        confirmed = typer.confirm(
+            f"Back up and replace {DB_PATH}? This will remove the current local cache before scraping."
+        )
+        if not confirmed:
+            console.print("[yellow]Rebuild cancelled.[/yellow]")
+            raise typer.Exit(code=1)
+
+    backup_path = _backup_database(DB_PATH, backup_dir)
+    if backup_path is None:
+        console.print(f"[yellow]No existing {DB_PATH} found; starting from a fresh database.[/yellow]")
+    else:
+        console.print(f"[green]Backed up {DB_PATH} to {backup_path}[/green]")
+
+    _remove_database_files(DB_PATH)
+    init_db()
+    console.print("[green]Database recreated.[/green]")
+
+    if no_scrape:
+        console.print("[yellow]Skipped scrape because --no-scrape was provided.[/yellow]")
+        return
+
+    _refresh_catalog("all")
 
 
 @app.command(name="json")

@@ -6,12 +6,15 @@ create short-lived sessions consumed by ``CoffeeService``.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base
 
-SQLITE_URL = "sqlite:///gesha.db"
+DB_PATH = Path("gesha.db")
+SQLITE_URL = f"sqlite:///{DB_PATH}"
 
 # Keep one engine and factory at module scope; commands create short sessions.
 engine = create_engine(SQLITE_URL, echo=False, future=True)

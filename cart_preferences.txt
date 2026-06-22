@@ -20,10 +20,12 @@ co-ferment
 coferment
 cofermentation
 gesha
+tropical
 floral
 funk
-tropical
 funky
+pungent
+fruit
 
 ! decaf
 ! dark roast
