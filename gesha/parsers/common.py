@@ -15,12 +15,14 @@ COMMON_TASTING_NOTE_LABELS = [
     # Roasters use different labels for the same catalog field.
     "Notes",
     "Tasting Notes",
+    "Taste Notes",
     "Taste",
     "Impressions",
     "In the cup",
     "Reminds us of",
     "flavour Profile",
     "Flavor Profile",
+    "Profile Notes",
     "Cup Notes",
     "Profile",
     "Aroma",
@@ -43,7 +45,7 @@ DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
     # Map normalized catalog fields to the storefront labels that may describe them.
     "origin": ("Origin", "Origins", "Country", "Region", "Place", "Location"),
     "producer": ("Producer", "Producers", "Coffee Producers", "Farmer", "Farm"),
-    "process": ("Process", "Method"),
+    "process": ("Process", "Method", "Drying Method"),
     "varietal": ("Varietal", "Variety", "Varieties", "Cultivar"),
     "altitude": ("Altitude", "Elevation"),
     "roast_style": ("Roast Level", "Roast Style", "Roast Degree", "Roast", "Value / Roasting degree"),
@@ -73,7 +75,7 @@ def _clean_fact_text(value: str) -> str | None:
     """Collapse whitespace around one extracted product-fact value."""
     # Non-breaking spaces are common in Shopify rich text.
     cleaned = value.replace("\xa0", " ")
-    cleaned = re.sub(r"\s+", " ", cleaned).strip(" \t\r\n:-")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" \t\r\n:-•·")
     return cleaned or None
 
 

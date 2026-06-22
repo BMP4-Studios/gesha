@@ -93,7 +93,7 @@ class ShopifyScraper(BaseScraper):
         ("honey", "honey"),
     )
 
-    NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", "·", "•", "Â", "â")
+    NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", " x ", "·", "•", "Â", "â")
     BULLET_NOTE_SEPARATORS = ("·", "•", "Â", "â")
     ROAST_SCALE_PATTERN = re.compile(r"\blight\b.*\bdark\b|[●○]", re.IGNORECASE)
     META_TASTING_NOTES_PATTERN = re.compile(r"\btasting\s+notes?\s+of\s+(.+?)(?:[.!?]|$)", re.IGNORECASE)
@@ -413,6 +413,7 @@ class ShopifyScraper(BaseScraper):
             page_facts.get("bag_size"),
             json_facts.get("bag_size"),
             self._extract_bag_size(product_data),
+            self._extract_bag_size_from_description(description),
         )
         tasting_notes = self._extract_tasting_notes(
             description,
@@ -438,7 +439,7 @@ class ShopifyScraper(BaseScraper):
             tasting_notes=tasting_notes,
             roast_style=roast_style,
             price_cents=default_variant.price_cents if default_variant else self._extract_price(product_data),
-            bag_size=default_variant.bag_size if default_variant else bag_size,
+            bag_size=_first_non_blank(default_variant.bag_size, bag_size) if default_variant else bag_size,
             url=url,
             availability=default_variant.availability if default_variant else bool(product_data.get("available", True)),
             variants=variants,
@@ -601,6 +602,21 @@ class ShopifyScraper(BaseScraper):
         lines = [line.strip() for line in description.splitlines() if line.strip()]
         if lines:
             first_line = lines[0]
+            if first_line.casefold() == "in the cup":
+                # Some themes render "In the cup" as a heading followed by one
+                # short note per line. Stop before the first prose paragraph or
+                # technical table heading.
+                note_lines: list[str] = []
+                for line in lines[1:]:
+                    if len(line) > 50 or line.casefold() in {"technical sheet", "details"}:
+                        break
+                    note_lines.append(line)
+                    if len(note_lines) >= 8:
+                        break
+                notes = normalize_tasting_notes(note_lines)
+                if notes:
+                    return notes
+
             if len(first_line) < 100 and any(separator in first_line for separator in self.NOTE_HINT_SEPARATORS):
                 return normalize_tasting_notes(first_line)
 
@@ -842,6 +858,18 @@ class ShopifyScraper(BaseScraper):
 
         return None
 
+    def _extract_bag_size_from_description(self, description: str) -> str | None:
+        """Read a leading bag size from sparse Shopify variant data."""
+        # Narval-style descriptions can begin with "340g" while Shopify reports
+        # zero-gram variants. Only trust weights at the very start of the text so
+        # recipe ratios or bundle descriptions do not become product bag sizes.
+        first_line = next((line.strip() for line in description.splitlines() if line.strip()), "")
+        if parse_weight_grams(first_line) is None:
+            return None
+
+        match = re.match(r"\s*\d+(?:\.\d+)?\s*(?:g|kg|oz|lbs?)\b", first_line, flags=re.IGNORECASE)
+        return match.group(0).replace(" ", "") if match else None
+
 
 class PorteBleueScraper(ShopifyScraper):
     """Shopify configuration for Porte Bleue products."""
@@ -1041,3 +1069,193 @@ class RabbitHoleScraper(ShopifyScraper):
     INCLUDE_PRODUCT_TYPES = ("Coffee",)
     EXCLUDE_TAGS = ("wholesale-only", "experience boxes")
     EXTRACT_HANDLE_PROCESS_FACTS = True
+
+
+class EscapeScraper(ShopifyScraper):
+    """Shopify configuration for Escape Coffee products."""
+
+    # Escape renders the useful bean specs in the product-page accordion, not in
+    # collection JSON. Scope to that accordion so unrelated carousels/nav copy
+    # cannot win product facts.
+    BASE_URL = "https://escape.cafe"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffees"
+    SOURCE_NAME = "Escape"
+    ROASTER_NAME = "Escape Coffee Roasters"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    SKIP_UNAVAILABLE_PRODUCTS = True
+    HYDRATE_COLLECTION_PRODUCTS = True
+    PRODUCT_FACT_SELECTORS = ("div#ProductAccordion-beans",)
+    TASTING_NOTE_TEXT_SELECTORS = (
+        "p.productHero__ingredients",
+        *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+    )
+
+
+class PiratesScraper(ShopifyScraper):
+    """Shopify configuration for Pirates of Coffee products."""
+
+    # Pirates keeps rich facts in collection JSON, but the all-coffee collection
+    # also carries bundles/matcha and unavailable archive items; keep this source
+    # focused on currently orderable coffee beans.
+    BASE_URL = "https://piratesofcoffee.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
+    SOURCE_NAME = "Pirates"
+    ROASTER_NAME = "Pirates of Coffee"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee Beans",)
+    SKIP_UNAVAILABLE_PRODUCTS = True
+    EXCLUDE_HANDLE_KEYWORDS = (
+        *ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS,
+        "treasure-box",
+        "box-set",
+        "matcha",
+        "drip-bags",
+        "cascara",
+    )
+
+
+class Celcius94Scraper(ShopifyScraper):
+    """Shopify configuration for 94 Celcius products."""
+
+    # The /cafes collection is the English storefront's coffee boundary; product
+    # type filtering catches any stray equipment that appears in broader feeds.
+    BASE_URL = "https://94celcius.com/en"
+    COLLECTION_URL = f"{BASE_URL}/collections/cafes"
+    SOURCE_NAME = "94 Celcius"
+    ROASTER_NAME = "94 Celcius"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+
+
+class CafePistaScraper(ShopifyScraper):
+    """Shopify configuration for Cafe Pista products."""
+
+    # Cafe Pista puts visible specs in the product description HTML. Hydrate and
+    # scope to the RTE block to avoid unrelated collection/header text.
+    BASE_URL = "https://cafepista.com/en"
+    COLLECTION_URL = f"{BASE_URL}/collections/sacs"
+    SOURCE_NAME = "Cafe Pista"
+    ROASTER_NAME = "Cafe Pista"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Sac de café",)
+    EXCLUDE_TAGS = ("wholesale-only",)
+    EXCLUDE_HANDLE_KEYWORDS = (
+        *ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS,
+        "trio",
+        "ensemble",
+        "tasting-set",
+    )
+    HYDRATE_COLLECTION_PRODUCTS = True
+    PRODUCT_FACT_SELECTORS = ("rte-formatter.rte",)
+
+
+class JungleScraper(ShopifyScraper):
+    """Shopify configuration for Jungle Livraison Cafe products."""
+
+    # The requested "les-melanges" collection is already focused on funky coffee
+    # bags, and the JSON descriptions carry standard label/value facts.
+    BASE_URL = "https://junglelivraisoncafe.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/les-melanges"
+    SOURCE_NAME = "Jungle"
+    ROASTER_NAME = "Jungle Livraison Cafe"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
+    SKIP_UNAVAILABLE_PRODUCTS = True
+
+
+class ZaAndKloScraper(ShopifyScraper):
+    """Shopify configuration for Za & Klo products."""
+
+    # Their visible /collections/coffees URL does not expose collection JSON, but
+    # the product index does. Product type plus bundle handles keep it coffee-only.
+    BASE_URL = "https://zaandklo.com"
+    COLLECTION_URL = f"{BASE_URL}/products"
+    SOURCE_NAME = "Za & Klo"
+    ROASTER_NAME = "Za & Klo"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("coffee", "Coffee")
+    SKIP_UNAVAILABLE_PRODUCTS = True
+    EXCLUDE_HANDLE_KEYWORDS = (
+        *ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS,
+        "discovery-box",
+        "roaster-box",
+        "roasters-box",
+    )
+
+
+class NektarScraper(ShopifyScraper):
+    """Shopify configuration for Nektar products."""
+
+    # Nektar's coffee collection includes discovery bundles. The coffee bags
+    # themselves expose rich facts in collection JSON using "Taste notes".
+    BASE_URL = "https://nektar.ca/en"
+    COLLECTION_URL = f"{BASE_URL}/collections/tous-les-cafes"
+    SOURCE_NAME = "Nektar"
+    ROASTER_NAME = "Nektar Cafeologue"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Cafés",)
+    EXCLUDE_HANDLE_KEYWORDS = (
+        *ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS,
+        "trio",
+        "ensemble",
+        "decouverte",
+        "bundle",
+    )
+
+
+class SeptemberScraper(ShopifyScraper):
+    """Shopify configuration for September Coffee products."""
+
+    # September's collection JSON has empty descriptions. Product pages expose
+    # a structured parameter list plus an "In the cup" paragraph, so hydrate.
+    BASE_URL = "https://september.coffee"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "September"
+    ROASTER_NAME = "September Coffee"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    SKIP_UNAVAILABLE_PRODUCTS = True
+    HYDRATE_COLLECTION_PRODUCTS = True
+    PRODUCT_FACT_SELECTORS = ("ul.parameter-list",)
+    TASTING_NOTE_TEXT_SELECTORS = (
+        "div.product-info-block:has(h2:-soup-contains('In the cup')) p",
+        *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+    )
+
+
+class MonogramScraper(ShopifyScraper):
+    """Shopify configuration for Monogram products."""
+
+    # Monogram's coffee collection JSON is available at /all-coffees. Hydrate so
+    # the product text block can provide origin/process/notes consistently, and
+    # stop before cross-links such as "Want this for espresso?".
+    BASE_URL = "https://monogramcoffee.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/all-coffees"
+    SOURCE_NAME = "Monogram"
+    ROASTER_NAME = "Monogram Coffee"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Whole Bean",)
+    SKIP_UNAVAILABLE_PRODUCTS = True
+    HYDRATE_COLLECTION_PRODUCTS = True
+    PRODUCT_FACT_STOP_LABELS = (
+        *DEFAULT_PRODUCT_FACT_STOP_LABELS,
+        "Want this for espresso",
+        "Want this for filter",
+    )
+    PRODUCT_FACT_SELECTORS = ("div.product__text.rte",)
+
+
+class NarvalScraper(ShopifyScraper):
+    """Shopify configuration for Narval products."""
+
+    # The 340g collection avoids bundles and 1.5kg duplicates. Shopify reports
+    # zero variant grams, so the shared leading-description weight fallback reads
+    # the visible "340g" line where present.
+    BASE_URL = "https://narval.cafe/en"
+    COLLECTION_URL = f"{BASE_URL}/collections/340g"
+    SOURCE_NAME = "Narval"
+    ROASTER_NAME = "Narval"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "coffret", "mug")

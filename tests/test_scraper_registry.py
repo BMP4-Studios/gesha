@@ -5,17 +5,27 @@ from gesha.scrapers import get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ArteryScraper,
+    CafePistaScraper,
+    Celcius94Scraper,
     ColorfullScraper,
     DeMelloScraper,
+    EscapeScraper,
     EthicaScraper,
     HouseOfFunkScraper,
+    JungleScraper,
     KohiScraper,
+    MonogramScraper,
+    NarvalScraper,
+    NektarScraper,
+    PiratesScraper,
     PorteBleueScraper,
     QuietlyScraper,
     RabbitHoleScraper,
     RogueWaveScraper,
+    SeptemberScraper,
     SubtextScraper,
     TrafficScraper,
+    ZaAndKloScraper,
 )
 
 
@@ -34,6 +44,16 @@ def test_get_scraper_returns_registered_source() -> None:
     assert isinstance(get_scraper("artery"), ArteryScraper)
     assert isinstance(get_scraper("ethica"), EthicaScraper)
     assert isinstance(get_scraper("rabbithole"), RabbitHoleScraper)
+    assert isinstance(get_scraper("escape"), EscapeScraper)
+    assert isinstance(get_scraper("pirates"), PiratesScraper)
+    assert isinstance(get_scraper("94celcius"), Celcius94Scraper)
+    assert isinstance(get_scraper("cafepista"), CafePistaScraper)
+    assert isinstance(get_scraper("jungle"), JungleScraper)
+    assert isinstance(get_scraper("zaandklo"), ZaAndKloScraper)
+    assert isinstance(get_scraper("nektar"), NektarScraper)
+    assert isinstance(get_scraper("september"), SeptemberScraper)
+    assert isinstance(get_scraper("monogram"), MonogramScraper)
+    assert isinstance(get_scraper("narval"), NarvalScraper)
     assert get_scraper("traffic").ROASTER_NAME == "Traffic Coffee"
 
 
@@ -56,6 +76,16 @@ def test_get_scrapers_returns_default_sources() -> None:
         ArteryScraper,
         EthicaScraper,
         RabbitHoleScraper,
+        EscapeScraper,
+        PiratesScraper,
+        Celcius94Scraper,
+        CafePistaScraper,
+        JungleScraper,
+        ZaAndKloScraper,
+        NektarScraper,
+        SeptemberScraper,
+        MonogramScraper,
+        NarvalScraper,
     ]
 
 
@@ -77,6 +107,16 @@ def test_supported_sources_includes_all_alias() -> None:
         "artery",
         "ethica",
         "rabbithole",
+        "escape",
+        "pirates",
+        "94celcius",
+        "cafepista",
+        "jungle",
+        "zaandklo",
+        "nektar",
+        "september",
+        "monogram",
+        "narval",
     ]
 
 

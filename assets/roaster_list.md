@@ -26,8 +26,23 @@ Added this round:
 - [x] roguewave
 - [x] houseoffunk
 - [x] quietly
-- [ ] kohi: not quite there
-- [x] subtext: looking pretty good, should probably spot check
-- [x] artery: looking pretty good, should probably spot check
-- [x] ethica: looking pretty good, should probably spot check
-- [x] rabbithole: looking pretty good, should probably spot check
+- [x] kohi
+- [x] subtext
+- [x] artery
+- [x] ethica
+- [x] rabbithole
+- [x] escape
+- [x] pirates
+- [x] 94celcius
+- [x] cafepista
+- [x] jungle (juste les funky, probablement devrais prendre plus)
+- [x] zaandklo
+- [x] nektar
+- [x] september
+- [x] monogram
+- [x] narval
+
+Future pass:
+- [ ] ambros: Shopify, but product metadata is still too inconsistent for a clean shared parser config.
+- [ ] nucleus: Shopify, but the useful coffee catalog spans multiple collections and needs a multi-collection plan.
+- [ ] sipstruck: Shopify, but title/notes parsing needs a source-specific shape before it is safe to list.

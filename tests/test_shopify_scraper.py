@@ -6,18 +6,28 @@ from bs4 import BeautifulSoup
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ArteryScraper,
+    CafePistaScraper,
+    Celcius94Scraper,
     ColorfullScraper,
     DeMelloScraper,
+    EscapeScraper,
     EthicaScraper,
     HouseOfFunkScraper,
+    JungleScraper,
     KohiScraper,
+    MonogramScraper,
+    NarvalScraper,
+    NektarScraper,
+    PiratesScraper,
     PorteBleueScraper,
     QuietlyScraper,
     RabbitHoleScraper,
     RogueWaveScraper,
+    SeptemberScraper,
     ShopifyScraper,
     SubtextScraper,
     TrafficScraper,
+    ZaAndKloScraper,
 )
 
 
@@ -152,6 +162,19 @@ def test_pilot_shopify_sources_use_expected_collection_json_urls() -> None:
             RabbitHoleScraper,
             "https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1",
         ),
+        (EscapeScraper, "https://escape.cafe/collections/coffees/products.json?limit=250&page=1"),
+        (PiratesScraper, "https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1"),
+        (Celcius94Scraper, "https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1"),
+        (CafePistaScraper, "https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1"),
+        (
+            JungleScraper,
+            "https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1",
+        ),
+        (ZaAndKloScraper, "https://zaandklo.com/products.json?limit=250&page=1"),
+        (NektarScraper, "https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1"),
+        (SeptemberScraper, "https://september.coffee/collections/coffee/products.json?limit=250&page=1"),
+        (MonogramScraper, "https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1"),
+        (NarvalScraper, "https://narval.cafe/en/collections/340g/products.json?limit=250&page=1"),
     ]
 
     assert [scraper_class()._collection_products_json_url() for scraper_class, _ in cases] == [
@@ -504,6 +527,19 @@ def test_rabbit_hole_excludes_experience_boxes_by_tag() -> None:
     assert not RabbitHoleScraper()._is_coffee_product(product)
 
 
+def test_next_batch_filters_non_bag_products_from_noisy_collections() -> None:
+    """New Shopify sources keep bundles and adjacent products out of carts."""
+    assert not PiratesScraper()._is_coffee_product(
+        {"handle": "treasure-box-brazil-crew-essentials", "type": "Coffee Beans", "tags": []}
+    )
+    assert not ZaAndKloScraper()._is_coffee_product(
+        {"handle": "roasters-box-espresso", "type": "coffee", "tags": []}
+    )
+    assert not NektarScraper()._is_coffee_product(
+        {"handle": "ensemble-decouverte-origine", "type": "Cafés", "tags": []}
+    )
+
+
 def test_shopify_product_prefers_labeled_html_product_facts() -> None:
     """Product-page label sections beat less complete JSON description text."""
     # JSON says "Washed"; the product page says the richer Colorfull process.
@@ -716,6 +752,178 @@ def test_common_shopify_caption_selector_supplies_tasting_notes() -> None:
     )
 
     assert coffee.tasting_notes == ["peach", "honey", "jasmine"]
+
+
+def test_escape_product_page_accordion_supplies_scoped_facts() -> None:
+    """Escape facts come from the product-page bean accordion."""
+    product = {
+        "title": "Mayor - Laos",
+        "handle": "mayor-laos",
+        "price": 2400,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": "<p>Long story without specs.</p>",
+        "variants": [{"id": 123, "title": "300g", "price": 2400, "grams": 300, "available": True}],
+    }
+    html = """
+    <p class="productHero__ingredients t-h2">Bosc Pear, Glossette, Brown Sugar</p>
+    <div id="ProductAccordion-beans" class="content t-body">
+      <div>Type: Single Origin</div>
+      <div>Notes: Bosc Pear, Glossette, Brown Sugar</div>
+      <div>Country: Laos</div>
+      <div>Region: Champasak Province, Bolaven Plateau</div>
+      <div>Process: Washed</div>
+      <div>Varieties: Catigua</div>
+      <div>Altitude: 800-1350 m</div>
+    </div>
+    <div><p>Country: Kenya</p><p>Process: Natural</p></div>
+    """
+
+    coffee = EscapeScraper()._coffee_from_product(
+        product,
+        "https://escape.cafe/products/mayor-laos",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.origin == "laos"
+    assert coffee.process == "washed"
+    assert coffee.varietal == "Catigua"
+    assert coffee.altitude == "800-1350 m"
+    assert coffee.tasting_notes == ["bosc pear", "glossette", "brown sugar"]
+
+
+def test_cafe_pista_rte_description_supplies_product_facts() -> None:
+    """Cafe Pista uses an RTE product-description block for visible specs."""
+    product = {
+        "title": "El Cortijo",
+        "handle": "el-cortijo",
+        "price": 2650,
+        "available": True,
+        "type": "Sac de café",
+        "tags": [],
+        "description": "<p>Generic collection teaser.</p>",
+        "variants": [{"id": 123, "title": "300G", "price": 2650, "grams": 300, "available": True}],
+    }
+    html = """
+    <rte-formatter class="spacing-style text-block rte rte">
+      <p>
+        Region : Nariño, Colombie
+        Farm : Ximena Cifuentes
+        Variety: Caturra, Colombia, Castillo
+        Altitude : 2100 M
+        Method: Washed
+        Notes: Apple, citrus, caramel
+      </p>
+    </rte-formatter>
+    <div><p>Region : Wrong carousel text</p></div>
+    """
+
+    coffee = CafePistaScraper()._coffee_from_product(
+        product,
+        "https://cafepista.com/en/products/el-cortijo",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.origin == "nariño, colombie"
+    assert coffee.producer == "Ximena Cifuentes"
+    assert coffee.process == "washed"
+    assert coffee.varietal == "Caturra, Colombia, Castillo"
+    assert coffee.altitude == "2100 M"
+    assert coffee.tasting_notes == ["apple", "citrus", "caramel"]
+
+
+def test_94_celcius_leading_note_fallbacks_supply_notes() -> None:
+    """Short note headings and x-separated note lines are accepted fallbacks."""
+    decaf = {
+        "title": "Decaf Colombia",
+        "handle": "decaf-colombie",
+        "price": 2499,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": "<p>Banana Bread x Apple x Dark Chocolate</p><p>Region: Tolima</p><p>Process: Washed</p>",
+        "variants": [{"id": 123, "title": "300g", "price": 2499, "grams": 300, "available": True}],
+    }
+    caro = {
+        "title": "Caro Citric",
+        "handle": "caro-citric-colombie",
+        "price": 3200,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": (
+            "<p>In the cup</p><p>🍊 Fresh Tangerine</p><p>Milk Chocolate</p><p>Creamy</p>"
+            "<p>A bright and juicy cup, where citrus brings freshness.</p>"
+            "<p>Region: Andes, Antioquia, Colombia</p><p>Process: Natural</p>"
+        ),
+        "variants": [{"id": 124, "title": "300g", "price": 3200, "grams": 300, "available": True}],
+    }
+
+    decaf_coffee = Celcius94Scraper()._coffee_from_product(decaf, "https://94celcius.com/en/products/decaf-colombie")
+    caro_coffee = Celcius94Scraper()._coffee_from_product(
+        caro,
+        "https://94celcius.com/en/products/caro-citric-colombie",
+    )
+
+    assert decaf_coffee.tasting_notes == ["banana bread", "apple", "dark chocolate"]
+    assert caro_coffee.tasting_notes == ["fresh tangerine", "milk chocolate", "creamy"]
+
+
+def test_monogram_product_text_stops_notes_before_cross_link() -> None:
+    """Monogram note extraction stops before product recommendation links."""
+    product = {
+        "title": "Warmth Filter Blend",
+        "handle": "warmth-filter-blend",
+        "price": 2000,
+        "available": True,
+        "type": "Whole Bean",
+        "tags": [],
+        "description": "",
+        "variants": [{"id": 123, "title": "300g", "price": 2000, "grams": 300, "available": True}],
+    }
+    html = """
+    <div class="product__text rte text-base">
+      <p>
+        Chocolatey, rich and smooth.
+        • Process: Washed
+        • Variety: Blend
+        • Origin: Central America, South America
+        • Tasting Notes: Chocolate, Nougat
+        <a href="/products/warmth-espresso-blend">Want this for espresso?</a>
+      </p>
+    </div>
+    """
+
+    coffee = MonogramScraper()._coffee_from_product(
+        product,
+        "https://monogramcoffee.com/products/warmth-filter-blend",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.origin == "central america, south america"
+    assert coffee.process == "washed"
+    assert coffee.varietal == "Blend"
+    assert coffee.tasting_notes == ["chocolate", "nougat"]
+
+
+def test_narval_description_leading_weight_supplies_bag_size() -> None:
+    """Narval can recover bag size when Shopify variants report zero grams."""
+    product = {
+        "title": "Flybine Espresso",
+        "handle": "flybine",
+        "price": 2400,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": "<p>340g</p><p>Tasting notes: Chocolate – almond - cherry</p>",
+        "variants": [{"id": 123, "title": "Default Title", "price": 2400, "grams": 0, "available": True}],
+    }
+
+    coffee = NarvalScraper()._coffee_from_product(product, "https://narval.cafe/en/products/flybine")
+
+    assert coffee.bag_size == "340g"
+    assert coffee.tasting_notes == ["chocolate", "almond", "cherry"]
 
 
 def test_subtext_product_page_supplies_shogun_specs_and_meta_notes() -> None:
