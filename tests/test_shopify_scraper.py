@@ -270,6 +270,7 @@ def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch
 
 def test_shopify_product_json_parses_labeled_specs() -> None:
     """Structured Shopify descriptions populate normalized catalog fields."""
+    # This fixture uses label aliases that differ from internal field names.
     product = {
         "title": "Colombia - Gesha - Inza",
         "price": 2300,
@@ -347,6 +348,7 @@ def test_shopify_product_defaults_to_smallest_available_variant() -> None:
 
 def test_colorfull_allows_products_without_type_or_tags() -> None:
     """Colorfull's source configuration accepts products without coffee tags."""
+    # Colorfull opts out of tag requirements because its product tags are sparse.
     product = {"handle": "apple-crumble", "type": "", "tags": []}
 
     assert ColorfullScraper()._is_coffee_product(product)
@@ -386,6 +388,7 @@ def test_shopify_product_prefers_labeled_html_product_facts() -> None:
 
 def test_shopify_title_dash_facts_are_opt_in() -> None:
     """Dash-only titles are too ambiguous to parse without source config."""
+    # Colorfull leaves dash parsing disabled, so the full title remains the name.
     product = {
         "title": "Apple Crumble - Washed",
         "price": 3200,
@@ -407,6 +410,7 @@ def test_shopify_title_dash_facts_are_opt_in() -> None:
 
 def test_shopify_title_pipe_facts_remain_supported() -> None:
     """Pipe-separated titles can still provide safe origin and process hints."""
+    # The pipe boundary is considered safe enough for all Shopify sources.
     product = {
         "title": "Colombia - Las Flores | Washed",
         "price": 2300,
@@ -428,6 +432,7 @@ def test_shopify_title_pipe_facts_remain_supported() -> None:
 
 def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
     """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
+    # The trailing paragraphs should stop fact extraction before brewing advice.
     product = {
         "title": "Milkshake Espresso",
         "handle": "milkshakeespresso",

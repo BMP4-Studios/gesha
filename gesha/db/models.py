@@ -15,6 +15,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 class Base(DeclarativeBase):
     """Declarative base used by table definitions and database initialization."""
 
+    # SQLAlchemy reads subclasses of this base to build the metadata collection.
     pass
 
 

@@ -73,6 +73,7 @@ def test_collection_json_command_writes_roaster_json(
     tmp_path,
 ) -> None:
     """The json command saves a pretty Shopify feed as <source>.json."""
+    # Replace registry lookup with one scraper whose session is fully controlled.
     scraper = TrafficScraper()
     fake_session = FakeCollectionSession()
     monkeypatch.setattr(scraper, "session", fake_session)
@@ -93,6 +94,7 @@ def test_rebuild_backs_up_resets_and_scrapes(
     tmp_path,
 ) -> None:
     """The rebuild command backs up the current DB before replacing it."""
+    # Create a real SQLite file so the backup path exercises sqlite3.backup().
     db_path = tmp_path / "gesha.db"
     backup_dir = tmp_path / "backups"
 
@@ -101,9 +103,11 @@ def test_rebuild_backs_up_resets_and_scrapes(
         connection.execute("INSERT INTO marker (id) VALUES (1)")
         connection.commit()
 
+    # Sidecar files should disappear along with the primary database.
     for sidecar_name in ("gesha.db-wal", "gesha.db-shm", "gesha.db-journal"):
         (tmp_path / sidecar_name).write_text("sidecar", encoding="utf-8")
 
+    # Stub schema creation and scraping so the test focuses on rebuild plumbing.
     calls: list[str] = []
     monkeypatch.setattr(cli_main, "DB_PATH", db_path)
     monkeypatch.setattr(cli_main, "init_db", lambda: calls.append("init"))
@@ -130,8 +134,12 @@ def test_cart_debug_explains_unavailable_keyword_match(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A matching coffee can still be skipped when availability/variants fail."""
+    # Preferences include both matches and exclusions so cart-debug prints each path.
     preferences = tmp_path / "preferences.txt"
     preferences.write_text("gesha\ncoferment\n! decaf\n", encoding="utf-8")
+
+    # The fixture coffee matches preferences but is unavailable at both product
+    # and variant level, which should produce a skip explanation.
     coffee = Coffee(
         id=25,
         name="Colombia Gesha",
@@ -162,6 +170,7 @@ def test_cart_debug_explains_unavailable_keyword_match(
             """Return the requested fixture coffee."""
             return coffee if coffee_id == 25 else None
 
+    # Replace database access with the fixture service while keeping command code intact.
     monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)

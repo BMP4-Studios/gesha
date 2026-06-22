@@ -60,7 +60,9 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
     PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
-    # some roasters (Rogue?) use dashes to add the origin to the title. Enable this by setting the flag to True
+
+    # Dash-separated title facts are source-specific and stay opt-in because
+    # ``Origin - Name`` and ``Name - Process`` can otherwise look identical.
     EXTRACT_DASH_TITLE_FACTS = False
     NOTE_HINT_SEPARATORS = ("|", ",", ";", "+", "·", "•", "Â", "â")
     BULLET_NOTE_SEPARATORS = ("·", "•", "Â", "â")
@@ -432,6 +434,9 @@ class ShopifyScraper(BaseScraper):
             if len(first_line) < 100 and any(separator in first_line for separator in self.NOTE_HINT_SEPARATORS):
                 return normalize_tasting_notes(first_line)
 
+            # Some themes put notes in compact leading lines before a roast
+            # scale or marketing description. Stop as soon as the text no
+            # longer looks like a short note list.
             note_lines: list[str] = []
             for line in lines:
                 if line.lower() == "light" or self.ROAST_SCALE_PATTERN.search(line):
@@ -442,6 +447,8 @@ class ShopifyScraper(BaseScraper):
                 if len(note_lines) >= 7:
                     break
 
+            # Bullet-like separators make this fallback safer than treating any
+            # short prose as tasting notes.
             combined_notes = " ".join(note_lines)
             if len(combined_notes) < 140 and any(
                 separator in combined_notes for separator in self.BULLET_NOTE_SEPARATORS
@@ -655,6 +662,7 @@ class TrafficScraper(ShopifyScraper):
 
     def _extract_json_product_facts(self, product_data: dict[str, Any], description: str) -> dict[str, str]:
         """Parse Traffic collection JSON descriptions as HTML fact rows."""
+        # Traffic's collection description preserves rich HTML label/value rows.
         raw_html = str(product_data.get("description") or "")
         if raw_html.strip():
             facts = extract_labeled_product_facts_from_html(
@@ -664,6 +672,8 @@ class TrafficScraper(ShopifyScraper):
             )
             if facts:
                 return facts
+
+        # Fall back to the shared text parser if Traffic's HTML shape changes.
         return super()._extract_json_product_facts(product_data, description)
 
 

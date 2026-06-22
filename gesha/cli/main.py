@@ -346,6 +346,8 @@ def rebuild(
     no_scrape: bool = rebuild_no_scrape_option,
 ) -> None:
     """Back up, wipe, recreate, and refresh the local database."""
+    # Rebuild is destructive to the local cache, so require confirmation unless
+    # automation explicitly supplied ``--yes``.
     if not yes:
         confirmed = typer.confirm(
             f"Back up and replace {DB_PATH}? This will remove the current local cache before scraping."
@@ -354,16 +356,19 @@ def rebuild(
             console.print("[yellow]Rebuild cancelled.[/yellow]")
             raise typer.Exit(code=1)
 
+    # Capture a consistent backup before deleting the SQLite database files.
     backup_path = _backup_database(DB_PATH, backup_dir)
     if backup_path is None:
         console.print(f"[yellow]No existing {DB_PATH} found; starting from a fresh database.[/yellow]")
     else:
         console.print(f"[green]Backed up {DB_PATH} to {backup_path}[/green]")
 
+    # Remove the active cache and recreate just the empty schema.
     _remove_database_files(DB_PATH)
     init_db()
     console.print("[green]Database recreated.[/green]")
 
+    # ``--no-scrape`` leaves the user with a clean empty cache for inspection.
     if no_scrape:
         console.print("[yellow]Skipped scrape because --no-scrape was provided.[/yellow]")
         return
@@ -560,6 +565,7 @@ def _format_keyword_matches(keywords: Sequence[str]) -> str:
 
 def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     """Explain whether one variant can be selected for cart recommendations."""
+    # Collect every blocker so cart-debug can explain the whole decision at once.
     reasons: list[str] = []
     if not variant.availability:
         reasons.append("unavailable")
@@ -574,6 +580,7 @@ def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     if not is_retail_variant(variant.name):
         reasons.append("non-retail variant")
 
+    # The boolean drives selection markers; the text is rendered in the table.
     if reasons:
         return False, ", ".join(reasons)
     return True, "usable"
@@ -585,12 +592,15 @@ def cart_debug(
     preferences: Path = preferences_file_option,
 ) -> None:
     """Explain why one cached coffee is or is not eligible for cart output."""
+    # Start with the same preference parsing as ``gesha cart`` so diagnostics
+    # describe the real cart command behavior.
     try:
         preference_config = _read_preferences_for_command(preferences)
     except ValueError as exc:
         console.print(f"[red]Error: {exc}[/red]")
         raise typer.Exit(code=1) from exc
 
+    # The database may not exist on a fresh checkout; initialize it before lookup.
     init_db()
     with get_session() as session:
         service = CoffeeService(session)
@@ -599,6 +609,7 @@ def cart_debug(
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
+        # Gather the same matching and variant-selection evidence used by carts.
         include_matches = matched_keywords(coffee, preference_config.keywords)
         exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
         selected_variant = smallest_available_variant(coffee)
@@ -608,6 +619,8 @@ def cart_debug(
             preference_config.excluded_keywords,
         )
 
+        # Reasons explain hard skips; warnings explain usable recommendations
+        # that may still be missing a pre-filled Shopify cart URL.
         reasons: list[str] = []
         warnings: list[str] = []
         if not coffee.availability:
@@ -631,6 +644,7 @@ def cart_debug(
         is_cart_eligible = coffee.availability and cart_item is not None
         result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
 
+        # The summary table mirrors the high-level cart eligibility decision.
         console.print(f"[bold cyan]Cart debug for coffee #{coffee_id}[/bold cyan]")
         summary = Table(show_header=False)
         summary.add_row("Result", result)
@@ -652,6 +666,7 @@ def cart_debug(
             summary.add_row("Selected variant", NA_LABEL)
         console.print(summary)
 
+        # Keep skip explanations separate from the data table for quick scanning.
         if reasons:
             console.print("[bold]Skip reason(s):[/bold]")
             for reason in reasons:
@@ -664,6 +679,8 @@ def cart_debug(
             for warning in warnings:
                 console.print(f" - {warning}")
 
+        # Variant-by-variant diagnostics show why the selected variant won, or
+        # why no variant was eligible.
         variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
         variants.add_column("Selected")
         variants.add_column("Variant")
@@ -856,10 +873,12 @@ def debug(coffee_id: int) -> None:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
 
+        # Fail before making network requests if there is no cached target.
         if coffee is None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
+        # Older rows or manual fixtures can lack URLs, which makes raw capture impossible.
         if not coffee.url:
             console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
             raise typer.Exit(code=1)

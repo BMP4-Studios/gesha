@@ -24,6 +24,7 @@ def test_normalize_search_text() -> None:
     assert normalize_search_text("LOVEBUZZ 😵‍💫 💙") == "lovebuzz"
     assert normalize_search_text("‧₊˚❀༉‧₊˚. Bouquet. 𝒷𝓁𝑜𝓈𝓈𝑜𝓂𝑒𝒹 𝑒𝒹𝒾𝓉𝒾𝑜𝓃") == ". bouquet. blossomed edition"
 
+    # Ordinary catalog fields are normalized without inventing taxonomy changes.
     assert normalize_search_text("Ethiopia") == "ethiopia"
     assert normalize_search_text("Colombia | Washed") == "colombia | washed"
 
@@ -31,4 +32,6 @@ def test_normalize_search_text() -> None:
     assert normalize_search_text("canada") == "canada"
     assert normalize_search_text("Ethiopia") == "ethiopia"
     assert normalize_search_text("CAUCA, COLOMBIA") == "cauca, colombia"
+
+    # Missing values stay missing so display code can show the NONE label.
     assert normalize_search_text(None) is None
