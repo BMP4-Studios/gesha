@@ -775,6 +775,8 @@ class ColorfullScraper(ShopifyScraper):
     """Shopify configuration for Colorfull, whose products lack coffee tags."""
 
     # Colorfull's collection JSON omits tasting notes, so use the richer product-page path.
+    # Its facts live in one themed rich-text block, which keeps page-wide text
+    # from competing with the shared label/value parser.
     USE_COLLECTION_JSON = False
     BASE_URL = "https://colorfullcoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/all"
@@ -782,6 +784,7 @@ class ColorfullScraper(ShopifyScraper):
     ROASTER_NAME = "Colorfull Coffee"
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = ("gift", "subscription")
+    PRODUCT_FACT_SELECTORS = ("div.mt-8.text-scheme-text",)
 
 
 class AngryRoasterScraper(ShopifyScraper):

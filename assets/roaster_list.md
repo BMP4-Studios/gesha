@@ -24,7 +24,7 @@ https://narval.cafe/en/collections/all
 
 Added this round:
 - [x] roguewave: got proper tasting notes
-- [ ] houseoffunk: no notes
+- [x] houseoffunk: should be good -- need to double check
 - [ ] quietly: no notes, origin is a long description
 - [ ] kohi: everything is a bit noisy
 - [ ] subtext: missing process and origin, not sure there are any tasting notes online
