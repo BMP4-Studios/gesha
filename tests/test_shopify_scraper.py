@@ -566,6 +566,39 @@ def test_shopify_title_pipe_facts_remain_supported() -> None:
     assert coffee.process == "washed"
 
 
+def test_rogue_wave_product_page_taste_list_supplies_tasting_notes() -> None:
+    """Rogue Wave renders notes as product-page list items outside JSON facts."""
+    product = {
+        "title": "Test Coffee",
+        "handle": "test-coffee",
+        "price": 2500,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["coffee"],
+        "description": "",
+        "variants": [{"id": 123, "title": "250g", "price": 2500, "grams": 250, "available": True}],
+    }
+    html = """
+    <div class="product-taste">
+      <ul class="product-taste-list">
+        <li class="peach">Peach</li>
+        <li class="milk-chocolate">Milk Chocolate</li>
+        <li class="apple">Apple</li>
+        <li class="almond">Almond</li>
+        <li class="tangerine">Tangerine</li>
+      </ul>
+    </div>
+    """
+
+    coffee = RogueWaveScraper()._coffee_from_product(
+        product,
+        "https://roguewavecoffee.ca/products/test-coffee",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.tasting_notes == ["peach", "milk chocolate", "apple", "almond", "tangerine"]
+
+
 def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
     """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
     # The trailing paragraphs should stop fact extraction before brewing advice.

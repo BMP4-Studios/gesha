@@ -123,6 +123,74 @@ def test_collection_json_command_writes_roaster_json(
     )
 
 
+def test_fix_tasting_notes_downloads_collection_and_missing_product_debug(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    """The tasting-note diagnostic command gathers the usual debug artifacts."""
+    scraper = TrafficScraper()
+    fake_session = FakeCollectionSession()
+    roaster = Roaster(name="Traffic Coffee")
+    missing_notes = Coffee(
+        id=7,
+        name="Missing Notes",
+        url="https://example.test/products/missing-notes",
+        roaster=roaster,
+    )
+    parsed_notes = Coffee(
+        id=8,
+        name="Parsed Notes",
+        url="https://example.test/products/parsed-notes",
+        roaster=roaster,
+    )
+    parsed_notes.tasting_notes.append(TastingNote(name="peach"))
+    debug_calls: list[int] = []
+
+    class FakeCoffeeService:
+        """Return cached coffees without touching a real database."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def list_coffees(
+            self,
+            process: str | None = None,
+            flavour: str | None = None,
+            roaster_name: str | None = None,
+            available: bool | None = None,
+        ) -> list[Coffee]:
+            """Return one coffee missing notes and one already parsed coffee."""
+            assert roaster_name == "Traffic Coffee"
+            return [missing_notes, parsed_notes]
+
+    def fake_debug(coffee_id: int) -> None:
+        """Write the product debug file that the diagnostic command should scan."""
+        debug_calls.append(coffee_id)
+        cli_main.DEBUG_DIR.mkdir(exist_ok=True)
+        (cli_main.DEBUG_DIR / f"debug_{coffee_id}.txt").write_text(
+            "=== RAW HTML DATA ===\nDebug Coffee tasting notes: Peach",
+            encoding="utf-8",
+        )
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(scraper, "session", fake_session)
+    monkeypatch.setattr(cli_main, "get_scraper", lambda source: scraper)
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "debug", fake_debug)
+
+    cli_main.fix_tasting_notes("traffic", search="Debug Coffee|tasting", limit=2)
+
+    assert fake_session.calls == [
+        ("https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1", 15)
+    ]
+    assert (tmp_path / "debug" / "traffic.json").exists()
+    assert (tmp_path / "debug" / "debug_7.txt").exists()
+    assert debug_calls == [7]
+
+
 def test_rebuild_backs_up_resets_and_scrapes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -343,5 +411,7 @@ def test_debug_uses_scraper_transport(
         ("https://example.test/products/debug-coffee", None, 15),
     ]
     assert (tmp_path / "debug" / "debug_7.txt").read_text(encoding="utf-8") == (
+        "=== PRODUCT URL ===\n"
+        "https://example.test/products/debug-coffee\n\n"
         '=== RAW JSON DATA ===\n{"title":"Debug Coffee"}\n\n=== RAW HTML DATA ===\n<html>Debug Coffee</html>'
     )

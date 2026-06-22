@@ -9,6 +9,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import re
 import sqlite3
 import subprocess
 import sys
@@ -59,6 +60,14 @@ console = Console()
 DEFAULT_PREFERENCES_PATH = Path("cart_preferences.txt")
 LOG_PATH = Path("gesha.log")
 
+# Raw scraper artifacts live under one ignored directory so repeated debugging
+# does not scatter large JSON/HTML files through the repo root.
+DEBUG_DIR = Path("debug")
+
+# The default pattern is intentionally broad; callers can pass exact visible
+# notes when tracking a specific missing-note bug from a product page.
+DEFAULT_TASTING_NOTES_DEBUG_PATTERN = r"notes?|tasting|flavou?r|profile|cup"
+
 # Typer's type stubs are stricter than its runtime API. These aliases keep
 # command signatures readable while avoiding noisy type-checking false positives.
 TyperParamFactory = Callable[..., Any]
@@ -73,9 +82,24 @@ preferences_file_option = typer_option(
     help="Text file containing include/exclude preference keywords and optional destination settings.",
 )
 collection_json_output_dir_option = typer_option(
-    Path("."),
+    DEBUG_DIR,
     "--output-dir",
-    help="Directory where <roaster>.json should be written; defaults to the current repo directory.",
+    help="Directory where <roaster>.json should be written; defaults to debug/.",
+)
+
+# These options are shared by the tasting-note diagnostic command so its defaults
+# stay visible near the rest of the CLI's reusable option definitions.
+tasting_notes_debug_search_option = typer_option(
+    DEFAULT_TASTING_NOTES_DEBUG_PATTERN,
+    "--search",
+    "-s",
+    help="Case-insensitive regex used to print matching lines from downloaded debug files.",
+)
+tasting_notes_debug_limit_option = typer_option(
+    5,
+    "--limit",
+    min=1,
+    help="Maximum number of cached coffees missing tasting notes to dump with gesha debug.",
 )
 rebuild_yes_option = typer_option(
     False,
@@ -456,6 +480,30 @@ def collection_json(
     output_path.write_text(output_text, encoding="utf-8")
 
     console.print(f"[green]Collection JSON saved to {output_path}[/green]")
+
+
+def _matching_debug_lines(path: Path, pattern: re.Pattern[str], limit: int = 10) -> list[tuple[int, str]]:
+    """Return bounded regex matches from a debug artifact."""
+    matches: list[tuple[int, str]] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
+        if pattern.search(line):
+            # Keep terminal diagnostics readable even when Shopify embeds huge HTML fields.
+            matches.append((line_number, line[:300]))
+            if len(matches) >= limit:
+                break
+    return matches
+
+
+def _print_debug_matches(path: Path, pattern: re.Pattern[str]) -> None:
+    """Show high-signal lines from one generated debug file."""
+    matches = _matching_debug_lines(path, pattern)
+    if not matches:
+        console.print(f"[yellow]No matches for /{pattern.pattern}/ in {path}.[/yellow]")
+        return
+
+    console.print(f"[green]Matches in {path}:[/green]")
+    for line_number, line in matches:
+        console.print(f" - {line_number}: {line}")
 
 
 def _query_cached_coffees(
@@ -916,9 +964,9 @@ def debug(coffee_id: int) -> None:
 
         # One debug file contains both JSON and HTML so parser fixtures can be
         # derived from a single capture when a roaster changes its page shape.
-        output_path = Path("debug") / f"debug_{coffee_id}.txt"
+        output_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
         output_path.parent.mkdir(exist_ok=True)
-        output: list[str] = []
+        output: list[str] = [f"=== PRODUCT URL ===\n{coffee.url}\n\n"]
         scraper = _scraper_for_roaster_name(coffee.roaster.name)
         transport = cast(Any, scraper.session if scraper is not None else requests)
 
@@ -945,6 +993,89 @@ def debug(coffee_id: int) -> None:
         output_path.write_text("".join(output), encoding="utf-8")
 
         console.print(f"[green]Full raw data dumped to {output_path}[/green]")
+
+
+@app.command(name="fix-tasting-notes")
+def fix_tasting_notes(
+    source: str = typer_argument(
+        ...,
+        help="The roaster whose missing tasting notes should be diagnosed.",
+    ),
+    search: str = tasting_notes_debug_search_option,
+    limit: int = tasting_notes_debug_limit_option,
+) -> None:
+    """Collect raw artifacts for cached coffees missing tasting notes."""
+    # This command gathers evidence for a scraper fix; it does not edit parser
+    # code or the database because tasting-note extraction needs source-specific review.
+    if source == "all" or source not in supported_sources():
+        valid_sources = sorted([name for name in supported_sources() if name != "all"])
+        console.print(f"[red]Error: '{source}' is not a supported single roaster for tasting-note debugging.[/red]")
+        console.print("\n[bold]Available roasters:[/bold]")
+        for valid_source in valid_sources:
+            console.print(f" - {valid_source}")
+        raise typer.Exit(code=1)
+
+    try:
+        # Compile once before network/database work so an invalid regex fails fast.
+        pattern = re.compile(search, flags=re.IGNORECASE)
+    except re.error as exc:
+        console.print(f"[red]Error: invalid --search regex: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    # First capture the batch feed, because missing notes often start there.
+    collection_json(source, output_dir=DEBUG_DIR)
+    collection_path = DEBUG_DIR / f"{source}.json"
+    if collection_path.exists():
+        _print_debug_matches(collection_path, pattern)
+
+    scraper = get_scraper(source)
+    init_db()
+    with get_session() as session:
+        service = CoffeeService(session)
+
+        # Use the display roaster name from the scraper so source aliases and
+        # cached database rows stay aligned.
+        coffees = service.list_coffees(roaster_name=scraper.ROASTER_NAME)
+
+        if not coffees:
+            console.print(
+                f"[yellow]No cached coffees found for {scraper.ROASTER_NAME}. Run `gesha scrape {source}` first.[/yellow]"
+            )
+            return
+
+        # Only products with no notes and a URL can help diagnose extraction gaps.
+        missing_notes = [
+            coffee for coffee in coffees if coffee.id is not None and coffee.url and not coffee.tasting_notes
+        ]
+        if not missing_notes:
+            console.print(f"[green]No cached {scraper.ROASTER_NAME} coffees are missing tasting notes.[/green]")
+            return
+
+        console.print(
+            f"[yellow]{len(missing_notes)} cached {scraper.ROASTER_NAME} coffees are missing tasting notes.[/yellow]"
+        )
+        # Copy IDs out of the session before calling debug(), which opens its own
+        # short read session and writes the product artifacts.
+        debug_ids = [coffee.id for coffee in missing_notes[:limit] if coffee.id is not None]
+
+    for coffee_id in debug_ids:
+        # Product debug files include both Shopify .js and rendered HTML; the
+        # HTML side is usually where theme-specific note selectors are discovered.
+        debug(coffee_id)
+        product_debug_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
+        if product_debug_path.exists():
+            _print_debug_matches(product_debug_path, pattern)
+
+    if len(debug_ids) < len(missing_notes):
+        console.print(
+            f"[yellow]Stopped after {len(debug_ids)} product dumps because --limit is {limit}. "
+            "Increase --limit to inspect more cached products.[/yellow]"
+        )
+
+    console.print(
+        "[blue]If matches appear in product debug files but not in parsed output, add product-page hydration "
+        "or a source-specific tasting-note parser for this roaster.[/blue]"
+    )
 
 
 @app.command(name="test")

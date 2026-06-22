@@ -68,6 +68,11 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
     PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
 
+    # Some storefronts keep notes outside labeled description copy. Source
+    # configs can point directly at repeated note elements once debug HTML proves
+    # the selector is stable.
+    TASTING_NOTE_SELECTORS: tuple[str, ...] = ()
+
     # Dash-separated title facts are source-specific and stay opt-in because
     # ``Origin - Name`` and ``Name - Process`` can otherwise look identical.
     EXTRACT_DASH_TITLE_FACTS = False
@@ -509,6 +514,22 @@ class ShopifyScraper(BaseScraper):
             if notes:
                 return notes
 
+        # Some themes expose flavor notes as individual elements outside the
+        # product description, such as Rogue Wave's product-taste list items.
+        if html_soup:
+            selected_notes: list[str] = []
+            for selector in self.TASTING_NOTE_SELECTORS:
+                # Selector order is source order, which usually matches the
+                # roaster's displayed tasting-note order on the product page.
+                for element in html_soup.select(selector):
+                    for note in normalize_tasting_notes(element.get_text(" ", strip=True)):
+                        # Repeated mobile/desktop blocks should not duplicate
+                        # notes in the cached catalog.
+                        if note not in selected_notes:
+                            selected_notes.append(note)
+            if selected_notes:
+                return selected_notes
+
         # Some themes render notes as a short standalone caption.
         if html_soup:
             target = html_soup.select_one("p.product__text.inline-richtext.caption-with-letter-spacing")
@@ -797,11 +818,16 @@ class HouseOfFunkScraper(ShopifyScraper):
 class RogueWaveScraper(ShopifyScraper):
     """Shopify configuration for Rogue Wave products."""
 
+    # Rogue Wave's collection JSON often omits notes that are rendered on the
+    # product page as <ul class="product-taste-list"><li>...</li></ul>. Hydrate
+    # product pages so those visible notes make it into cart keyword matching.
     BASE_URL = "https://roguewavecoffee.ca"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "Rogue Wave"
     ROASTER_NAME = "Rogue Wave Coffee"
     INCLUDE_TAGS = ("coffee",)
+    HYDRATE_COLLECTION_PRODUCTS = True
+    TASTING_NOTE_SELECTORS = ("ul.product-taste-list li",)
 
 
 class QuietlyScraper(ShopifyScraper):

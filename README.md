@@ -119,11 +119,14 @@ gesha cart demello --threshold 50
 # Explain why one cached coffee is included in or skipped from cart recommendations
 gesha cart-debug 25
 
-# Download a roaster's raw Shopify collection JSON to <roaster>.json
+# Download a roaster's raw Shopify collection JSON to debug/<roaster>.json
 gesha json traffic
 
 # Save a product's raw HTML and Shopify JSON for parser debugging
 gesha debug 1
+
+# Gather collection and product debug files for coffees missing tasting notes
+gesha fix-tasting-notes roguewave --search "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting"
 ```
 
 `gesha cache` is an alias for `gesha list`. Run `gesha --help` or `gesha <command> --help` for the complete command
@@ -154,32 +157,53 @@ Missing tasting notes usually mean the fast Shopify collection JSON does not con
 the product page. Use `gesha json` to inspect the collection feed and `gesha debug` to inspect one cached product's page
 HTML plus product JSON.
 
-Start with the raw collection feed:
-
-```bash
-gesha json roguewave
-rg -n "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting" roguewave.json
-```
-
-If the notes are absent from the collection JSON, scrape the roaster and pick one product ID from the cached table:
+Start with a cached product that is missing notes:
 
 ```bash
 gesha scrape roguewave
 gesha list --roaster roguewave
-gesha show 1
+gesha show 95
 ```
 
-Then dump the raw product data for that cached coffee:
+Dump the product's raw data:
 
 ```bash
-gesha debug 1
-rg -n "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting" debug/debug_1.txt
+gesha debug 95
 ```
 
-Use both commands when a webpage visibly has notes but Gesha does not: `gesha json <source>` shows what the scraper gets
-from the batch collection path, while `gesha debug <id>` shows whether the individual product page has the missing data.
-If the notes only appear in `debug/debug_<id>.txt`, update that scraper to hydrate product-page HTML or add a
-source-specific parser/selector.
+Open the URL printed at the top of `debug/debug_95.txt`, copy one visible tasting note from the webpage, then search the
+debug file for that exact note:
+
+```bash
+grep -nEi "Peach" debug/debug_95.txt
+```
+
+If that finds surrounding HTML, copy the smallest useful snippet into the issue or prompt. For example, Rogue Wave notes
+appeared as:
+
+```html
+<ul class="product-taste-list">
+  <li class="peach">Peach</li>
+  <li class="milk-chocolate">Milk Chocolate</li>
+</ul>
+```
+
+That snippet tells the scraper fix to hydrate the product page and read notes with a selector such as
+`ul.product-taste-list li`. If notes are absent from `debug/debug_<id>.txt`, inspect the collection feed too:
+
+```bash
+gesha json roguewave
+grep -nEi "Peach|Milk Chocolate|Apple|Almond|Tangerine|notes|tasting" debug/roguewave.json
+```
+
+To automate that evidence-gathering loop for cached products missing notes, use:
+
+```bash
+gesha fix-tasting-notes roguewave --search "Peach|Milk Chocolate|Apple|Almond|Tangerine|notes|tasting"
+```
+
+This writes `debug/roguewave.json`, dumps up to five cached Rogue Wave products with no tasting notes to
+`debug/debug_<id>.txt`, and prints matching lines from each file. Increase `--limit` to inspect more products.
 
 ## Cart preferences
 
