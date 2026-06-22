@@ -6,6 +6,7 @@ from gesha.parsers.common import extract_labeled_product_facts_from_html
 
 def test_extract_labeled_product_facts_from_shopify_list_section() -> None:
     """Colorfull-style list rows map labels to catalog fields."""
+    # Include an SVG icon to prove decorative markup is ignored.
     html = """
     <div class="mt-8 text-scheme-text">
       <ul>
@@ -23,6 +24,7 @@ def test_extract_labeled_product_facts_from_shopify_list_section() -> None:
 
 def test_extract_labeled_product_facts_from_traffic_paragraph_section() -> None:
     """Traffic-style strong labels and spans are parsed from product HTML."""
+    # Traffic splits labels and values across nested tags, which is common in themes.
     html = """
     <div class="product-block-description">
       <p><strong>Origin</strong><span>: </span><span>Kitale, Kenya<br></span></p>

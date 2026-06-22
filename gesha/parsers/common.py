@@ -12,6 +12,7 @@ from collections.abc import Mapping, Sequence
 from bs4 import BeautifulSoup, Tag
 
 COMMON_TASTING_NOTE_LABELS = [
+    # Roasters use different labels for the same catalog field.
     "Notes",
     "Tasting Notes",
     "In the cup",
@@ -24,6 +25,8 @@ COMMON_TASTING_NOTE_LABELS = [
 ]
 
 PRODUCT_FACT_FIELDS = (
+    # Merge order for extracted facts. Earlier names are checked first when
+    # combining multiple parse passes from the same HTML section.
     "origin",
     "producer",
     "process",
@@ -35,6 +38,7 @@ PRODUCT_FACT_FIELDS = (
 )
 
 DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
+    # Map normalized catalog fields to the storefront labels that may describe them.
     "origin": ("Origin", "Origins", "Country", "Region", "Place"),
     "producer": ("Producer", "Producers", "Coffee Producers", "Farmer", "Farm"),
     "process": ("Process", "Method"),
@@ -50,11 +54,13 @@ DEFAULT_PRODUCT_FACT_STOP_LABELS = ("About", "Description", "Story")
 
 def _label_pattern(label: str) -> str:
     """Build a regex fragment that tolerates flexible whitespace in labels."""
+    # Split/rejoin means "Tasting Notes" matches labels with tabs or line breaks.
     return r"\s+".join(re.escape(part) for part in label.strip().split())
 
 
 def _clean_fact_text(value: str) -> str | None:
     """Collapse whitespace around one extracted product-fact value."""
+    # Non-breaking spaces are common in Shopify rich text.
     cleaned = value.replace("\xa0", " ")
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" \t\r\n:-")
     return cleaned or None
@@ -63,6 +69,8 @@ def _clean_fact_text(value: str) -> str | None:
 def _strip_repeated_label(value: str, labels: Sequence[str]) -> str:
     """Handle duplicated labels such as ``Origin: Origin: Colombia``."""
     cleaned = value
+
+    # Longest-first avoids removing "Notes" before "Tasting Notes".
     for label in sorted(labels, key=len, reverse=True):
         pattern = rf"^{_label_pattern(label)}\s*[:\uff1a-]\s*"
         cleaned = re.sub(pattern, "", cleaned, count=1, flags=re.IGNORECASE).strip()
@@ -71,7 +79,10 @@ def _strip_repeated_label(value: str, labels: Sequence[str]) -> str:
 
 def _text_from_row(element: Tag) -> str:
     """Extract row-like text while ignoring decorative SVG content."""
+    # Work on a clone so removing noisy markup does not mutate the caller's soup.
     clone = BeautifulSoup(str(element), "html.parser")
+
+    # SVG icons and scripts often sit inside spec rows but are not product facts.
     for noisy in clone.select("script, style, noscript, svg"):
         noisy.decompose()
     return clone.get_text(" ", strip=True)
@@ -79,6 +90,7 @@ def _text_from_row(element: Tag) -> str:
 
 def _is_inside_ignored_tree(element: Tag) -> bool:
     """Return whether an element is nested inside non-content markup."""
+    # BeautifulSoup can find nested tags inside script/style blocks; skip them.
     return element.find_parent(["script", "style", "noscript"]) is not None
 
 
@@ -89,6 +101,7 @@ def extract_labeled_product_facts_from_text(
     stop_labels: Sequence[str] = DEFAULT_PRODUCT_FACT_STOP_LABELS,
 ) -> dict[str, str]:
     """Extract ordered ``Label: value`` product facts from a text block."""
+    # Empty descriptions or HTML blocks simply have no structured facts.
     if not text:
         return {}
 
@@ -99,12 +112,15 @@ def extract_labeled_product_facts_from_text(
     # Collect every known label occurrence with its canonical catalog field.
     for field, labels in aliases.items():
         for label in labels:
+            # The negative lookbehind avoids matching labels in the middle of words.
             pattern = rf"(?<![\w]){_label_pattern(label)}\s*[:\uff1a-]\s*"
             for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
                 markers.append((match.start(), match.end(), field, label))
 
     # Stop labels bound the previous value without becoming facts themselves.
     for label in stop_labels:
+        # Stop markers do not need a colon; headings like "About" still end the
+        # previous fact section.
         pattern = rf"(?<![\w]){_label_pattern(label)}(?=\s*(?:[:\uff1a-]|\b))"
         for match in re.finditer(pattern, normalized_text, flags=re.IGNORECASE):
             markers.append((match.start(), match.end(), None, None))
@@ -117,6 +133,7 @@ def extract_labeled_product_facts_from_text(
     selected: list[tuple[int, int, str | None, str | None]] = []
     occupied_until = -1
     for marker in markers:
+        # Skip shorter aliases that overlap a longer selected alias.
         if marker[0] < occupied_until:
             continue
         selected.append(marker)
@@ -126,6 +143,7 @@ def extract_labeled_product_facts_from_text(
     facts: dict[str, str] = {}
     for index, marker in enumerate(selected):
         field = marker[2]
+        # Stop markers and duplicate fields are boundaries, not new fact values.
         if field is None or field in facts:
             continue
 
@@ -134,6 +152,7 @@ def extract_labeled_product_facts_from_text(
         if value is None:
             continue
 
+        # Some themes repeat the label at the start of the extracted value.
         value = _strip_repeated_label(value, aliases.get(field, ()))
         value = _clean_fact_text(value)
         if value:
@@ -164,6 +183,7 @@ def extract_labeled_product_facts_from_html(
             continue
 
         if row.name == "tr":
+            # Table rows usually split label/value into separate cells.
             cells = row.find_all(["th", "td"], recursive=False)
             if len(cells) >= 2:
                 label = _text_from_row(cells[0])
@@ -189,6 +209,7 @@ def extract_labeled_product_facts_from_html(
     for term in soup.find_all("dt"):
         if not isinstance(term, Tag) or _is_inside_ignored_tree(term):
             continue
+        # Pair each ``dt`` with its following ``dd`` value.
         definition = term.find_next_sibling("dd")
         if not isinstance(definition, Tag):
             continue
@@ -205,6 +226,8 @@ def extract_labeled_product_facts_from_html(
         for block in soup.find_all(["div", "section", "article"]):
             if not isinstance(block, Tag) or _is_inside_ignored_tree(block):
                 continue
+            # Requiring multiple facts prevents random marketing copy from being
+            # treated as structured metadata.
             block_facts = extract_labeled_product_facts_from_text(
                 _text_from_row(block),
                 label_aliases=label_aliases,

@@ -1,5 +1,7 @@
 """Tests for behavior shared by JSON-backed Shopify scraper adapters."""
 
+import logging
+
 from bs4 import BeautifulSoup
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
@@ -8,6 +10,42 @@ from gesha.scrapers.shopify_scraper import (
     PorteBleueScraper,
     TrafficScraper,
 )
+
+
+class JsonOptInTrafficScraper(TrafficScraper):
+    """Traffic fixture scraper that opts into the collection JSON path."""
+
+    USE_COLLECTION_JSON = True
+
+
+class FakeShopifyResponse:
+    """Small response fixture for Shopify collection feed tests."""
+
+    def __init__(
+        self,
+        json_data: dict | None = None,
+        status_code: int = 200,
+        text: str = "",
+        headers: dict[str, str] | None = None,
+        reason: str = "",
+    ) -> None:
+        """Create a response with optional JSON payload."""
+        self._json_data = json_data
+        self.status_code = status_code
+        self.text = text
+        self.headers = headers or {}
+        self.reason = reason
+
+    def raise_for_status(self) -> None:
+        """Mirror the HTTP failure behavior the scraper expects."""
+        if self.status_code >= 400:
+            raise RuntimeError(f"HTTP {self.status_code}")
+
+    def json(self) -> dict:
+        """Return the configured JSON payload."""
+        if self._json_data is None:
+            raise ValueError("No JSON data configured")
+        return self._json_data
 
 
 def test_shopify_collection_extracts_canonical_product_urls() -> None:
@@ -43,8 +81,196 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     ]
 
 
+def test_shopify_scrape_defaults_to_collection_json_feed(monkeypatch) -> None:
+    """Shopify scrapers use collection JSON by default to avoid collection-page challenges."""
+    calls: list[str] = []
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return an empty collection feed and fail if product pages are requested."""
+        calls.append(url)
+        if url == "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1":
+            return FakeShopifyResponse({"products": []})
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = TrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert coffees == []
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+
+
+def test_shopify_scrape_can_opt_into_collection_json_feed(monkeypatch) -> None:
+    """Opted-in sources can read one collection JSON feed, not each product page."""
+    calls: list[str] = []
+
+    # This payload uses collection-feed field names so the adapter has to
+    # normalize ``body_html``, ``product_type``, decimal prices, and variants.
+    payload = {
+        "products": [
+            {
+                "title": "Little Swamps AA",
+                "handle": "little-swamps-aa",
+                "product_type": "coffee",
+                "tags": [],
+                "body_html": (
+                    "<p>Origin: Kitale, Kenya</p>"
+                    "<p>Process: Washed</p>"
+                    "<p>In the cup: tangerine, blackberry jam, raspberry</p>"
+                ),
+                "variants": [
+                    {
+                        "id": 123,
+                        "title": "300g",
+                        "price": "26.00",
+                        "grams": 300,
+                        "available": True,
+                    }
+                ],
+            }
+        ]
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return the collection feed and fail if product pages are requested."""
+        calls.append(url)
+        if url == "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1":
+            return FakeShopifyResponse(payload)
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = JsonOptInTrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+    assert len(coffees) == 1
+    assert coffees[0].name == "little swamps aa"
+    assert coffees[0].url == "https://www.trafficcoffee.com/products/little-swamps-aa"
+    assert coffees[0].origin == "kitale, kenya"
+    assert coffees[0].process == "washed"
+    assert coffees[0].price_cents == 2600
+    assert coffees[0].bag_size == "300g"
+    assert coffees[0].variants[0].shopify_variant_id == "123"
+    assert coffees[0].tasting_notes == ["tangerine", "blackberry jam", "raspberry"]
+
+
+def test_shopify_collection_json_rate_limit_does_not_fall_back_to_product_pages(monkeypatch) -> None:
+    """A blocked collection feed stops cleanly instead of making many more requests."""
+    calls: list[str] = []
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return a rate limit from the collection feed."""
+        calls.append(url)
+        return FakeShopifyResponse(status_code=429)
+
+    scraper = JsonOptInTrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert coffees == []
+    assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+
+
+def test_shopify_collection_json_failure_logs_summary_and_full_response(monkeypatch, caplog) -> None:
+    """The CLI warning stays short while the log file can keep response details."""
+    headers = {
+        "Retry-After": "120",
+        "x-request-id": "request-123",
+        "cf-ray": "ray-456-YUL",
+        "shopify-complexity-score": "950",
+        "shopify-complexity-score-v2": "95",
+        "set-cookie": "diagnostic-cookie=value",
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return a detailed 429 response from the collection feed."""
+        return FakeShopifyResponse(
+            status_code=429,
+            reason="Too Many Requests",
+            headers=headers,
+            text="<html>blocked by storefront</html>",
+        )
+
+    scraper = JsonOptInTrafficScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    with caplog.at_level(logging.DEBUG):
+        coffees = scraper.scrape()
+
+    assert coffees == []
+    assert (
+        "Failed to fetch Shopify collection JSON for Traffic: HTTP 429 Too Many Requests, "
+        "Retry-After: 120, request-id: request-123, cf-ray: ray-456-YUL, complexity: 950, complexity-v2: 95"
+        in caplog.text
+    )
+    assert "Full HTTP failure while attempting to fetch Shopify collection JSON for Traffic" in caplog.text
+    assert "set-cookie: diagnostic-cookie=value" in caplog.text
+    assert "Body:\n<html>blocked by storefront</html>" in caplog.text
+
+
+def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch) -> None:
+    """Colorfull opts out of collection JSON because those feeds omit useful facts."""
+    calls: list[str] = []
+
+    # Colorfull's useful facts live in product-page HTML, not the collection feed.
+    collection_html = '<a href="/products/apple-fritter-blend">Apple Fritter</a>'
+    product_html = """
+    <div class="mt-8 text-scheme-text">
+      <ul>
+        <li><span>Process: Natural</span></li>
+        <li><span>Tasting notes: Candied Apple - Cinnamon - Green Jolly Rancher</span></li>
+      </ul>
+    </div>
+    """
+    product_payload = {
+        "title": "Apple Fritter - Blend",
+        "handle": "apple-fritter-blend",
+        "price": 3400,
+        "available": True,
+        "type": "",
+        "tags": [],
+        "description": "",
+        "variants": [{"id": 133, "title": "250g", "price": 3400, "available": True}],
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return old-path responses and fail if collection JSON is requested."""
+        calls.append(url)
+
+        # This assertion is the important part of the test: Colorfull should use
+        # the old collection HTML -> product page -> .js path.
+        if "products.json" in url:
+            raise AssertionError(f"Unexpected collection JSON request: {url}")
+        if url == "https://colorfullcoffee.com/collections/all":
+            return FakeShopifyResponse(text=collection_html)
+        if url == "https://colorfullcoffee.com/products/apple-fritter-blend":
+            return FakeShopifyResponse(text=product_html)
+        if url == "https://colorfullcoffee.com/products/apple-fritter-blend.js":
+            return FakeShopifyResponse(product_payload)
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = ColorfullScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert calls == [
+        "https://colorfullcoffee.com/collections/all",
+        "https://colorfullcoffee.com/products/apple-fritter-blend",
+        "https://colorfullcoffee.com/products/apple-fritter-blend.js",
+    ]
+    assert len(coffees) == 1
+    assert coffees[0].name == "apple fritter - blend"
+    assert coffees[0].process == "natural"
+    assert coffees[0].tasting_notes == ["candied apple", "cinnamon", "green jolly rancher"]
+
+
 def test_shopify_product_json_parses_labeled_specs() -> None:
     """Structured Shopify descriptions populate normalized catalog fields."""
+    # This fixture uses label aliases that differ from internal field names.
     product = {
         "title": "Colombia - Gesha - Inza",
         "price": 2300,
@@ -80,8 +306,49 @@ def test_shopify_product_json_parses_labeled_specs() -> None:
     assert coffee.tasting_notes == ["bergamot", "clementine", "lavender", "blueberries"]
 
 
+def test_shopify_product_defaults_to_smallest_available_variant() -> None:
+    """Product-level display fields follow the lightest purchasable bag."""
+    # Put the larger bag first to prove the scraper sorts by weight, not source order.
+    product = {
+        "title": "Smallest Bag",
+        "price": 2600,
+        "available": True,
+        "tags": ["coffee"],
+        "description": "",
+        "variants": [
+            {
+                "id": 222,
+                "title": "2lb",
+                "price": 6000,
+                "weight": 2,
+                "weight_unit": "lb",
+                "available": True,
+            },
+            {
+                "id": 111,
+                "title": "300g",
+                "price": 2600,
+                "weight": 300,
+                "weight_unit": "g",
+                "available": True,
+            },
+        ],
+    }
+
+    coffee = AngryRoasterScraper()._coffee_from_product(
+        product,
+        "https://theangryroaster.com/products/smallest-bag",
+    )
+
+    assert coffee.price_cents == 2600
+    assert coffee.bag_size == "300g"
+    assert [variant.shopify_variant_id for variant in coffee.variants] == ["222", "111"]
+    assert [variant.weight_grams for variant in coffee.variants] == [907, 300]
+
+
 def test_colorfull_allows_products_without_type_or_tags() -> None:
     """Colorfull's source configuration accepts products without coffee tags."""
+    # Colorfull opts out of tag requirements because its product tags are sparse.
     product = {"handle": "apple-crumble", "type": "", "tags": []}
 
     assert ColorfullScraper()._is_coffee_product(product)
@@ -89,6 +356,7 @@ def test_colorfull_allows_products_without_type_or_tags() -> None:
 
 def test_shopify_product_prefers_labeled_html_product_facts() -> None:
     """Product-page label sections beat less complete JSON description text."""
+    # JSON says "Washed"; the product page says the richer Colorfull process.
     product = {
         "title": "Apple Crumble",
         "price": 3200,
@@ -120,6 +388,7 @@ def test_shopify_product_prefers_labeled_html_product_facts() -> None:
 
 def test_shopify_title_dash_facts_are_opt_in() -> None:
     """Dash-only titles are too ambiguous to parse without source config."""
+    # Colorfull leaves dash parsing disabled, so the full title remains the name.
     product = {
         "title": "Apple Crumble - Washed",
         "price": 3200,
@@ -141,6 +410,7 @@ def test_shopify_title_dash_facts_are_opt_in() -> None:
 
 def test_shopify_title_pipe_facts_remain_supported() -> None:
     """Pipe-separated titles can still provide safe origin and process hints."""
+    # The pipe boundary is considered safe enough for all Shopify sources.
     product = {
         "title": "Colombia - Las Flores | Washed",
         "price": 2300,
@@ -160,42 +430,51 @@ def test_shopify_title_pipe_facts_remain_supported() -> None:
     assert coffee.process == "washed"
 
 
-def test_traffic_product_uses_shopify_json_labeled_description() -> None:
-    """Traffic's Shopify JSON description contains the structured product facts."""
+def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
+    """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
+    # The trailing paragraphs should stop fact extraction before brewing advice.
     product = {
-        "title": "LITTLE SWAMPS AA",
-        "handle": "little-swamps-aa",
-        "price": 2600,
+        "title": "Milkshake Espresso",
+        "handle": "milkshakeespresso",
+        "price": 2800,
         "available": True,
         "type": "coffee",
         "tags": [],
         "description": (
-            "<p><strong>Origin</strong><span>: </span><span>Kitale, Kenya<br></span></p>"
-            "<p><span><strong>Process</strong>: Washed</span></p>"
-            "<p><span><strong>Varietal</strong>: AA </span><span>Batian &amp; Ruiru</span></p>"
-            "<p><span><strong>Roast level</strong>: Superlight</span></p>"
-            "<p><span><strong>In the cup</strong>: tangerine, blackberry jam, raspberry</span></p>"
+            "<p><strong>Origin</strong><span>: Kenya &amp; Ethiopia </span><span><br></span></p>"
+            "<p><span><strong>Process</strong>: washed &amp; natural</span></p>"
+            "<p><span><strong>Altitude</strong>: ~1700</span><span>-2200m</span></p>"
+            "<p><span><strong>Varietal</strong>: various JARC Landraces &amp; combination of SL's and ruiru 11, "
+            "Batian</span><span><br></span></p>"
+            "<p><strong>Roast level: </strong>Medium</p>"
+            "<p><span><strong>Notes</strong>: upside down pineapple cake, raspberry, peach<br></span></p>"
+            "<p>Originally an ode to one of our favourite espresso blends from the UK, the milkshake morphed into "
+            "our tribute to a director that we love...David Lynch.</p>"
+            "<p><strong>PULLING THE MILKSHAKE</strong></p>"
+            "<p>We recommend larger shots, so, a larger ratio of dry to wet.</p>"
         ),
         "variants": [{"title": "Default Title", "weight": 300, "weight_unit": "g"}],
     }
 
     coffee = TrafficScraper()._coffee_from_product(
         product,
-        "https://www.trafficcoffee.com/products/little-swamps-aa",
+        "https://www.trafficcoffee.com/products/milkshakeespresso",
     )
 
     assert coffee.roaster == "Traffic Coffee"
-    assert coffee.origin == "kitale, kenya"
-    assert coffee.process == "washed"
-    assert coffee.varietal == "AA Batian & Ruiru"
-    assert coffee.roast_style == "Superlight"
-    assert coffee.price_cents == 2600
+    assert coffee.origin == "kenya ethiopia"
+    assert coffee.process == "washed natural"
+    assert coffee.varietal == "various JARC Landraces & combination of SL's and ruiru 11, Batian"
+    assert coffee.altitude == "~1700 -2200m"
+    assert coffee.roast_style == "Medium"
+    assert coffee.price_cents == 2800
     assert coffee.bag_size == "300g"
-    assert coffee.tasting_notes == ["tangerine", "blackberry jam", "raspberry"]
+    assert coffee.tasting_notes == ["upside down pineapple cake", "raspberry", "peach"]
 
 
 def test_demello_product_uses_shopify_description_and_metafield_details() -> None:
     """De Mello's small quirks are handled by Shopify config and shared facts."""
+    # Description carries notes/roast hints while the metafield carries facts.
     product = {
         "title": "Dancing Goats",
         "handle": "dancing-goats",

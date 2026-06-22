@@ -1,6 +1,6 @@
 """Tests for catalog persistence rules that protect and replace cached rows."""
 
-from gesha.coffee_data import CoffeeData
+from gesha.coffee_data import CoffeeData, CoffeeVariantData
 from gesha.coffee_service import CoffeeService
 from gesha.db.models import Base
 from sqlalchemy import create_engine
@@ -9,12 +9,16 @@ from sqlalchemy.orm import sessionmaker
 
 def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
     """A refreshed roaster loses vanished products without affecting others."""
+    # Use an in-memory database so the test exercises real SQLAlchemy behavior
+    # without touching the user's local ``gesha.db``.
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
 
     with Session() as session:
         service = CoffeeService(session)
+
+        # Current and old rows share a roaster; only the old URL should disappear.
         kept = service.create_or_update_coffee(
             CoffeeData(
                 roaster="Test Roaster",
@@ -37,6 +41,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
             )
         )
 
+        # The current URL set represents one successful scrape of Test Roaster.
         removed_count = service.delete_stale_coffees(
             "Test Roaster",
             ["https://example.test/current-coffee"],
@@ -45,6 +50,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
         coffees = service.list_coffees()
         urls = {coffee.url for coffee in coffees}
 
+    engine.dispose()
     assert removed_count == 1
     assert kept.url in urls
     assert "https://example.test/old-coffee" not in urls
@@ -53,6 +59,7 @@ def test_delete_stale_coffees_removes_rows_missing_from_latest_scrape() -> None:
 
 def test_delete_stale_coffees_skips_empty_url_set() -> None:
     """An empty scrape result cannot erase previously useful cached data."""
+    # Empty URL sets are treated as "do not know" rather than "everything vanished".
     engine = create_engine("sqlite:///:memory:", future=True)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
@@ -71,5 +78,39 @@ def test_delete_stale_coffees_skips_empty_url_set() -> None:
 
         coffees = service.list_coffees()
 
+    engine.dispose()
     assert removed_count == 0
     assert len(coffees) == 1
+
+
+def test_create_or_update_coffee_replaces_shopify_variants() -> None:
+    """Variant snapshots keep cart IDs, weights, prices, and stock current."""
+    # This checks the variant relationship path used later by cart optimization.
+    engine = create_engine("sqlite:///:memory:", future=True)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine, future=True, expire_on_commit=False)
+
+    with Session() as session:
+        service = CoffeeService(session)
+        coffee = service.create_or_update_coffee(
+            CoffeeData(
+                roaster="Test Roaster",
+                name="Variant Coffee",
+                url="https://example.test/variant-coffee",
+                variants=[
+                    CoffeeVariantData(
+                        shopify_variant_id="123",
+                        name="250g",
+                        price_cents=2500,
+                        bag_size="250g",
+                        weight_grams=250,
+                    )
+                ],
+            )
+        )
+
+        assert len(coffee.variants) == 1
+        assert coffee.variants[0].shopify_variant_id == "123"
+        assert coffee.variants[0].weight_grams == 250
+
+    engine.dispose()

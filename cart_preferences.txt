@@ -1,0 +1,32 @@
+# Add one case-insensitive include keyword per line, ordered from most
+# important to least important. A coffee is eligible when any include keyword
+# appears in its name, origin, producer, process, varietal, altitude,
+# roast style, or tasting notes.
+#
+# Prefix a keyword with ! to exclude matching coffees from cart recommendations.
+#
+# Optional destination settings:
+@province ON
+# @postal-code M5V 3A8
+
+anniversary
+special
+natural
+unique
+gesha
+geisha
+anaerobic
+co-ferment
+coferment
+cofermentation
+gesha
+tropical
+floral
+funk
+funky
+pungent
+fruit
+
+! decaf
+! dark roast
+! espresso

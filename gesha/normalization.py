@@ -15,6 +15,7 @@ NA_LABEL = "[red]NONE[/red]"
 
 def normalize_search_text(value: str | None) -> str | None:
     """Remove decorative characters without changing meaningful casing."""
+    # ``None`` stays ``None`` so missing scraper fields remain visibly missing.
     if not value:
         return None
 
@@ -28,11 +29,13 @@ def normalize_search_text(value: str | None) -> str | None:
 
 def price_display(price_cents: int | None) -> str:
     """Render optional integer-cent prices for user-facing output."""
+    # Prices are stored as cents to avoid floating-point drift in cart totals.
     return f"${price_cents / 100:.2f}" if price_cents is not None else NA_LABEL
 
 
 def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
     """Return source-ordered tasting notes in lowercase."""
+    # Missing notes should become an empty list for Pydantic and ORM callers.
     if values is None:
         return []
     if isinstance(values, str):
@@ -46,6 +49,7 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
     # Keep non-empty notes in the same order the roaster presented them.
     notes: list[str] = []
     for note in values:
+        # Some scrapers may pass defensive mixed iterables from untyped JSON.
         if not isinstance(note, str):
             continue
         candidate = re.sub(r"\s+", " ", note).strip().strip(" .")

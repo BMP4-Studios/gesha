@@ -2,9 +2,9 @@
 
 <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
-Gesha is a local-first CLI for collecting and browsing specialty coffee listings from supported Canadian roasters.
-It scrapes product metadata, stores the resulting catalog in a local SQLite database, and provides commands for
-filtering and inspecting cached coffees.
+Gesha is a local-first specialty coffee discovery and cart optimization CLI. It scrapes product metadata from
+supported Canadian roasters, stores the catalog in a local SQLite database, and recommends preference-matched carts
+that reach each roaster's advertised free-shipping threshold.
 
 ## Current scope
 
@@ -16,6 +16,9 @@ Gesha currently:
 - Updates existing products and removes stale products after a successful scrape
 - Stores the catalog in `gesha.db` in the directory where the CLI is run
 - Lists and filters cached products without contacting roaster websites
+- Stores Shopify variants and defaults to the smallest available bag
+- Compares coffee prices by calculating the cost per 100 grams
+- Builds preference-matched cart recommendations with ordered include keywords, exclusion keywords, and Shopify cart links
 
 ## Data cleanup
 
@@ -62,13 +65,7 @@ Install Gesha in editable mode:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e .
-```
-
-For development, install the optional tooling dependencies as well:
-
-```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e . # or `python -m pip install -e ".[dev]" for development mode
 ```
 
 The package and dependency definitions in `pyproject.toml` are authoritative. `requirements.txt` is retained as a
@@ -94,6 +91,9 @@ gesha scrape
 # Refresh one roaster
 gesha scrape traffic
 
+# Back up gesha.db, wipe the cache, recreate tables, and scrape every roaster
+gesha rebuild
+
 # List previously scraped coffees without making network requests
 gesha list
 
@@ -105,6 +105,21 @@ gesha list --available
 
 # Show all stored fields for one catalog ID
 gesha show 1
+
+# Recommend carts for every supported roaster
+gesha cart
+
+# Optimize one roaster and prefill a Canadian checkout destination
+gesha cart traffic --postal-code "M5V 3A8"
+
+# Override the published free-shipping threshold
+gesha cart demello --threshold 50
+
+# Explain why one cached coffee is included in or skipped from cart recommendations
+gesha cart-debug 25
+
+# Download a roaster's raw Shopify collection JSON to <roaster>.json
+gesha json traffic
 
 # Save a product's raw HTML and Shopify JSON for parser debugging
 gesha debug 1
@@ -123,6 +138,58 @@ colorfull
 angry
 all
 ```
+
+## Cart preferences
+
+Edit `cart_preferences.txt` to describe the coffees you want. Add one case-insensitive include keyword per line,
+ordered from most important to least important:
+
+```text
+natural
+anaerobic
+co-ferment
+peach
+mango
+wilton benitez
+! decaf
+! dark roast
+```
+
+Include keywords are matched against the coffee name, origin, producer, process, varietal, altitude, roast style, and
+tasting notes. A coffee is eligible when it matches at least one include keyword and no exclusion keyword. Prefix a
+keyword with `!` to exclude coffees that match it, such as `! decaf` or `! dark roast`. Blank lines and lines beginning
+with `#` are ignored. If the file is missing or has no include keywords, Gesha uses its built-in fruity/natural
+include list.
+
+The include keyword order is also the optimizer's preference order. A cart that covers a higher-listed keyword ranks
+ahead of carts that only cover lower-listed keywords; after that, Gesha uses cost and coverage tie-breakers.
+
+The same file can set a Canadian destination:
+
+```text
+@province ON
+@postal-code M5V 3A8
+```
+
+Command-line `--province` and `--postal-code` values override the file. A Canadian postal code is validated,
+normalized, and used to infer its province when no province is supplied. Ontario, Canada is the default destination.
+
+For each roaster, Gesha:
+
+1. Removes coffees that match any `!` exclusion keyword.
+2. Selects the smallest available retail variant of each coffee that matches at least one include keyword, capped at
+   roughly 1 lb / 454 g.
+3. Adds all matching coffees to one roaster-specific cart.
+4. Orders the coffees inside that cart by how strongly they match the include keywords.
+5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a
+   pre-filled Shopify cart link.
+
+Gesha checks each roaster's public shipping page and falls back to a configured threshold if the page cannot be
+read or its wording is not recognized. Shipping eligibility remains an estimate because discounts, destination
+restrictions, and checkout rules can change; confirm the final shipping rate at checkout. Use
+`--no-refresh-shipping` for an offline recommendation or `--threshold` to supply a known amount.
+
+Run `gesha cart --help` for controls such as `--threshold`, `--no-refresh-shipping`, and an alternate `--preferences` file.
 
 ## Development
 
