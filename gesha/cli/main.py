@@ -13,6 +13,7 @@ import sqlite3
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -145,6 +146,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table.add_column("Roaster")
     table.add_column("Name")
     table.add_column("Size")
+    table.add_column("Avail")
     table.add_column("Process")
     table.add_column("Origin")
     table.add_column("Price")
@@ -161,6 +163,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
             coffee.roaster.name,
             name_display,
             coffee.bag_size or NA_LABEL,
+            "y" if coffee.availability else "[red]NO[/red]",
             coffee.process or NA_LABEL,
             coffee.origin or NA_LABEL,
             price_display(coffee.price_cents),
@@ -263,8 +266,8 @@ def _backup_database(db_path: Path, backup_dir: Path) -> Path | None:
 
     # SQLite's backup API captures a consistent database image, including data
     # that may currently be represented through WAL bookkeeping.
-    with sqlite3.connect(str(db_path)) as source:
-        with sqlite3.connect(str(backup_path)) as destination:
+    with closing(sqlite3.connect(str(db_path))) as source:
+        with closing(sqlite3.connect(str(backup_path))) as destination:
             source.backup(destination)
     return backup_path
 

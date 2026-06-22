@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from types import SimpleNamespace
 
 import gesha.cli.main as cli_main
@@ -95,9 +96,10 @@ def test_rebuild_backs_up_resets_and_scrapes(
     db_path = tmp_path / "gesha.db"
     backup_dir = tmp_path / "backups"
 
-    with sqlite3.connect(str(db_path)) as connection:
+    with closing(sqlite3.connect(str(db_path))) as connection:
         connection.execute("CREATE TABLE marker (id INTEGER PRIMARY KEY)")
         connection.execute("INSERT INTO marker (id) VALUES (1)")
+        connection.commit()
 
     for sidecar_name in ("gesha.db-wal", "gesha.db-shm", "gesha.db-journal"):
         (tmp_path / sidecar_name).write_text("sidecar", encoding="utf-8")
@@ -117,7 +119,7 @@ def test_rebuild_backs_up_resets_and_scrapes(
 
     backups = list(backup_dir.glob("gesha-*.db"))
     assert len(backups) == 1
-    with sqlite3.connect(str(backups[0])) as backup_connection:
+    with closing(sqlite3.connect(str(backups[0]))) as backup_connection:
         marker_count = backup_connection.execute("SELECT COUNT(*) FROM marker").fetchone()[0]
     assert marker_count == 1
 
