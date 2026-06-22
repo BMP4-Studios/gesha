@@ -196,6 +196,21 @@ gesha json roguewave
 grep -nEi "Peach|Milk Chocolate|Apple|Almond|Tangerine|notes|tasting" debug/roguewave.json
 ```
 
+Most Shopify tasting-note fixes should be declarative once the HTML snippet is found:
+
+```python
+# Use this when each matched element is one note, such as <li>Peach</li>.
+HYDRATE_COLLECTION_PRODUCTS = True
+TASTING_NOTE_SELECTORS = ("ul.product-taste-list li",)
+
+# Use this when one matched element contains the note text, such as a short description span.
+HYDRATE_COLLECTION_PRODUCTS = True
+TASTING_NOTE_TEXT_SELECTORS = (
+    "div.product-item__short-desc span.text-color--opacity",
+    *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+)
+```
+
 To automate that evidence-gathering loop for cached products missing notes, use:
 
 ```bash

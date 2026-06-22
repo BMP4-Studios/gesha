@@ -635,6 +635,33 @@ def test_house_of_funk_short_description_supplies_tasting_notes() -> None:
     ]
 
 
+def test_common_shopify_caption_selector_supplies_tasting_notes() -> None:
+    """Shared Shopify caption markup feeds the same selector note extractor."""
+    product = {
+        "title": "Caption Coffee",
+        "handle": "caption-coffee",
+        "price": 2400,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["coffee"],
+        "description": "",
+        "variants": [{"id": 123, "title": "250g", "price": 2400, "grams": 250, "available": True}],
+    }
+    html = """
+    <p class="product__text inline-richtext caption-with-letter-spacing">
+      Peach, honey, jasmine
+    </p>
+    """
+
+    coffee = AngryRoasterScraper()._coffee_from_product(
+        product,
+        "https://theangryroaster.com/products/caption-coffee",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.tasting_notes == ["peach", "honey", "jasmine"]
+
+
 def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
     """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
     # The trailing paragraphs should stop fact extraction before brewing advice.

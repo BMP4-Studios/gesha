@@ -68,10 +68,13 @@ class ShopifyScraper(BaseScraper):
     PRODUCT_FACT_STOP_LABELS = DEFAULT_PRODUCT_FACT_STOP_LABELS
     PRODUCT_FACT_SELECTORS: tuple[str, ...] = ()
 
-    # Some storefronts keep notes outside labeled description copy. Source
-    # configs can point directly at repeated note elements once debug HTML proves
-    # the selector is stable.
+    # Some storefronts keep notes outside labeled description copy. Use
+    # TASTING_NOTE_SELECTORS when each matched element is one note, and
+    # TASTING_NOTE_TEXT_SELECTORS when a matched block contains a comma/sentence
+    # separated note string. The caption selector is a common Shopify theme
+    # pattern, so keep it on the shared path instead of hard-coding a fallback.
     TASTING_NOTE_SELECTORS: tuple[str, ...] = ()
+    TASTING_NOTE_TEXT_SELECTORS: tuple[str, ...] = ("p.product__text.inline-richtext.caption-with-letter-spacing",)
 
     # Dash-separated title facts are source-specific and stay opt-in because
     # ``Origin - Name`` and ``Name - Process`` can otherwise look identical.
@@ -437,6 +440,19 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_json_product_facts(self, product_data: dict[str, Any], description: str) -> dict[str, str]:
         """Extract product facts from Shopify JSON description fields."""
+        raw_html = str(product_data.get("description") or "")
+        if raw_html.strip():
+            # Row-aware HTML parsing keeps labels scoped to their paragraph/list
+            # item, which avoids swallowing trailing marketing copy as a fact.
+            html_facts = extract_labeled_product_facts_from_html(
+                BeautifulSoup(raw_html, "html.parser"),
+                label_aliases=self.PRODUCT_FACT_LABELS,
+                stop_labels=self.PRODUCT_FACT_STOP_LABELS,
+            )
+            if html_facts:
+                return html_facts
+
+        # Plain-text parsing remains the fallback for sparse/non-HTML payloads.
         return self._extract_details(description)
 
     def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
@@ -514,29 +530,11 @@ class ShopifyScraper(BaseScraper):
             if notes:
                 return notes
 
-        # Some themes expose flavor notes as individual elements outside the
-        # product description, such as Rogue Wave's product-taste list items.
+        # Some themes expose flavor notes outside the product description.
         if html_soup:
-            selected_notes: list[str] = []
-            for selector in self.TASTING_NOTE_SELECTORS:
-                # Selector order is source order, which usually matches the
-                # roaster's displayed tasting-note order on the product page.
-                for element in html_soup.select(selector):
-                    for note in normalize_tasting_notes(element.get_text(" ", strip=True)):
-                        # Repeated mobile/desktop blocks should not duplicate
-                        # notes in the cached catalog.
-                        if note not in selected_notes:
-                            selected_notes.append(note)
+            selected_notes = self._extract_tasting_notes_from_selectors(html_soup)
             if selected_notes:
                 return selected_notes
-
-        # Some themes render notes as a short standalone caption.
-        if html_soup:
-            target = html_soup.select_one("p.product__text.inline-richtext.caption-with-letter-spacing")
-            if target and target.get_text():
-                notes = normalize_tasting_notes(target.get_text())
-                if notes:
-                    return notes
 
         # Last chance: only accept very short note-like leading text.
         lines = [line.strip() for line in description.splitlines() if line.strip()]
@@ -567,6 +565,44 @@ class ShopifyScraper(BaseScraper):
                 return normalize_tasting_notes(combined_notes)
 
         return []
+
+    def _extract_tasting_notes_from_selectors(self, html_soup: BeautifulSoup) -> list[str]:
+        """Extract source-ordered notes from configured product-page selectors."""
+        selected_notes: list[str] = []
+
+        # Element selectors are for markup like <li>Peach</li>, where each
+        # matched node is already one note.
+        self._append_unique_notes_from_selectors(
+            html_soup,
+            self.TASTING_NOTE_SELECTORS,
+            selected_notes,
+        )
+
+        # Text selectors are for markup like a short description span, where one
+        # matched node contains a comma/sentence-separated note string.
+        self._append_unique_notes_from_selectors(
+            html_soup,
+            self.TASTING_NOTE_TEXT_SELECTORS,
+            selected_notes,
+        )
+        return selected_notes
+
+    def _append_unique_notes_from_selectors(
+        self,
+        html_soup: BeautifulSoup,
+        selectors: tuple[str, ...],
+        selected_notes: list[str],
+    ) -> None:
+        """Append normalized notes from selector matches without duplicates."""
+        for selector in selectors:
+            # Selector order is source order, which usually matches the roaster's
+            # displayed tasting-note order on the product page.
+            for element in html_soup.select(selector):
+                for note in normalize_tasting_notes(element.get_text(" ", strip=True)):
+                    # Repeated mobile/desktop blocks should not duplicate notes
+                    # in the cached catalog.
+                    if note not in selected_notes:
+                        selected_notes.append(note)
 
     def _extract_roast_style(self, product_data: dict[str, Any]) -> str | None:
         """Use standard Shopify tags as a fallback roast-style classification."""
@@ -771,22 +807,6 @@ class TrafficScraper(ShopifyScraper):
     PRODUCT_FACT_STOP_LABELS = (*DEFAULT_PRODUCT_FACT_STOP_LABELS, "ABOUT")
     PRODUCT_FACT_SELECTORS = ("div.product-block-description",)
 
-    def _extract_json_product_facts(self, product_data: dict[str, Any], description: str) -> dict[str, str]:
-        """Parse Traffic collection JSON descriptions as HTML fact rows."""
-        # Traffic's collection description preserves rich HTML label/value rows.
-        raw_html = str(product_data.get("description") or "")
-        if raw_html.strip():
-            facts = extract_labeled_product_facts_from_html(
-                BeautifulSoup(raw_html, "html.parser"),
-                label_aliases=self.PRODUCT_FACT_LABELS,
-                stop_labels=self.PRODUCT_FACT_STOP_LABELS,
-            )
-            if facts:
-                return facts
-
-        # Fall back to the shared text parser if Traffic's HTML shape changes.
-        return super()._extract_json_product_facts(product_data, description)
-
 
 class DeMelloScraper(ShopifyScraper):
     """Shopify configuration for De Mello products."""
@@ -816,31 +836,10 @@ class HouseOfFunkScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Coffee Beans",)
     HYDRATE_COLLECTION_PRODUCTS = True
-
-    def _extract_tasting_notes(
-        self,
-        description: str,
-        html_soup: BeautifulSoup | None = None,
-        page_facts: dict[str, str] | None = None,
-        json_facts: dict[str, str] | None = None,
-    ) -> list[str]:
-        """Extract House of Funk notes from the product-page short description."""
-        if html_soup:
-            target = html_soup.select_one("div.product-item__short-desc span.text-color--opacity")
-            if target:
-                # House of Funk's second sentence carries vibe words that are
-                # still useful for preference matching, so keep both sentences.
-                notes = normalize_tasting_notes(target.get_text(" ", strip=True))
-                if notes:
-                    return notes
-
-        # Fall back to the shared Shopify heuristics if the theme changes.
-        return super()._extract_tasting_notes(
-            description,
-            html_soup=html_soup,
-            page_facts=page_facts,
-            json_facts=json_facts,
-        )
+    TASTING_NOTE_TEXT_SELECTORS = (
+        "div.product-item__short-desc span.text-color--opacity",
+        *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+    )
 
 
 class RogueWaveScraper(ShopifyScraper):
