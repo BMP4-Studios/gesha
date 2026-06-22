@@ -442,10 +442,18 @@ class ShopifyScraper(BaseScraper):
         """Extract product facts from Shopify JSON description fields."""
         raw_html = str(product_data.get("description") or "")
         if raw_html.strip():
+            raw_soup = BeautifulSoup(raw_html, "html.parser")
+
+            # JSON descriptions can contain the same theme-specific fact blocks
+            # as product pages, so selector configs should scope both paths.
+            selected_facts = self._extract_selected_html_product_facts(raw_soup)
+            if selected_facts:
+                return selected_facts
+
             # Row-aware HTML parsing keeps labels scoped to their paragraph/list
             # item, which avoids swallowing trailing marketing copy as a fact.
             html_facts = extract_labeled_product_facts_from_html(
-                BeautifulSoup(raw_html, "html.parser"),
+                raw_soup,
                 label_aliases=self.PRODUCT_FACT_LABELS,
                 stop_labels=self.PRODUCT_FACT_STOP_LABELS,
             )
@@ -455,13 +463,20 @@ class ShopifyScraper(BaseScraper):
         # Plain-text parsing remains the fallback for sparse/non-HTML payloads.
         return self._extract_details(description)
 
-    def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
-        """Read product-page label/value sections before JSON fallbacks."""
+    def _extract_selected_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
+        """Read labeled facts from configured HTML blocks only."""
         selected_facts: dict[str, str] = {}
 
-        # Source configs can point directly at known metadata blocks.
+        # Source configs can point directly at known metadata blocks. This is
+        # safer than page-wide parsing for themes with long story sections.
         for selector in self.PRODUCT_FACT_SELECTORS:
-            for block in html_soup.select(selector):
+            blocks = html_soup.select(selector)
+
+            # Themes sometimes nest the compact spec sheet inside a broader
+            # story wrapper that also matches the selector. Parse deepest blocks
+            # first so specific facts win, then let ancestors fill missing fields.
+            blocks.sort(key=lambda block: len(list(block.parents)), reverse=True)
+            for block in blocks:
                 block_facts = extract_labeled_product_facts_from_html(
                     block,
                     label_aliases=self.PRODUCT_FACT_LABELS,
@@ -469,6 +484,11 @@ class ShopifyScraper(BaseScraper):
                 )
                 for key, value in block_facts.items():
                     selected_facts.setdefault(key, value)
+        return selected_facts
+
+    def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
+        """Read product-page label/value sections before JSON fallbacks."""
+        selected_facts = self._extract_selected_html_product_facts(html_soup)
         if selected_facts:
             return selected_facts
 
@@ -867,12 +887,19 @@ class QuietlyScraper(ShopifyScraper):
 
     # Quietly's collection includes apparel/subscriptions, while coffee products
     # are consistently typed as Coffee.
+    # Their JSON description contains a final inline-styled spec sheet; require
+    # both TASTE and REGION so earlier origin/flavour story wrappers are ignored.
     BASE_URL = "https://www.quietlycoffee.com"
     COLLECTION_URL = f"{BASE_URL}/collections/our-coffee"
     SOURCE_NAME = "Quietly"
     ROASTER_NAME = "Quietly Coffee"
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    PRODUCT_FACT_STOP_LABELS = (*DEFAULT_PRODUCT_FACT_STOP_LABELS, "Importer", "FOB Pricing", "Years Partnered")
+    PRODUCT_FACT_SELECTORS = (
+        "div[style*='text-align: left']:has(strong span:-soup-contains('TASTE'))"
+        ":has(strong span:-soup-contains('REGION'))",
+    )
 
 
 class KohiScraper(ShopifyScraper):

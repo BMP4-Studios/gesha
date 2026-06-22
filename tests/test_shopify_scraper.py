@@ -746,6 +746,131 @@ def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() 
     assert coffee.tasting_notes == ["upside down pineapple cake", "raspberry", "peach"]
 
 
+def test_quietly_description_spec_sheet_supplies_product_facts() -> None:
+    """Quietly's JSON description spec sheet uses shared selector-scoped facts."""
+    # Quietly nests story paragraphs and the compact spec sheet in matching
+    # styled divs; REGION from the spec sheet should beat the earlier ORIGIN story.
+    product = {
+        "title": "DECAFFEINATED",
+        "handle": "decaffeinated",
+        "price": 2600,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": (
+            '<div style="text-align: left;">'
+            '<p><strong>ORIGIN:<br></strong>'
+            "I love bringing in fun decaf lots because I love great decaf! "
+            "So could not say no to this tropical and fun lot from the Siane Organic Agriculture Cooperative "
+            "located in the Chuave district within the province of Chimbu.</p>"
+            '<p><strong>FLAVOUR:</strong><br>'
+            "In the cup you can expect juicy citrus and malic acid.</p>"
+            "</div>"
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">PARAMETERS:&nbsp;</span><br></strong>'
+            "For espresso, use a 1:2.3 ratio in 32-35 seconds.<br>"
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">ROAST DEGREE:&nbsp;</span><br></strong>'
+            "Light-Medium.<br>"
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">TASTE: <br></span></strong>'
+            "Blackberry, Nectarine &amp; Oolong Tea.<br>"
+            '<strong><span style="color: #00205b;">REGION:<br></span></strong>'
+            "Chimbu Province.<br>"
+            '<strong><span style="color: #00205b;">FARM:</span><br></strong>'
+            "Siane Organic Agriculture Cooperative.<br>"
+            '<strong><span style="color: #00205b;">VARIETY:</span><br></strong>'
+            "Bourbon &amp; Typica.<br>"
+            '<strong><span style="color: #00205b;">ELEVATION:</span><br></strong>'
+            "1350m.<br>"
+            '<strong><span style="color: #00205b;">PROCESS:</span><br></strong>'
+            "Washed.<br>"
+            '<strong><span style="color: #00205b;">IMPORTER:</span><br></strong>'
+            "Rachel at Covoya.<br>"
+            '<strong><span style="color: #00205b;">FOB&nbsp;PRICING:</span><br></strong>'
+            "$13.40 USD per Kilogram.<br>"
+            "</div>"
+            "</div>"
+            "</div>"
+        ),
+        "variants": [{"id": 123, "title": "300 Grams", "price": 2600, "grams": 300, "available": True}],
+    }
+
+    coffee = QuietlyScraper()._coffee_from_product(
+        product,
+        "https://www.quietlycoffee.com/products/decaffeinated",
+    )
+
+    assert coffee.origin == "chimbu province."
+    assert coffee.producer == "Siane Organic Agriculture Cooperative."
+    assert coffee.varietal == "Bourbon & Typica."
+    assert coffee.altitude == "1350m."
+    assert coffee.process == "washed."
+    assert coffee.roast_style == "Light-Medium."
+    assert coffee.tasting_notes == ["blackberry", "nectarine", "oolong tea"]
+
+
+def test_quietly_nested_spec_sheet_wins_over_story_origin() -> None:
+    """Nested Quietly spec-sheet facts should beat broader story wrappers."""
+    # Sugar Mountain nests the compact TASTE/REGION block inside a larger div
+    # that also contains an ORIGIN story, so deepest selector matches must win.
+    product = {
+        "title": "SUGAR MOUNTAIN",
+        "handle": "sugar-mountain",
+        "price": 2800,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": (
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">ORIGIN:</span><br></strong>'
+            "<p>Angel Ortega returns to our menu with a very fun passion fruit co-ferment. "
+            "The grower initiative is frequently featured on the Quietly menu.</p>"
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">FLAVOUR:</span><br></strong>'
+            "The cup is wonderfully sweet with marshmallow and cooked sugar notes."
+            "</div>"
+            '<div style="text-align: left;">'
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">ROAST DEGREE:&nbsp;</span><br></strong>'
+            "Light-Medium.<br>"
+            '<div style="text-align: left;">'
+            '<strong><span style="color: #00205b;">TASTE:&nbsp;</span></strong><br>'
+            "Passion Fruit, Mandarin Orange &amp; Marshmallow.<br>"
+            '<strong><span style="color: #00205b;">REGION:</span><br></strong>'
+            "Kennedy, San Agustin.<br>"
+            '<strong><span style="color: #00205b;">FARM:</span><br></strong>'
+            "Miramar.<br>"
+            '<strong><span style="color: #00205b;">VARIETAL:</span><br></strong>'
+            "Pink Bourbon.<br>"
+            '<strong><span style="color: #00205b;">ELEVATION:</span><br></strong>'
+            "1680m.<br>"
+            '<strong><span style="color: #00205b;">PROCESS:</span><br></strong>'
+            "Passion fruit co-ferment &amp; washed.<br>"
+            '<strong><span style="color: #00205b;">IMPORTER:</span><br></strong>'
+            "Brendan at Semilla.<br>"
+            "</div>"
+            "</div>"
+            "</div>"
+            "</div>"
+        ),
+        "variants": [{"id": 123, "title": "300 Grams", "price": 2800, "grams": 300, "available": True}],
+    }
+
+    coffee = QuietlyScraper()._coffee_from_product(
+        product,
+        "https://www.quietlycoffee.com/products/sugar-mountain",
+    )
+
+    assert coffee.origin == "kennedy, san agustin."
+    assert coffee.producer == "Miramar."
+    assert coffee.varietal == "Pink Bourbon."
+    assert coffee.altitude == "1680m."
+    assert coffee.process == "passion fruit co-ferment washed."
+    assert coffee.roast_style == "Light-Medium."
+    assert coffee.tasting_notes == ["passion fruit", "mandarin orange", "marshmallow"]
+
+
 def test_demello_product_uses_shopify_description_and_metafield_details() -> None:
     """De Mello's small quirks are handled by Shopify config and shared facts."""
     # Description carries notes/roast hints while the metafield carries facts.

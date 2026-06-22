@@ -15,6 +15,7 @@ COMMON_TASTING_NOTE_LABELS = [
     # Roasters use different labels for the same catalog field.
     "Notes",
     "Tasting Notes",
+    "Taste",
     "In the cup",
     "Reminds us of",
     "flavour Profile",
@@ -44,7 +45,7 @@ DEFAULT_PRODUCT_FACT_LABELS: dict[str, tuple[str, ...]] = {
     "process": ("Process", "Method"),
     "varietal": ("Varietal", "Variety", "Varieties", "Cultivar"),
     "altitude": ("Altitude", "Elevation"),
-    "roast_style": ("Roast Level", "Roast Style", "Roast", "Value / Roasting degree"),
+    "roast_style": ("Roast Level", "Roast Style", "Roast Degree", "Roast", "Value / Roasting degree"),
     "bag_size": ("Amount", "Size", "Specs"),
     "tasting_notes": tuple(COMMON_TASTING_NOTE_LABELS),
 }
@@ -282,8 +283,17 @@ def extract_labeled_product_facts_from_html(
     merge({field: value for field, (_, value) in sibling_pair_facts.items()})
 
     # As a fallback, scan larger blocks and only accept ones with multiple facts.
-    if len(facts) < 2:
-        for block in soup.find_all(["div", "section", "article"]):
+    # This can fill fields missed by sibling-pair markup, such as labels whose
+    # value sits outside the label node's immediate sibling chain.
+    if len(facts) < len(PRODUCT_FACT_FIELDS):
+        # When a source selector points directly at a metadata container, the
+        # selected container itself may carry the complete label/value text.
+        block_candidates: list[Tag] = []
+        if isinstance(soup, Tag) and soup.name in ("div", "section", "article"):
+            block_candidates.append(soup)
+        block_candidates.extend(soup.find_all(["div", "section", "article"]))
+
+        for block in block_candidates:
             if not isinstance(block, Tag) or _is_inside_ignored_tree(block):
                 continue
             # Requiring multiple facts prevents random marketing copy from being
