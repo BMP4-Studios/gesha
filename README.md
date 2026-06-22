@@ -10,7 +10,8 @@ that reach each roaster's advertised free-shipping threshold.
 
 Gesha currently:
 
-- Scrapes coffee listings from De Mello, Traffic, Porte Bleue, Colorfull Coffee, and The Angry Roaster
+- Scrapes coffee listings from De Mello, Traffic, Porte Bleue, Colorfull Coffee, The Angry Roaster, and the first
+  expanded Shopify cohort
 - Extracts metadata such as origin, producer, process, varietal, altitude, tasting notes, roast style, price, bag
   size, availability, and product URL when the source provides it
 - Updates existing products and removes stale products after a successful scrape
@@ -136,8 +137,49 @@ traffic
 portebleue
 colorfull
 angry
+houseoffunk
+roguewave
+quietly
+kohi
+subtext
+artery
+ethica
+rabbithole
 all
 ```
+
+## Debugging missing tasting notes
+
+Missing tasting notes usually mean the fast Shopify collection JSON does not contain the same rich copy that appears on
+the product page. Use `gesha json` to inspect the collection feed and `gesha debug` to inspect one cached product's page
+HTML plus product JSON.
+
+Start with the raw collection feed:
+
+```bash
+gesha json roguewave
+rg -n "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting" roguewave.json
+```
+
+If the notes are absent from the collection JSON, scrape the roaster and pick one product ID from the cached table:
+
+```bash
+gesha scrape roguewave
+gesha list --roaster roguewave
+gesha show 1
+```
+
+Then dump the raw product data for that cached coffee:
+
+```bash
+gesha debug 1
+rg -n "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting" debug/debug_1.txt
+```
+
+Use both commands when a webpage visibly has notes but Gesha does not: `gesha json <source>` shows what the scraper gets
+from the batch collection path, while `gesha debug <id>` shows whether the individual product page has the missing data.
+If the notes only appear in `debug/debug_<id>.txt`, update that scraper to hydrate product-page HTML or add a
+source-specific parser/selector.
 
 ## Cart preferences
 

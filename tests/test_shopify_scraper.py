@@ -5,9 +5,18 @@ import logging
 from bs4 import BeautifulSoup
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
+    ArteryScraper,
     ColorfullScraper,
     DeMelloScraper,
+    EthicaScraper,
+    HouseOfFunkScraper,
+    KohiScraper,
     PorteBleueScraper,
+    QuietlyScraper,
+    RabbitHoleScraper,
+    RogueWaveScraper,
+    ShopifyScraper,
+    SubtextScraper,
     TrafficScraper,
 )
 
@@ -16,6 +25,29 @@ class JsonOptInTrafficScraper(TrafficScraper):
     """Traffic fixture scraper that opts into the collection JSON path."""
 
     USE_COLLECTION_JSON = True
+
+
+class LocaleProductsIndexScraper(ShopifyScraper):
+    """Fixture scraper for locale-prefixed Shopify product indexes."""
+
+    BASE_URL = "https://cafepista.com/en"
+    COLLECTION_URL = "https://cafepista.com/en/products"
+    SOURCE_NAME = "Cafe Pista"
+    ROASTER_NAME = "Cafe Pista"
+
+
+class PaginatedFilterScraper(ShopifyScraper):
+    """Fixture scraper that exercises pagination and new product filters."""
+
+    BASE_URL = "https://example.com"
+    COLLECTION_URL = "https://example.com/collections/coffee"
+    SOURCE_NAME = "Example"
+    ROASTER_NAME = "Example Roaster"
+    PRODUCTS_JSON_LIMIT = 2
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    EXCLUDE_TAGS = ("wholesale-only",)
+    SKIP_UNAVAILABLE_PRODUCTS = True
 
 
 class FakeShopifyResponse:
@@ -81,6 +113,52 @@ def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     ]
 
 
+def test_shopify_collection_json_preserves_locale_and_product_index_paths() -> None:
+    """Locale storefronts keep /en in JSON endpoints and product URLs."""
+    scraper = LocaleProductsIndexScraper()
+
+    assert scraper._collection_products_json_url(page=2) == "https://cafepista.com/en/products.json?limit=250&page=2"
+    assert scraper._canonical_product_url("https://cafepista.com/en/products/el-cortijo") == (
+        "https://cafepista.com/en/products/el-cortijo"
+    )
+
+
+def test_shopify_collection_extracts_locale_prefixed_product_urls() -> None:
+    """Product-page scraping can discover links from locale-prefixed themes."""
+    html = '<a href="/en/collections/frontpage/products/oh-fudge-yuki">Coffee</a>'
+
+    urls = LocaleProductsIndexScraper().extract_product_urls(html)
+
+    assert urls == ["https://cafepista.com/en/products/oh-fudge-yuki"]
+
+
+def test_pilot_shopify_sources_use_expected_collection_json_urls() -> None:
+    """New batch sources should keep their focused Shopify collection feeds."""
+    cases = [
+        (
+            HouseOfFunkScraper,
+            "https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1",
+        ),
+        (RogueWaveScraper, "https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1"),
+        (QuietlyScraper, "https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1"),
+        (KohiScraper, "https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1"),
+        (SubtextScraper, "https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1"),
+        (
+            ArteryScraper,
+            "https://thearterycommunityroasters.com/collections/by-the-bag/products.json?limit=250&page=1",
+        ),
+        (EthicaScraper, "https://ethicaroasters.com/collections/filter-coffee/products.json?limit=250&page=1"),
+        (
+            RabbitHoleScraper,
+            "https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1",
+        ),
+    ]
+
+    assert [scraper_class()._collection_products_json_url() for scraper_class, _ in cases] == [
+        expected_url for _, expected_url in cases
+    ]
+
+
 def test_shopify_scrape_defaults_to_collection_json_feed(monkeypatch) -> None:
     """Shopify scrapers use collection JSON by default to avoid collection-page challenges."""
     calls: list[str] = []
@@ -99,6 +177,64 @@ def test_shopify_scrape_defaults_to_collection_json_feed(monkeypatch) -> None:
 
     assert coffees == []
     assert calls == ["https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"]
+
+
+def test_shopify_collection_json_paginates_and_applies_source_filters(monkeypatch) -> None:
+    """Batch sources can page through collections while filtering noisy products."""
+    calls: list[str] = []
+    first_page = {
+        "products": [
+            {
+                "title": "Good Coffee",
+                "handle": "good-coffee",
+                "product_type": "Coffee",
+                "tags": [],
+                "body_html": "<p>Notes: Peach, Mango</p>",
+                "variants": [{"id": 1, "title": "250g", "price": "22.00", "grams": 250, "available": True}],
+            },
+            {
+                "title": "Wholesale Coffee",
+                "handle": "wholesale-coffee",
+                "product_type": "Coffee",
+                "tags": ["wholesale-only"],
+                "variants": [{"id": 2, "title": "250g", "price": "20.00", "grams": 250, "available": True}],
+            },
+        ]
+    }
+    second_page = {
+        "products": [
+            {
+                "title": "Sold Out Coffee",
+                "handle": "sold-out-coffee",
+                "product_type": "Coffee",
+                "tags": [],
+                "variants": [{"id": 3, "title": "250g", "price": "20.00", "grams": 250, "available": False}],
+            }
+        ]
+    }
+
+    def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
+        """Return two Shopify JSON pages and fail on unexpected pagination."""
+        calls.append(url)
+        if url == "https://example.com/collections/coffee/products.json?limit=2&page=1":
+            return FakeShopifyResponse(first_page)
+        if url == "https://example.com/collections/coffee/products.json?limit=2&page=2":
+            return FakeShopifyResponse(second_page)
+        raise AssertionError(f"Unexpected request: {url}")
+
+    scraper = PaginatedFilterScraper()
+    monkeypatch.setattr(scraper.session, "get", fake_get)
+
+    coffees = scraper.scrape()
+
+    assert calls == [
+        "https://example.com/collections/coffee/products.json?limit=2&page=1",
+        "https://example.com/collections/coffee/products.json?limit=2&page=2",
+    ]
+    assert len(coffees) == 1
+    assert coffees[0].name == "good coffee"
+    assert coffees[0].url == "https://example.com/products/good-coffee"
+    assert coffees[0].tasting_notes == ["peach", "mango"]
 
 
 def test_shopify_scrape_can_opt_into_collection_json_feed(monkeypatch) -> None:

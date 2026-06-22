@@ -43,18 +43,25 @@ class ShopifyScraper(BaseScraper):
     # stores. Source configs can opt out if collection JSON is too incomplete.
     USE_COLLECTION_JSON: bool = True
 
-    # Shopify limits collection JSON pages; current roaster collections fit in one.
+    # Shopify limits collection JSON pages, so large/archive-heavy stores are
+    # paginated until a short or empty page proves the collection is exhausted.
     PRODUCTS_JSON_LIMIT = 250
 
     # Product links may be plain ``/products/x`` or collection-scoped
     # ``/collections/coffee/products/x`` links.
-    PRODUCT_URL_PATTERN = re.compile(r"^/(?:collections/[^/]+/)?products/[^/?#]+$")
+    PRODUCT_URL_PATTERN = re.compile(r"^/(?:[^/]+/)?(?:collections/[^/]+/)?products/[^/?#]+$")
     PRODUCT_LINK_ATTRIBUTES: tuple[str, ...] = ("href", "data-url")
 
     # Stores with reliable tags can require coffee tags; stores without them
-    # opt out by setting INCLUDE_TAGS to an empty tuple.
+    # opt out by setting INCLUDE_TAGS to an empty tuple. Product-type filters
+    # cover stores that expose "Coffee", "Whole Bean", or translated type names.
     INCLUDE_TAGS: tuple[str, ...] = ("coffee",)
+    INCLUDE_PRODUCT_TYPES: tuple[str, ...] = ()
     EXCLUDE_HANDLE_KEYWORDS: tuple[str, ...] = ("subscription", "sub", "gift", "recurring")
+    EXCLUDE_TAGS: tuple[str, ...] = ()
+    EXCLUDE_PRODUCT_TYPES: tuple[str, ...] = ()
+    SKIP_UNAVAILABLE_PRODUCTS = False
+    HYDRATE_COLLECTION_PRODUCTS = False
 
     # Shared label dictionaries can be extended or narrowed per roaster.
     PRODUCT_FACT_LABELS = DEFAULT_PRODUCT_FACT_LABELS
@@ -104,62 +111,108 @@ class ShopifyScraper(BaseScraper):
                 return coffees
         return super().scrape()
 
+    def _storefront_origin(self) -> str:
+        """Return the scheme/host portion that owns Shopify product paths."""
+        # BASE_URL may include a locale path for future sources, but absolute
+        # Shopify product/cart paths are rooted at the storefront origin.
+        parsed = urlparse(self.BASE_URL)
+        return f"{parsed.scheme}://{parsed.netloc}"
+
+    def _product_path_prefix(self) -> str:
+        """Return any locale prefix that should precede ``/products/<handle>``."""
+        # Locale-aware stores expose paths such as /en/collections/coffee and
+        # /en/products/foo. The product prefix is the path segment before the
+        # Shopify collection/products namespace.
+        path = urlparse(self.COLLECTION_URL).path.rstrip("/")
+        segments = [segment for segment in path.split("/") if segment]
+        if not segments:
+            return ""
+
+        if "collections" in segments:
+            prefix_segments = segments[: segments.index("collections")]
+        elif segments[-1] == "products":
+            prefix_segments = segments[:-1]
+        else:
+            prefix_segments = segments
+        return f"/{'/'.join(prefix_segments)}" if prefix_segments else ""
+
     def _collection_products_json_url(self, page: int = 1) -> str:
         """Build Shopify's public collection products JSON endpoint."""
-        # Preserve the configured collection path so each roaster can choose
-        # ``collections/coffee``, ``collections/all``, or another storefront route.
+        # Preserve the configured collection/locale path so each roaster can
+        # choose ``/en``, ``/collections/coffee``, or Shopify's product index.
         parsed = urlparse(self.COLLECTION_URL)
         path = parsed.path.rstrip("/")
-        return urljoin(self.BASE_URL, f"{path}/products.json?limit={self.PRODUCTS_JSON_LIMIT}&page={page}")
+        origin = f"{parsed.scheme}://{parsed.netloc}"
+
+        if path.endswith("/products"):
+            json_path = f"{path}.json"
+        elif path:
+            json_path = f"{path}/products.json"
+        else:
+            json_path = "/products.json"
+        return f"{origin}{json_path}?limit={self.PRODUCTS_JSON_LIMIT}&page={page}"
 
     def _scrape_collection_json(self) -> list[CoffeeData] | None:
-        """Fetch a whole Shopify collection from one JSON endpoint when available."""
-        # One collection-feed request replaces many per-product page requests.
-        collection_json_url = self._collection_products_json_url()
-        response = self.session.get(collection_json_url, timeout=15)
-
-        # A 404 means the store/theme does not expose this endpoint; allow the
-        # caller to fall back to the older product-page path.
-        if response.status_code == 404:
-            return None
-
-        # Other HTTP failures are treated as a failed source refresh. Falling
-        # back to many product requests could make rate limiting worse.
-        if response.status_code >= 400:
-            self._log_http_failure("fetch Shopify collection JSON", collection_json_url, response)
-            return []
-        response.raise_for_status()
-
-        try:
-            # Some storefronts may return HTML from this URL; that is not usable
-            # as a Shopify collection feed.
-            payload = response.json()
-        except ValueError:
-            return None
-        if not isinstance(payload, dict):
-            return None
-
-        products = payload.get("products")
-        if not isinstance(products, list):
-            return None
-
+        """Fetch every Shopify collection JSON page when the feed is available."""
         coffees: list[CoffeeData] = []
-        for raw_product in products:
-            # Collection JSON is external data, so validate shape before casting.
-            if not isinstance(raw_product, dict):
-                continue
+        page = 1
+        while True:
+            collection_json_url = self._collection_products_json_url(page=page)
+            response = self.session.get(collection_json_url, timeout=15)
 
-            product_data = self._product_from_collection_json(cast(dict[str, Any], raw_product))
-            if not self._is_coffee_product(product_data):
-                continue
+            # A first-page 404 means the store/theme does not expose this endpoint;
+            # allow the caller to fall back to the older product-page path.
+            if response.status_code == 404 and page == 1:
+                return None
 
-            # Shopify handles are enough to build canonical product URLs.
-            handle = str(product_data.get("handle") or "").strip()
-            if not handle:
-                continue
+            # Any other HTTP failure makes the refresh unsafe: a partial catalog
+            # could delete valid cached rows, so return an empty failed scrape.
+            if response.status_code >= 400:
+                self._log_http_failure("fetch Shopify collection JSON", collection_json_url, response)
+                return []
+            response.raise_for_status()
 
-            url = self._canonical_product_url(urljoin(self.BASE_URL, f"/products/{handle}"))
-            coffees.append(self._coffee_from_product(product_data, url))
+            try:
+                # Some storefronts may return HTML from this URL; that is not usable
+                # as a Shopify collection feed.
+                payload = response.json()
+            except ValueError:
+                return None if page == 1 else []
+            if not isinstance(payload, dict):
+                return None if page == 1 else []
+
+            products = payload.get("products")
+            if not isinstance(products, list):
+                return None if page == 1 else []
+            if not products:
+                break
+
+            for raw_product in products:
+                # Collection JSON is external data, so validate shape before casting.
+                if not isinstance(raw_product, dict):
+                    continue
+
+                product_data = self._product_from_collection_json(cast(dict[str, Any], raw_product))
+                if not self._is_coffee_product(product_data):
+                    continue
+                if self.SKIP_UNAVAILABLE_PRODUCTS and not self._is_available_product(product_data):
+                    continue
+
+                # Shopify handles are enough to build canonical product URLs.
+                handle = str(product_data.get("handle") or "").strip()
+                if not handle:
+                    continue
+
+                url = self._canonical_product_url(urljoin(self.BASE_URL, f"/products/{handle}"))
+                html_soup: BeautifulSoup | None = None
+                html_facts: dict[str, str] | None = None
+                if self.HYDRATE_COLLECTION_PRODUCTS:
+                    html_soup, html_facts = self._product_page_html_facts(url)
+                coffees.append(self._coffee_from_product(product_data, url, html_soup=html_soup, html_facts=html_facts))
+
+            if len(products) < self.PRODUCTS_JSON_LIMIT:
+                break
+            page += 1
         return coffees
 
     def _product_from_collection_json(self, product_data: dict[str, Any]) -> dict[str, Any]:
@@ -192,15 +245,7 @@ class ShopifyScraper(BaseScraper):
 
     def scrape_product(self, url: str) -> CoffeeData | None:
         """Fetch Shopify HTML first, then JSON support data for one product."""
-        # Product-page HTML usually carries the richest label/value metadata.
-        html_soup: BeautifulSoup | None = None
-        html_facts: dict[str, str] = {}
-        res_html = self.session.get(url, timeout=15)
-        if res_html.status_code == 200:
-            html_soup = BeautifulSoup(res_html.text, "html.parser")
-            html_facts = self._extract_html_product_facts(html_soup)
-        elif res_html.status_code >= 400:
-            self._log_http_failure("fetch product HTML", url, res_html)
+        html_soup, html_facts = self._product_page_html_facts(url)
 
         # Shopify JSON is still the reliable source for title, variants, price,
         # availability, tags, and description fallbacks.
@@ -222,6 +267,20 @@ class ShopifyScraper(BaseScraper):
         # Merge the page facts and Shopify payload into the normalized DTO.
         return self._coffee_from_product(product_data, url, html_soup=html_soup, html_facts=html_facts)
 
+    def _product_page_html_facts(self, url: str) -> tuple[BeautifulSoup | None, dict[str, str]]:
+        """Fetch product-page HTML facts for sources that need richer metadata."""
+        # Product-page HTML usually carries the richest label/value metadata, but
+        # collection JSON remains the cheaper default for batch-friendly sources.
+        html_soup: BeautifulSoup | None = None
+        html_facts: dict[str, str] = {}
+        res_html = self.session.get(url, timeout=15)
+        if res_html.status_code == 200:
+            html_soup = BeautifulSoup(res_html.text, "html.parser")
+            html_facts = self._extract_html_product_facts(html_soup)
+        elif res_html.status_code >= 400:
+            self._log_http_failure("fetch product HTML", url, res_html)
+        return html_soup, html_facts
+
     def parse_product(self, html: str, url: str) -> CoffeeData:
         """Prevent the base HTML parser path for JSON-driven Shopify products."""
         # Shopify product HTML is not parsed directly; ``scrape_product`` pairs
@@ -231,9 +290,21 @@ class ShopifyScraper(BaseScraper):
     def _canonical_product_url(self, url: str) -> str:
         """Strip collection prefixes so one Shopify item has one stored URL."""
         # The final path component is the product handle in both URL shapes.
+        # Locale prefixes come from COLLECTION_URL so /en stores stay on /en.
         parsed = urlparse(url)
         handle = parsed.path.rstrip("/").rsplit("/", 1)[-1]
-        return urljoin(self.BASE_URL, f"/products/{handle}")
+        return f"{self._storefront_origin()}{self._product_path_prefix()}/products/{handle}"
+
+    def _normalized_config_values(self, values: tuple[str, ...]) -> set[str]:
+        """Normalize source config text before comparing tags and type labels."""
+        # Product types and tags can differ by case, punctuation, or accents
+        # across locale-aware storefronts, so share the search-text normalizer.
+        return {value for raw_value in values if (value := normalize_search_text(raw_value))}
+
+    def _product_type(self, product_data: dict[str, Any]) -> str:
+        """Return the normalized Shopify product type for filter checks."""
+        raw_type = product_data.get("type") or product_data.get("product_type") or ""
+        return normalize_search_text(str(raw_type)) or ""
 
     def _normalize_tags(self, product_data: dict[str, Any]) -> set[str]:
         """Return lowercase Shopify tags independent of API string/list shape."""
@@ -241,7 +312,7 @@ class ShopifyScraper(BaseScraper):
         raw_tags = product_data.get("tags") or []
         if isinstance(raw_tags, str):
             raw_tags = [tag.strip() for tag in raw_tags.split(",") if tag.strip()]
-        return {str(tag).strip().lower() for tag in raw_tags if str(tag).strip()}
+        return {tag for raw_tag in raw_tags if (tag := normalize_search_text(str(raw_tag)))}
 
     def _is_excluded_handle(self, handle: str) -> bool:
         """Return whether a product handle belongs to a non-catalog item."""
@@ -252,16 +323,35 @@ class ShopifyScraper(BaseScraper):
         """Reject subscriptions and accept products satisfying source tag rules."""
         handle = str(product_data.get("handle") or "").lower()
         tags = self._normalize_tags(product_data)
+        product_type = self._product_type(product_data)
+        include_tags = self._normalized_config_values(self.INCLUDE_TAGS)
+        include_types = self._normalized_config_values(self.INCLUDE_PRODUCT_TYPES)
+        exclude_tags = self._normalized_config_values(self.EXCLUDE_TAGS)
+        exclude_types = self._normalized_config_values(self.EXCLUDE_PRODUCT_TYPES)
 
         # Excluded handles/tags catch subscription, gift, and kit-like products.
-        if self._is_excluded_handle(handle) or any(keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS):
+        if (
+            self._is_excluded_handle(handle)
+            or bool(tags.intersection(exclude_tags))
+            or (product_type in exclude_types)
+            or any(keyword in tags for keyword in self.EXCLUDE_HANDLE_KEYWORDS)
+        ):
             return False
 
-        # Some roasters tag coffee reliably; others configure INCLUDE_TAGS empty.
-        if self.INCLUDE_TAGS and tags.intersection({value.lower() for value in self.INCLUDE_TAGS}):
-            return True
+        # Some roasters tag coffee reliably; others need product type filters.
+        if include_tags or include_types:
+            return bool(tags.intersection(include_tags) or product_type in include_types)
 
-        return not self.INCLUDE_TAGS
+        return True
+
+    def _is_available_product(self, product_data: dict[str, Any]) -> bool:
+        """Return whether the Shopify product has at least one available variant."""
+        # Collection feeds can omit product-level availability; variant data is
+        # the source of truth for cart-usable availability when present.
+        variants = self._raw_variants(product_data)
+        if variants:
+            return any(bool(variant.get("available", True)) for variant in variants)
+        return bool(product_data.get("available", True))
 
     def _coffee_from_product(
         self,
@@ -689,3 +779,101 @@ class DeMelloScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "starter-kit", "instant-coffee")
     PRODUCT_FACT_SELECTORS = ("div.metafield-rich_text_field",)
+
+
+class HouseOfFunkScraper(ShopifyScraper):
+    """Shopify configuration for House of Funk products."""
+
+    # The coffee collection also exposes subscription and brew-gear products, so
+    # use product type instead of the broad Coffee tag.
+    BASE_URL = "https://www.houseoffunkbrewing.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "House of Funk"
+    ROASTER_NAME = "House of Funk"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee Beans",)
+
+
+class RogueWaveScraper(ShopifyScraper):
+    """Shopify configuration for Rogue Wave products."""
+
+    BASE_URL = "https://roguewavecoffee.ca"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "Rogue Wave"
+    ROASTER_NAME = "Rogue Wave Coffee"
+    INCLUDE_TAGS = ("coffee",)
+
+
+class QuietlyScraper(ShopifyScraper):
+    """Shopify configuration for Quietly products."""
+
+    # Quietly's collection includes apparel/subscriptions, while coffee products
+    # are consistently typed as Coffee.
+    BASE_URL = "https://www.quietlycoffee.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/our-coffee"
+    SOURCE_NAME = "Quietly"
+    ROASTER_NAME = "Quietly Coffee"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+
+
+class KohiScraper(ShopifyScraper):
+    """Shopify configuration for Kohi products."""
+
+    # Kohi's English storefront keeps product types/tags sparse, so the focused
+    # frontpage collection is the source boundary and handle/tag exclusions do cleanup.
+    BASE_URL = "https://kohi.ca/en"
+    COLLECTION_URL = f"{BASE_URL}/collections/frontpage"
+    SOURCE_NAME = "Kohi"
+    ROASTER_NAME = "Kohi"
+    INCLUDE_TAGS = ()
+    EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "carte", "cadeau", "boite", "trio")
+    EXCLUDE_TAGS = ("Cadeau", "Boite", "Trio", "Carte")
+
+
+class SubtextScraper(ShopifyScraper):
+    """Shopify configuration for Subtext products."""
+
+    BASE_URL = "https://www.subtext.coffee"
+    COLLECTION_URL = f"{BASE_URL}/collections/filter-coffee-beans"
+    SOURCE_NAME = "Subtext"
+    ROASTER_NAME = "Subtext Coffee"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+
+
+class ArteryScraper(ShopifyScraper):
+    """Shopify configuration for The Artery Community Roasters products."""
+
+    # The by-the-bag collection is already coffee-focused; product types and tags
+    # are blank, so rely on the collection path plus shared gift/subscription excludes.
+    BASE_URL = "https://thearterycommunityroasters.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/by-the-bag"
+    SOURCE_NAME = "The Artery"
+    ROASTER_NAME = "The Artery Community Roasters"
+    INCLUDE_TAGS = ()
+
+
+class EthicaScraper(ShopifyScraper):
+    """Shopify configuration for Ethica products."""
+
+    BASE_URL = "https://ethicaroasters.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/filter-coffee"
+    SOURCE_NAME = "Ethica"
+    ROASTER_NAME = "Ethica Coffee Roasters"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+
+
+class RabbitHoleScraper(ShopifyScraper):
+    """Shopify configuration for Rabbit Hole products."""
+
+    # Rabbit Hole's all-coffee collection can carry wholesale-only tags, but
+    # those products should not enter consumer cart recommendations.
+    BASE_URL = "https://www.rabbitholeroasters.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/all-coffee"
+    SOURCE_NAME = "Rabbit Hole"
+    ROASTER_NAME = "Rabbit Hole Roasters"
+    INCLUDE_TAGS = ("All Coffee",)
+    INCLUDE_PRODUCT_TYPES = ("Coffee",)
+    EXCLUDE_TAGS = ("wholesale-only",)

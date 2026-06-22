@@ -7,9 +7,17 @@ from typing import TypeAlias
 from gesha.scrapers.base_scraper import BaseScraper
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
+    ArteryScraper,
     ColorfullScraper,
     DeMelloScraper,
+    EthicaScraper,
+    HouseOfFunkScraper,
+    KohiScraper,
     PorteBleueScraper,
+    QuietlyScraper,
+    RabbitHoleScraper,
+    RogueWaveScraper,
+    SubtextScraper,
     TrafficScraper,
 )
 
@@ -22,6 +30,14 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "portebleue": PorteBleueScraper,
     "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
+    "houseoffunk": HouseOfFunkScraper,
+    "roguewave": RogueWaveScraper,
+    "quietly": QuietlyScraper,
+    "kohi": KohiScraper,
+    "subtext": SubtextScraper,
+    "artery": ArteryScraper,
+    "ethica": EthicaScraper,
+    "rabbithole": RabbitHoleScraper,
 }
 
 # ``all`` intentionally follows this tuple so default output order is stable.
@@ -31,6 +47,14 @@ DEFAULT_SOURCES = (
     "portebleue",
     "colorfull",
     "angry",
+    "houseoffunk",
+    "roguewave",
+    "quietly",
+    "kohi",
+    "subtext",
+    "artery",
+    "ethica",
+    "rabbithole",
 )
 
 

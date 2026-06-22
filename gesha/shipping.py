@@ -85,6 +85,25 @@ class ShippingThreshold:
     detected_live: bool
 
 
+TODO_SHIPPING_FALLBACK_CENTS: Final[int] = 5000
+TODO_SHIPPING_DETECTION_PATTERNS: Final[tuple[str, ...]] = (
+    r"free shipping.*?\$?(\d+(?:\.\d{1,2})?)",
+    r"orders?\s+(?:above|over)\s+\$?(\d+(?:\.\d{1,2})?)",
+)
+
+
+def _todo_shipping_policy(roaster_name: str, policy_url: str) -> ShippingPolicy:
+    """Create an explicitly temporary shipping policy for newly batched roasters."""
+    # TODO: Replace this $50 fallback with each roaster's verified threshold and
+    # policy-page regex before treating the policy data as final.
+    return ShippingPolicy(
+        roaster_name=roaster_name,
+        policy_url=policy_url,
+        fallback_cents={"CA": TODO_SHIPPING_FALLBACK_CENTS},
+        detection_patterns={"CA": TODO_SHIPPING_DETECTION_PATTERNS},
+    )
+
+
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     # These are known fallbacks plus regexes for refreshing against public
     # policy pages. Fallbacks keep cart optimization useful when pages change.
@@ -122,6 +141,36 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
         fallback_cents={"CA": 6500},
         detection_patterns={"CA": (r"free shipping\s+(?:for\s+)?orders\s+(?:above|over)\s+\$?(\d+(?:\.\d{1,2})?)",)},
     ),
+    "House of Funk": _todo_shipping_policy("House of Funk", "https://www.houseoffunkbrewing.com/"),
+    "Rogue Wave Coffee": _todo_shipping_policy("Rogue Wave Coffee", "https://roguewavecoffee.ca/"),
+    "Quietly Coffee": _todo_shipping_policy("Quietly Coffee", "https://www.quietlycoffee.com/"),
+    "Escape Coffee Roasters": _todo_shipping_policy("Escape Coffee Roasters", "https://escape.cafe/"),
+    "Pirates of Coffee": _todo_shipping_policy("Pirates of Coffee", "https://piratesofcoffee.com/"),
+    "94 Celcius": _todo_shipping_policy("94 Celcius", "https://94celcius.com/en"),
+    "Cafe Pista": _todo_shipping_policy("Cafe Pista", "https://cafepista.com/en"),
+    "Jungle Livraison Cafe": _todo_shipping_policy(
+        "Jungle Livraison Cafe",
+        "https://junglelivraisoncafe.com/collections/les-melanges",
+    ),
+    "Ambros Coffee": _todo_shipping_policy("Ambros Coffee", "https://ambroscoffee.com/"),
+    "Za & Klo": _todo_shipping_policy("Za & Klo", "https://zaandklo.com/"),
+    "Nektar Cafeologue": _todo_shipping_policy("Nektar Cafeologue", "https://nektar.ca/en"),
+    "September Coffee": _todo_shipping_policy("September Coffee", "https://september.coffee/"),
+    "Kohi": _todo_shipping_policy("Kohi", "https://kohi.ca/en/collections/frontpage"),
+    "Subtext Coffee": _todo_shipping_policy("Subtext Coffee", "https://www.subtext.coffee/"),
+    "Nucleus Coffee": _todo_shipping_policy("Nucleus Coffee", "https://nucleuscoffee.com/"),
+    "The Artery Community Roasters": _todo_shipping_policy(
+        "The Artery Community Roasters",
+        "https://thearterycommunityroasters.com/",
+    ),
+    "Sips Truck Coffee Roasters": _todo_shipping_policy("Sips Truck Coffee Roasters", "https://sipstruck.com/"),
+    "Monogram Coffee": _todo_shipping_policy("Monogram Coffee", "https://monogramcoffee.com/"),
+    "Ethica Coffee Roasters": _todo_shipping_policy("Ethica Coffee Roasters", "https://ethicaroasters.com/"),
+    "Rabbit Hole Roasters": _todo_shipping_policy(
+        "Rabbit Hole Roasters",
+        "https://www.rabbitholeroasters.com/",
+    ),
+    "Narval": _todo_shipping_policy("Narval", "https://narval.cafe/en"),
 }
 
 
