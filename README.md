@@ -112,6 +112,9 @@ gesha cart traffic --postal-code "M5V 3A8"
 # Override the published free-shipping threshold
 gesha cart demello --threshold 50
 
+# Download a roaster's raw Shopify collection JSON to <roaster>.json
+gesha json traffic
+
 # Save a product's raw HTML and Shopify JSON for parser debugging
 gesha debug 1
 ```

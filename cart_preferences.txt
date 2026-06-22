@@ -9,15 +9,20 @@
 @province ON
 # @postal-code M5V 3A8
 
-special
 anniversary
+special
 natural
+unique
+gesha
+geisha
 anaerobic
 co-ferment
 coferment
 cofermentation
 gesha
 floral
+funk
+tropical
 funky
 
 ! decaf
