@@ -19,3 +19,15 @@ https://monogramcoffee.com/collections/whole-bean-coffee
 https://ethicaroasters.com/collections/filter-coffee
 https://www.rabbitholeroasters.com/collections/all-coffee
 https://narval.cafe/en/collections/all
+
+===========================================================
+
+Added this round:
+- [x] roguewave: got proper tasting notes
+- [ ] houseoffunk: no notes
+- [ ] quietly: no notes, origin is a long description
+- [ ] kohi: everything is a bit noisy
+- [ ] subtext: missing process and origin, not sure there are any tasting notes online
+- [ ] artery: some noise in the process, and maybe skip the 125g bags? Tasting notes on point!
+- [ ] ethica: a bit like traffic, there's a few tasting notes then a big long description
+- [ ] rabbithole: no tasting notes, big description in the process

@@ -599,6 +599,42 @@ def test_rogue_wave_product_page_taste_list_supplies_tasting_notes() -> None:
     assert coffee.tasting_notes == ["peach", "milk chocolate", "apple", "almond", "tangerine"]
 
 
+def test_house_of_funk_short_description_supplies_tasting_notes() -> None:
+    """House of Funk notes live in a short product-page blurb."""
+    product = {
+        "title": "Sunday Morning",
+        "handle": "sunday-morning",
+        "price": 2200,
+        "available": True,
+        "type": "Coffee Beans",
+        "tags": ["Coffee"],
+        "description": "",
+        "variants": [{"id": 123, "title": "250g", "price": 2200, "grams": 250, "available": True}],
+    }
+    html = """
+    <div class="product-item__short-desc text-size--small">
+      <span class="text-color--opacity">
+        Caramelized banana, brown sugar, and warm spice. Bold, funky, and built like a morning hug.
+      </span>
+    </div>
+    """
+
+    coffee = HouseOfFunkScraper()._coffee_from_product(
+        product,
+        "https://www.houseoffunkbrewing.com/products/sunday-morning",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.tasting_notes == [
+        "caramelized banana",
+        "brown sugar",
+        "warm spice",
+        "bold",
+        "funky",
+        "built like a morning hug",
+    ]
+
+
 def test_traffic_product_uses_labeled_json_description_without_trailing_blurb() -> None:
     """Traffic collection JSON facts come from labeled HTML rows, not trailing prose."""
     # The trailing paragraphs should stop fact extraction before brewing advice.

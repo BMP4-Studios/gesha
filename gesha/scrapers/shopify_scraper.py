@@ -807,12 +807,40 @@ class HouseOfFunkScraper(ShopifyScraper):
 
     # The coffee collection also exposes subscription and brew-gear products, so
     # use product type instead of the broad Coffee tag.
+    # Notes live in a two-sentence product-page blurb, so hydrate HTML and keep
+    # the whole short description rather than guessing which sentence is "real".
     BASE_URL = "https://www.houseoffunkbrewing.com"
     COLLECTION_URL = f"{BASE_URL}/collections/coffee"
     SOURCE_NAME = "House of Funk"
     ROASTER_NAME = "House of Funk"
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Coffee Beans",)
+    HYDRATE_COLLECTION_PRODUCTS = True
+
+    def _extract_tasting_notes(
+        self,
+        description: str,
+        html_soup: BeautifulSoup | None = None,
+        page_facts: dict[str, str] | None = None,
+        json_facts: dict[str, str] | None = None,
+    ) -> list[str]:
+        """Extract House of Funk notes from the product-page short description."""
+        if html_soup:
+            target = html_soup.select_one("div.product-item__short-desc span.text-color--opacity")
+            if target:
+                # House of Funk's second sentence carries vibe words that are
+                # still useful for preference matching, so keep both sentences.
+                notes = normalize_tasting_notes(target.get_text(" ", strip=True))
+                if notes:
+                    return notes
+
+        # Fall back to the shared Shopify heuristics if the theme changes.
+        return super()._extract_tasting_notes(
+            description,
+            html_soup=html_soup,
+            page_facts=page_facts,
+            json_facts=json_facts,
+        )
 
 
 class RogueWaveScraper(ShopifyScraper):
