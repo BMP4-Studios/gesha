@@ -344,6 +344,79 @@ def test_refresh_catalog_continues_when_one_scraper_raises(
     assert "Finished Good" in output
 
 
+def test_scrape_serial_option_forces_one_worker(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The public --serial flag maps to the same worker count as --workers 1."""
+    calls: list[tuple[str, int | None]] = []
+
+    def fake_refresh_catalog(source: str, workers: int | None = None) -> None:
+        """Capture scrape orchestration arguments without network work."""
+        calls.append((source, workers))
+
+    monkeypatch.setattr(cli_main, "_refresh_catalog", fake_refresh_catalog)
+
+    cli_main.scrape(source="all", workers=4, serial=True)
+
+    assert calls == [("all", 1)]
+
+
+def test_refresh_catalog_workers_one_runs_scrapers_in_source_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Serial refresh contacts one roaster at a time in registry order."""
+    events: list[str] = []
+
+    class FirstScraper:
+        """First fixture scraper in source order."""
+
+        SOURCE_NAME = "First"
+        ROASTER_NAME = "First Roaster"
+
+        def scrape(self) -> list[object]:
+            """Record the serial execution order."""
+            events.append("first")
+            return []
+
+    class SecondScraper:
+        """Second fixture scraper in source order."""
+
+        SOURCE_NAME = "Second"
+        ROASTER_NAME = "Second Roaster"
+
+        def scrape(self) -> list[object]:
+            """Record the serial execution order."""
+            events.append("second")
+            return []
+
+    class FakeCoffeeService:
+        """Minimal service used by _refresh_catalog."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def list_coffees(self, *args: object, **kwargs: object) -> list[object]:
+            """Return no cached coffees for final rendering."""
+            return []
+
+        def create_or_update_coffee(self, coffee: object) -> None:
+            """Record no-op imports."""
+            return None
+
+        def delete_stale_coffees(self, roaster_name: str, current_urls: list[str]) -> int:
+            """Return no stale deletions."""
+            return 0
+
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "supported_sources", lambda: ["all", "first", "second"])
+    monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [FirstScraper(), SecondScraper()])
+
+    cli_main._refresh_catalog("all", workers=1)
+
+    assert events == ["first", "second"]
+
+
 def test_cart_all_roasters_come_from_scraper_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     """cart all follows supported scrapers, not the shipping policy keys."""
     monkeypatch.setattr(

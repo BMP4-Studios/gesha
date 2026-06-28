@@ -532,9 +532,7 @@ def test_next_batch_filters_non_bag_products_from_noisy_collections() -> None:
     assert not PiratesScraper()._is_coffee_product(
         {"handle": "treasure-box-brazil-crew-essentials", "type": "Coffee Beans", "tags": []}
     )
-    assert not ZaAndKloScraper()._is_coffee_product(
-        {"handle": "roasters-box-espresso", "type": "coffee", "tags": []}
-    )
+    assert not ZaAndKloScraper()._is_coffee_product({"handle": "roasters-box-espresso", "type": "coffee", "tags": []})
     assert not NektarScraper()._is_coffee_product(
         {"handle": "ensemble-decouverte-origine", "type": "Cafés", "tags": []}
     )
@@ -1119,11 +1117,11 @@ def test_quietly_description_spec_sheet_supplies_product_facts() -> None:
         "tags": [],
         "description": (
             '<div style="text-align: left;">'
-            '<p><strong>ORIGIN:<br></strong>'
+            "<p><strong>ORIGIN:<br></strong>"
             "I love bringing in fun decaf lots because I love great decaf! "
             "So could not say no to this tropical and fun lot from the Siane Organic Agriculture Cooperative "
             "located in the Chuave district within the province of Chimbu.</p>"
-            '<p><strong>FLAVOUR:</strong><br>'
+            "<p><strong>FLAVOUR:</strong><br>"
             "In the cup you can expect juicy citrus and malic acid.</p>"
             "</div>"
             '<div style="text-align: left;">'

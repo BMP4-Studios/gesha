@@ -1023,8 +1023,7 @@ class SubtextScraper(ShopifyScraper):
     HYDRATE_COLLECTION_PRODUCTS = True
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "sample-box", "test-batch")
     PRODUCT_FACT_SELECTORS = (
-        "div.shg-rich-text.shg-default-text-content:has(p:-soup-contains('Region'))"
-        ":has(p:-soup-contains('Process'))",
+        "div.shg-rich-text.shg-default-text-content:has(p:-soup-contains('Region')):has(p:-soup-contains('Process'))",
     )
 
 

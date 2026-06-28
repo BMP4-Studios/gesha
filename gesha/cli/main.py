@@ -117,6 +117,17 @@ rebuild_no_scrape_option = typer_option(
     "--no-scrape",
     help="Back up and recreate an empty database without scraping roaster websites.",
 )
+scrape_workers_option = typer_option(
+    None,
+    "--workers",
+    min=1,
+    help="Maximum roasters to scrape concurrently; use 1 for a gentler serial refresh.",
+)
+scrape_serial_option = typer_option(
+    False,
+    "--serial",
+    help="Scrape roasters one at a time. Equivalent to --workers 1.",
+)
 
 
 def _configure_logging() -> None:
@@ -217,7 +228,7 @@ def _selected_cart_roaster_names(source: str) -> list[str]:
     return [get_scraper(source).ROASTER_NAME]
 
 
-def _refresh_catalog(source: str) -> None:
+def _refresh_catalog(source: str, workers: int | None = None) -> None:
     """Scrape one or all sources, persist results, and print refreshed records."""
     # Create the database on first execution so a refresh is immediately usable.
     init_db()
@@ -239,48 +250,67 @@ def _refresh_catalog(source: str) -> None:
 
         scrapers = get_scrapers(source)
         refreshed_roaster_names: list[str] = []
+        worker_count = min(workers or len(scrapers), len(scrapers))
 
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             """Run a network scraper in a worker and retain source identity."""
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
             return scraper.SOURCE_NAME, scraper.ROASTER_NAME, scraper.scrape()
 
-        # Each roaster is independent, so fetch sources concurrently while
-        # serializing database writes in the owning command/session thread.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
-            future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
-            for future in concurrent.futures.as_completed(future_to_scraper):
-                scraper = future_to_scraper[future]
+        def log_scrape_failure(scraper: BaseScraper, exc: Exception) -> None:
+            """Report one scraper failure without aborting the whole refresh."""
+            # Keep full exception details in the log file while letting the
+            # other roasters finish normally.
+            logging.getLogger(__name__).debug(
+                "Scraper failed for %s",
+                scraper.SOURCE_NAME,
+                exc_info=True,
+            )
+            console.print(f"[red]Failed {scraper.SOURCE_NAME}: {exc}[/red]")
+
+        def persist_scrape_result(source_name: str, roaster_name: str, scraped_coffees: list[CoffeeData]) -> None:
+            """Write one scraper result after network work has completed."""
+            # Upsert current products before trimming rows no longer found on
+            # this successfully returned roaster listing.
+            for coffee in scraped_coffees:
+                service.create_or_update_coffee(coffee)
+
+            if scraped_coffees:
+                refreshed_roaster_names.append(roaster_name)
+                current_urls = [coffee.url for coffee in scraped_coffees if coffee.url]
+                removed_count = service.delete_stale_coffees(roaster_name, current_urls)
+            else:
+                removed_count = 0
+                console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
+
+            console.print(
+                f"[green]Finished {source_name}: {len(scraped_coffees)} imported, "
+                f"{removed_count} stale removed.[/green]"
+            )
+
+        if worker_count == 1:
+            # Serial mode is gentler on storefronts because only one roaster is
+            # contacted at a time. Database writes already happen in this thread.
+            for scraper in scrapers:
                 try:
-                    source_name, roaster_name, scraped_coffees = future.result()
+                    source_name, roaster_name, scraped_coffees = run_scraper(scraper)
                 except Exception as exc:
-                    # Keep full exception details in the log file while letting
-                    # the other roasters finish normally.
-                    logging.getLogger(__name__).debug(
-                        "Scraper failed for %s",
-                        scraper.SOURCE_NAME,
-                        exc_info=True,
-                    )
-                    console.print(f"[red]Failed {scraper.SOURCE_NAME}: {exc}[/red]")
+                    log_scrape_failure(scraper, exc)
                     continue
-
-                # Upsert current products before trimming rows no longer found
-                # on this successfully returned roaster listing.
-                for coffee in scraped_coffees:
-                    service.create_or_update_coffee(coffee)
-
-                if scraped_coffees:
-                    refreshed_roaster_names.append(roaster_name)
-                    current_urls = [coffee.url for coffee in scraped_coffees if coffee.url]
-                    removed_count = service.delete_stale_coffees(roaster_name, current_urls)
-                else:
-                    removed_count = 0
-                    console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
-
-                console.print(
-                    f"[green]Finished {source_name}: {len(scraped_coffees)} imported, "
-                    f"{removed_count} stale removed.[/green]"
-                )
+                persist_scrape_result(source_name, roaster_name, scraped_coffees)
+        else:
+            # Each roaster is independent, so fetch sources concurrently while
+            # serializing database writes in the owning command/session thread.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
+                future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
+                for future in concurrent.futures.as_completed(future_to_scraper):
+                    scraper = future_to_scraper[future]
+                    try:
+                        source_name, roaster_name, scraped_coffees = future.result()
+                    except Exception as exc:
+                        log_scrape_failure(scraper, exc)
+                        continue
+                    persist_scrape_result(source_name, roaster_name, scraped_coffees)
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
         # An all-source refresh displays only successfully returned roasters;
@@ -382,6 +412,8 @@ def scrape(
         "all",
         help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog.",
     ),
+    workers: int | None = scrape_workers_option,
+    serial: bool = scrape_serial_option,
 ) -> None:
     """Refresh the local database by scraping roaster websites.
 
@@ -391,7 +423,7 @@ def scrape(
     """
     # All scrape orchestration lives in one helper so the no-argument callback
     # and explicit ``gesha scrape`` command behave the same way.
-    _refresh_catalog(source)
+    _refresh_catalog(source, workers=1 if serial else workers)
 
 
 @app.command()

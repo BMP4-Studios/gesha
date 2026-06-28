@@ -89,6 +89,12 @@ gesha init
 # Refresh every supported roaster
 gesha scrape
 
+# Refresh every supported roaster one at a time, which is gentler on storefronts
+gesha scrape --serial
+
+# Limit scrape concurrency explicitly
+gesha scrape --workers 2
+
 # Refresh one roaster
 gesha scrape traffic
 

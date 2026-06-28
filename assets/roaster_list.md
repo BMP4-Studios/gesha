@@ -35,8 +35,8 @@ Added this round:
 - [x] pirates
 - [x] 94celcius
 - [x] cafepista
-- [x] jungle (juste les funky, probablement devrais prendre plus)
-- [x] zaandklo
+- [x] jungle: we're just scraping the funky section, but maybe we should scrape all coffees?
+- [x] zaandklo: missing process
 - [x] nektar
 - [x] september
 - [x] monogram
