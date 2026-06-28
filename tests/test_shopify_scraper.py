@@ -392,7 +392,16 @@ def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch
         "type": "",
         "tags": [],
         "description": "",
-        "variants": [{"id": 133, "title": "250g", "price": 3400, "available": True}],
+        "variants": [
+            {
+                "id": 133,
+                "title": "Default Title",
+                "sku": "COL-AFB-200",
+                "price": 3400,
+                "weight": 200,
+                "available": True,
+            }
+        ],
     }
 
     def fake_get(url: str, *args, **kwargs) -> FakeShopifyResponse:
@@ -424,6 +433,8 @@ def test_colorfull_scrape_uses_product_pages_for_richer_source_facts(monkeypatch
     assert len(coffees) == 1
     assert coffees[0].name == "apple fritter - blend"
     assert coffees[0].process == "natural"
+    assert coffees[0].bag_size == "200g"
+    assert coffees[0].variants[0].weight_grams == 200
     assert coffees[0].tasting_notes == ["candied apple", "cinnamon", "green jolly rancher"]
 
 

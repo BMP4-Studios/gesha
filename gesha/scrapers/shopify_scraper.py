@@ -777,6 +777,10 @@ class ShopifyScraper(BaseScraper):
             converted = weight_to_grams(weight, unit)
             if converted is not None:
                 return converted
+        if isinstance(weight, int | float) and weight > 0:
+            # Some product ``.js`` payloads omit ``weight_unit`` but still store
+            # the variant weight in grams, as Shopify's storefront JSON commonly does.
+            return round(float(weight))
 
         # Variant labels are the final fallback, e.g. "300g" or "2lb".
         for field in ("title", "public_title", "option1", "sku", "name"):
