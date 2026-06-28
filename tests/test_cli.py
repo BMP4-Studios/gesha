@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import closing
+from pathlib import Path
 from types import SimpleNamespace
 
 import gesha.cli.main as cli_main
@@ -164,14 +165,16 @@ def test_fix_tasting_notes_downloads_collection_and_missing_product_debug(
             assert roaster_name == "Traffic Coffee"
             return [missing_notes, parsed_notes]
 
-    def fake_debug(coffee_id: int) -> None:
+    def fake_write_cached_raw_debug_data(coffee_id: int) -> Path:
         """Write the product debug file that the diagnostic command should scan."""
         debug_calls.append(coffee_id)
         cli_main.DEBUG_DIR.mkdir(exist_ok=True)
-        (cli_main.DEBUG_DIR / f"debug_{coffee_id}.txt").write_text(
+        debug_path = cli_main.DEBUG_DIR / f"debug_{coffee_id}.txt"
+        debug_path.write_text(
             "=== RAW HTML DATA ===\nDebug Coffee tasting notes: Peach",
             encoding="utf-8",
         )
+        return debug_path
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(scraper, "session", fake_session)
@@ -179,7 +182,7 @@ def test_fix_tasting_notes_downloads_collection_and_missing_product_debug(
     monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
-    monkeypatch.setattr(cli_main, "debug", fake_debug)
+    monkeypatch.setattr(cli_main, "_write_cached_raw_debug_data", fake_write_cached_raw_debug_data)
 
     cli_main.fix_tasting_notes("traffic", search="Debug Coffee|tasting", limit=2)
 
@@ -230,13 +233,13 @@ def test_rebuild_backs_up_resets_and_scrapes(
     assert marker_count == 1
 
 
-def test_cart_debug_explains_unavailable_keyword_match(
+def test_debug_explains_unavailable_keyword_match(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A matching coffee can still be skipped when availability/variants fail."""
-    # Preferences include both matches and exclusions so cart-debug prints each path.
+    # Preferences include both matches and exclusions so debug prints each path.
     preferences = tmp_path / "preferences.txt"
     preferences.write_text("gesha\ncoferment\n! decaf\n", encoding="utf-8")
 
@@ -260,6 +263,7 @@ def test_cart_debug_explains_unavailable_keyword_match(
             )
         ],
     )
+    transport = FakeDebugTransport()
 
     class FakeCoffeeService:
         """Return the fixture coffee without touching a real database."""
@@ -273,17 +277,24 @@ def test_cart_debug_explains_unavailable_keyword_match(
             return coffee if coffee_id == 25 else None
 
     # Replace database access with the fixture service while keeping command code intact.
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(
+        cli_main,
+        "get_scrapers",
+        lambda source: [SimpleNamespace(ROASTER_NAME="Test Roaster", session=transport)],
+    )
 
-    cli_main.cart_debug(25, preferences=preferences)
+    cli_main.debug(25, preferences=preferences)
 
     output = capsys.readouterr().out
     assert "Skipped" in output
     assert "gesha" in output
     assert "Coffee is marked unavailable" in output
     assert "unavailable" in output
+    assert (tmp_path / "debug" / "debug_25.txt").exists()
 
 
 def test_refresh_catalog_continues_when_one_scraper_raises(
@@ -465,12 +476,13 @@ def test_debug_uses_scraper_transport(
         raise AssertionError("plain requests should not be used")
 
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
     monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [fake_scraper])
     monkeypatch.setattr(cli_main.requests, "get", fail_plain_requests)
 
-    cli_main.debug(7)
+    cli_main.debug(7, preferences=cli_main.DEFAULT_PREFERENCES_PATH)
 
     assert transport.calls == [
         (

@@ -676,7 +676,7 @@ def _format_keyword_matches(keywords: Sequence[str]) -> str:
 
 def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     """Explain whether one variant can be selected for cart recommendations."""
-    # Collect every blocker so cart-debug can explain the whole decision at once.
+    # Collect every blocker so debug can explain the whole decision at once.
     reasons: list[str] = []
     if not variant.availability:
         reasons.append("unavailable")
@@ -697,119 +697,153 @@ def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     return True, "usable"
 
 
-@app.command(name="cart-debug")
-def cart_debug(
-    coffee_id: int,
-    preferences: Path = preferences_file_option,
-) -> None:
+def _print_cart_eligibility_debug(coffee_id: int, coffee: Coffee, preference_config: PreferenceConfig) -> None:
     """Explain why one cached coffee is or is not eligible for cart output."""
-    # Start with the same preference parsing as ``gesha cart`` so diagnostics
-    # describe the real cart command behavior.
-    try:
-        preference_config = _read_preferences_for_command(preferences)
-    except ValueError as exc:
-        console.print(f"[red]Error: {exc}[/red]")
-        raise typer.Exit(code=1) from exc
+    # Gather the same matching and variant-selection evidence used by carts.
+    include_matches = matched_keywords(coffee, preference_config.keywords)
+    exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
+    selected_variant = smallest_available_variant(coffee)
+    cart_item = cart_item_for_coffee(
+        coffee,
+        preference_config.keywords,
+        preference_config.excluded_keywords,
+    )
 
-    # The database may not exist on a fresh checkout; initialize it before lookup.
-    init_db()
+    # Reasons explain hard skips; warnings explain usable recommendations
+    # that may still be missing a pre-filled Shopify cart URL.
+    reasons: list[str] = []
+    warnings: list[str] = []
+    if not coffee.availability:
+        reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
+    if exclude_matches:
+        reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
+    if not include_matches:
+        reasons.append("Coffee does not match any include keyword.")
+    if coffee.url is None:
+        reasons.append("Coffee has no product URL.")
+    if not coffee.variants:
+        reasons.append("Coffee has no cached Shopify variants.")
+    elif selected_variant is None:
+        reasons.append(
+            "No variant is available that is retail-sized, priced, weighted, and within the "
+            f"{MAX_CART_BAG_WEIGHT_GRAMS}g bag cap."
+        )
+    if cart_item is not None and cart_item.variant_id is None:
+        warnings.append("Selected variant has no Shopify variant ID, so a pre-filled cart link cannot be built.")
+
+    is_cart_eligible = coffee.availability and cart_item is not None
+    result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
+
+    # The summary table mirrors the high-level cart eligibility decision.
+    console.print(f"[bold cyan]Cart eligibility for coffee #{coffee_id}[/bold cyan]")
+    summary = Table(show_header=False)
+    summary.add_row("Result", result)
+    summary.add_row("Roaster", coffee.roaster.name)
+    summary.add_row("Name", coffee.name)
+    summary.add_row("Availability", "yes" if coffee.availability else "no")
+    summary.add_row("Include matches", _format_keyword_matches(include_matches))
+    summary.add_row("Exclude matches", _format_keyword_matches(exclude_matches))
+    summary.add_row("URL", coffee.url or NA_LABEL)
+    if selected_variant is not None:
+        summary.add_row(
+            "Selected variant",
+            (
+                f"{selected_variant.name} / {selected_variant.bag_size or NA_LABEL} / "
+                f"{price_display(selected_variant.price_cents)} / {selected_variant.weight_grams}g"
+            ),
+        )
+    else:
+        summary.add_row("Selected variant", NA_LABEL)
+    console.print(summary)
+
+    # Keep skip explanations separate from the data table for quick scanning.
+    if reasons:
+        console.print("[bold]Skip reason(s):[/bold]")
+        for reason in reasons:
+            console.print(f" - {reason}")
+    else:
+        console.print("[green]No skip reasons found.[/green]")
+
+    if warnings:
+        console.print("[bold yellow]Warning(s):[/bold yellow]")
+        for warning in warnings:
+            console.print(f" - {warning}")
+
+    # Variant-by-variant diagnostics show why the selected variant won, or why
+    # no variant was eligible.
+    variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
+    variants.add_column("Selected")
+    variants.add_column("Variant")
+    variants.add_column("Available")
+    variants.add_column("Weight", justify="right")
+    variants.add_column("Price", justify="right")
+    variants.add_column("Cart status")
+    for variant in coffee.variants:
+        _, status = _variant_cart_usability(variant)
+        variants.add_row(
+            "yes" if selected_variant is variant else "",
+            variant.name,
+            "yes" if variant.availability else "no",
+            f"{variant.weight_grams}g" if variant.weight_grams is not None else NA_LABEL,
+            price_display(variant.price_cents),
+            status,
+        )
+    console.print(variants)
+
+
+def _write_raw_debug_data(coffee_id: int, coffee: Coffee) -> Path:
+    """Fetch and write raw source responses for one cached coffee."""
+    # Older rows or manual fixtures can lack URLs, which makes raw capture impossible.
+    if not coffee.url:
+        console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
+        raise typer.Exit(code=1)
+
+    # One debug file contains both JSON and HTML so parser fixtures can be
+    # derived from a single capture when a roaster changes its page shape.
+    output_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
+    output_path.parent.mkdir(exist_ok=True)
+    output: list[str] = [f"=== PRODUCT URL ===\n{coffee.url}\n\n"]
+    scraper = _scraper_for_roaster_name(coffee.roaster.name)
+    transport = cast(Any, scraper.session if scraper is not None else requests)
+
+    # Capture a Shopify-style JSON response when supported; a missing JSON
+    # endpoint is tolerated because non-Shopify records are also debuggable.
+    json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
+    json_headers = None
+    if scraper is not None:
+        json_headers = transport.headers.copy()
+        json_headers["Referer"] = coffee.url
+    res_json = transport.get(json_url, headers=json_headers, timeout=15)
+    if res_json.status_code == 200:
+        output.append("=== RAW JSON DATA ===\n")
+        output.append(res_json.text)
+        output.append("\n\n")
+
+    # The HTML response is always included because each parser may depend on
+    # selectors or embedded page payloads not represented in JSON.
+    res_html = transport.get(coffee.url, timeout=15)
+    res_html.raise_for_status()
+    output.append("=== RAW HTML DATA ===\n")
+    output.append(res_html.text)
+
+    output_path.write_text("".join(output), encoding="utf-8")
+    return output_path
+
+
+def _write_cached_raw_debug_data(coffee_id: int) -> Path:
+    """Load one cached coffee and write its raw debug artifact."""
+    # Keep this separate from the public debug command so batch diagnostics can
+    # gather raw files without also printing cart eligibility tables each time.
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
+
+        # Fail before making network requests if there is no cached target.
         if coffee is None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
-        # Gather the same matching and variant-selection evidence used by carts.
-        include_matches = matched_keywords(coffee, preference_config.keywords)
-        exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
-        selected_variant = smallest_available_variant(coffee)
-        cart_item = cart_item_for_coffee(
-            coffee,
-            preference_config.keywords,
-            preference_config.excluded_keywords,
-        )
-
-        # Reasons explain hard skips; warnings explain usable recommendations
-        # that may still be missing a pre-filled Shopify cart URL.
-        reasons: list[str] = []
-        warnings: list[str] = []
-        if not coffee.availability:
-            reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
-        if exclude_matches:
-            reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
-        if not include_matches:
-            reasons.append("Coffee does not match any include keyword.")
-        if coffee.url is None:
-            reasons.append("Coffee has no product URL.")
-        if not coffee.variants:
-            reasons.append("Coffee has no cached Shopify variants.")
-        elif selected_variant is None:
-            reasons.append(
-                "No variant is available, retail-sized, priced, weighted, and within the "
-                f"{MAX_CART_BAG_WEIGHT_GRAMS}g bag cap."
-            )
-        if cart_item is not None and cart_item.variant_id is None:
-            warnings.append("Selected variant has no Shopify variant ID, so a pre-filled cart link cannot be built.")
-
-        is_cart_eligible = coffee.availability and cart_item is not None
-        result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
-
-        # The summary table mirrors the high-level cart eligibility decision.
-        console.print(f"[bold cyan]Cart debug for coffee #{coffee_id}[/bold cyan]")
-        summary = Table(show_header=False)
-        summary.add_row("Result", result)
-        summary.add_row("Roaster", coffee.roaster.name)
-        summary.add_row("Name", coffee.name)
-        summary.add_row("Availability", "yes" if coffee.availability else "no")
-        summary.add_row("Include matches", _format_keyword_matches(include_matches))
-        summary.add_row("Exclude matches", _format_keyword_matches(exclude_matches))
-        summary.add_row("URL", coffee.url or NA_LABEL)
-        if selected_variant is not None:
-            summary.add_row(
-                "Selected variant",
-                (
-                    f"{selected_variant.name} / {selected_variant.bag_size or NA_LABEL} / "
-                    f"{price_display(selected_variant.price_cents)} / {selected_variant.weight_grams}g"
-                ),
-            )
-        else:
-            summary.add_row("Selected variant", NA_LABEL)
-        console.print(summary)
-
-        # Keep skip explanations separate from the data table for quick scanning.
-        if reasons:
-            console.print("[bold]Skip reason(s):[/bold]")
-            for reason in reasons:
-                console.print(f" - {reason}")
-        else:
-            console.print("[green]No skip reasons found.[/green]")
-
-        if warnings:
-            console.print("[bold yellow]Warning(s):[/bold yellow]")
-            for warning in warnings:
-                console.print(f" - {warning}")
-
-        # Variant-by-variant diagnostics show why the selected variant won, or
-        # why no variant was eligible.
-        variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
-        variants.add_column("Selected")
-        variants.add_column("Variant")
-        variants.add_column("Available")
-        variants.add_column("Weight", justify="right")
-        variants.add_column("Price", justify="right")
-        variants.add_column("Cart status")
-        for variant in coffee.variants:
-            _, status = _variant_cart_usability(variant)
-            variants.add_row(
-                "yes" if selected_variant is variant else "",
-                variant.name,
-                "yes" if variant.availability else "no",
-                f"{variant.weight_grams}g" if variant.weight_grams is not None else NA_LABEL,
-                price_display(variant.price_cents),
-                status,
-            )
-        console.print(variants)
+        return _write_raw_debug_data(coffee_id, coffee)
 
 
 @app.command()
@@ -976,10 +1010,18 @@ def cart(
 
 
 @app.command()
-def debug(coffee_id: int) -> None:
-    """Fetch raw source responses for a cached coffee to help parser debugging."""
+def debug(
+    coffee_id: int,
+    preferences: Path = preferences_file_option,
+) -> None:
+    """Explain cart eligibility and fetch raw source responses for one cached coffee."""
+    try:
+        preference_config = _read_preferences_for_command(preferences)
+    except ValueError as exc:
+        console.print(f"[red]Error: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
 
-    # The cached row gives us the canonical URL that the scraper stored.
+    init_db()
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
@@ -989,40 +1031,10 @@ def debug(coffee_id: int) -> None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
-        # Older rows or manual fixtures can lack URLs, which makes raw capture impossible.
-        if not coffee.url:
-            console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
-            raise typer.Exit(code=1)
-
-        # One debug file contains both JSON and HTML so parser fixtures can be
-        # derived from a single capture when a roaster changes its page shape.
-        output_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
-        output_path.parent.mkdir(exist_ok=True)
-        output: list[str] = [f"=== PRODUCT URL ===\n{coffee.url}\n\n"]
-        scraper = _scraper_for_roaster_name(coffee.roaster.name)
-        transport = cast(Any, scraper.session if scraper is not None else requests)
-
-        # Capture a Shopify-style JSON response when supported; a missing JSON
-        # endpoint is tolerated because non-Shopify records are also debuggable.
-        json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
-        json_headers = None
-        if scraper is not None:
-            json_headers = transport.headers.copy()
-            json_headers["Referer"] = coffee.url
-        res_json = transport.get(json_url, headers=json_headers, timeout=15)
-        if res_json.status_code == 200:
-            output.append("=== RAW JSON DATA ===\n")
-            output.append(res_json.text)
-            output.append("\n\n")
-
-        # The HTML response is always included because each parser may depend
-        # on selectors or embedded page payloads not represented in JSON.
-        res_html = transport.get(coffee.url, timeout=15)
-        res_html.raise_for_status()
-        output.append("=== RAW HTML DATA ===\n")
-        output.append(res_html.text)
-
-        output_path.write_text("".join(output), encoding="utf-8")
+        # The public debug command combines the old cart eligibility diagnostic
+        # with the raw JSON/HTML capture so one ID answers both common questions.
+        _print_cart_eligibility_debug(coffee_id, coffee, preference_config)
+        output_path = _write_raw_debug_data(coffee_id, coffee)
 
         console.print(f"[green]Full raw data dumped to {output_path}[/green]")
 
@@ -1086,14 +1098,14 @@ def fix_tasting_notes(
         console.print(
             f"[yellow]{len(missing_notes)} cached {scraper.ROASTER_NAME} coffees are missing tasting notes.[/yellow]"
         )
-        # Copy IDs out of the session before calling debug(), which opens its own
-        # short read session and writes the product artifacts.
+        # Copy IDs out of the session before writing raw artifacts, because the
+        # helper opens its own short read session for each selected product.
         debug_ids = [coffee.id for coffee in missing_notes[:limit] if coffee.id is not None]
 
     for coffee_id in debug_ids:
         # Product debug files include both Shopify .js and rendered HTML; the
         # HTML side is usually where theme-specific note selectors are discovered.
-        debug(coffee_id)
+        _write_cached_raw_debug_data(coffee_id)
         product_debug_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
         if product_debug_path.exists():
             _print_debug_matches(product_debug_path, pattern)

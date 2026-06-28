@@ -101,8 +101,14 @@ gesha scrape traffic
 # Back up gesha.db, wipe the cache, recreate tables, and scrape every roaster
 gesha rebuild
 
+# Recreate the database without scraping, useful before controlled manual refreshes
+gesha rebuild --no-scrape
+
 # List previously scraped coffees without making network requests
 gesha list
+
+# Same cached listing command under its older alias
+gesha cache
 
 # Filter the cached catalog
 gesha list --process washed
@@ -122,21 +128,25 @@ gesha cart traffic --postal-code "M5V 3A8"
 # Override the published free-shipping threshold
 gesha cart demello --threshold 50
 
-# Explain why one cached coffee is included in or skipped from cart recommendations
-gesha cart-debug 25
+# Use configured fallback shipping thresholds without visiting policy pages
+gesha cart monogram --no-refresh-shipping
 
 # Download a roaster's raw Shopify collection JSON to debug/<roaster>.json
 gesha json traffic
 
-# Save a product's raw HTML and Shopify JSON for parser debugging
+# Explain cart eligibility and save raw product HTML/JSON for parser debugging
 gesha debug 1
 
 # Gather collection and product debug files for coffees missing tasting notes
 gesha fix-tasting-notes roguewave --search "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting"
+
+# Run the test suite through the current Python environment
+gesha test
 ```
 
-`gesha cache` is an alias for `gesha list`. Run `gesha --help` or `gesha <command> --help` for the complete command
-reference.
+The command examples above cover every CLI command: default `gesha`, `init`, `scrape`, `rebuild`, `list`, `cache`,
+`show`, `cart`, `json`, `debug`, `fix-tasting-notes`, and `test`. Run `gesha --help` or
+`gesha <command> --help` for all options.
 
 Supported scrape keys are:
 
@@ -170,8 +180,8 @@ all
 ## Debugging missing tasting notes
 
 Missing tasting notes usually mean the fast Shopify collection JSON does not contain the same rich copy that appears on
-the product page. Use `gesha json` to inspect the collection feed and `gesha debug` to inspect one cached product's page
-HTML plus product JSON.
+the product page. Use `gesha json` to inspect the collection feed and `gesha debug` to inspect one cached product's cart
+eligibility, page HTML, and product JSON.
 
 Start with a cached product that is missing notes:
 
