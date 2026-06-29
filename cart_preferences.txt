@@ -19,12 +19,22 @@ anaerobic
 co-ferment
 coferment
 cofermentation
-gesha
 tropical
 floral
 funk
 funky
 pungent
+jasmine
+cantaloupe
+berries
+mango
+raspberry
+grape
+peach
+strawberry
+blackberry
+tangerine
+lime
 fruit
 
 ! decaf
