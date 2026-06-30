@@ -1010,6 +1010,8 @@ class KohiScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "carte", "cadeau", "boite", "trio")
     EXCLUDE_TAGS = ("Cadeau", "Boite", "Trio", "Carte")
+    # TASTING_NOTE_SELECTORS = ("p:-soup-contains('Notes de dégustation')",)
+    TASTING_NOTE_SELECTORS = ("Notes de dégustation",)
 
 
 class SubtextScraper(ShopifyScraper):

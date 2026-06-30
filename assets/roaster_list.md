@@ -9,7 +9,15 @@
 - [ ] roguewave: has espresso in all its descriptions so we skip all coffees
 - [x] houseoffunk
 - [x] quietly
-- [ ] kohi; notes are simply "classic" or "funky" lol
+- [ ] kohi; notes are simply "classic" or "funky" lol. The issue is that the notes are in the raw json data, and I'm not sure how to specify the way to get there:
+
+=== RAW JSON DATA ===
+{
+  "id":8280273485868,
+  "title":"ROYAL CASSIS (Kenya)",
+  "handle":"royal-cassis-kenya",
+  "description":"\u003cp\u003eProfile: FUNKY\u003c\/p\u003e\n\u003cp class=\"p1\"\u003e\u003cem\u003eNotes de dégustation\u003c\/em\u003e: BLACKCURRANT, BUN, HONEY\u003c\/
+
 - [x] subtext
 - [ ] artery: bunch of tasting notes in origin
 - [x] ethica
