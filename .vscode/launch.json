@@ -7,7 +7,7 @@
       "request": "launch",
       "module": "gesha.cli.main",
       "python": "${workspaceFolder}/.venv/bin/python",
-      "args": ["scrape", "kohi"],
+      "args": ["scrape", "roguewave"], // <== CHANGE ROASTER HERE
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
       "justMyCode": true,

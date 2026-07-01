@@ -397,6 +397,11 @@ class ShopifyScraper(BaseScraper):
         # Prefer explicit page labels, then Shopify description labels, then
         # title/handle heuristics only for fields those sources express safely.
         origin = _first_non_blank(page_facts.get("origin"), json_facts.get("origin"), title_facts.get("origin"))
+        # Some roasters like to put some novels in the origin field, so truncate to a reasonable number of words
+        if origin and len(origin) > 100:
+            words = origin.split()
+            origin = " ".join(words[:5])
+
         producer = _first_non_blank(page_facts.get("producer"), json_facts.get("producer"))
         process = _first_non_blank(
             page_facts.get("process"),
@@ -653,16 +658,14 @@ class ShopifyScraper(BaseScraper):
         """Extract source-ordered notes from configured product-page selectors."""
         selected_notes: list[str] = []
 
-        # Element selectors are for markup like <li>Peach</li>, where each
-        # matched node is already one note.
+        # Element selectors are for markup like <li>Peach</li>, where each matched node is already one note.
         self._append_unique_notes_from_selectors(
             html_soup,
             self.TASTING_NOTE_SELECTORS,
             selected_notes,
         )
 
-        # Text selectors are for markup like a short description span, where one
-        # matched node contains a comma/sentence-separated note string.
+        # Text selectors are for markup like a short description span, where one matched node contains a comma/sentence-separated note string.
         self._append_unique_notes_from_selectors(
             html_soup,
             self.TASTING_NOTE_TEXT_SELECTORS,
