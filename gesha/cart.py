@@ -199,8 +199,7 @@ def cart_item_for_coffee(
     excluded_keywords: tuple[str, ...] = (),
 ) -> CartItem | None:
     """Build an optimizer item from a coffee's smallest available variant."""
-    # Exclusions are checked before includes so a disliked process/producer can
-    # remove a coffee even when it also matches a positive keyword.
+    # Exclusions are checked before includes so a disliked process/producer can remove a coffee even when it also matches a positive keyword.
     if matched_keywords(coffee, excluded_keywords):
         return None
 
