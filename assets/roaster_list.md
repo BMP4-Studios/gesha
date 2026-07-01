@@ -5,6 +5,7 @@
 - [ ] the free shipping line says "Estimated free-shipping threshold: $60.00 (live policy page)" -- it should clearly say whether it's estimated or fetched lol, not both
 - [ ] would be cool to either hardcode some keywords to avoid for specific roasters, e.g., roguewave cannot exclude espresso because all coffees have it, and also be able to do something like `gesha cart roguewave +espresso`
 - [ ] there's a mismatch between commands where you can do `gesha cart 94celcius` but can't do `gesha list --roaster 94celcius`, you have to do `gesha list --roaster 94`
+
 ---
 
 # All good
@@ -29,12 +30,13 @@
 - [x] september
 - [x] monogram
 - [x] narval
+- [x] 94celcius: list is working but cart isn't; see issue above, it might be relevant
+- [x] nektar: cart not returning anything, not sure why
 
 # Issues
 
-- [ ] 94celcius: list is working but cart isn't; see issue above, it might be relevant
 - [ ] zaandklo: missing process
-- [ ] nektar: cart not returning anything, not sure why
+
 
 # Still to implement
 - [ ] [ambros](https://ambroscoffee.com/): Shopify, but product metadata is still too inconsistent for a clean shared parser config.

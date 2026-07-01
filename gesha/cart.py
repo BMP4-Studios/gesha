@@ -202,8 +202,8 @@ def cart_item_for_coffee(
     # Exclusions are checked before includes so a disliked process/producer can remove a coffee even when it also matches a positive keyword.
     excluded_matches = matched_keywords(coffee, excluded_keywords)
     if excluded_matches:
-        # skip_espresso_exclusion = coffee.roaster.name.casefold().__contains__("nektar" or "94 celcius")
-        skip_espresso_exclusion = coffee.roaster.name.casefold().__contains__("94 celcius") or coffee.roaster.name.casefold().__contains__("nektar")
+        roaster_name = coffee.roaster.name.casefold()
+        skip_espresso_exclusion = any(name in roaster_name for name in ("94 celcius", "nektar"))
         if not (skip_espresso_exclusion and any(match.casefold() == "espresso" for match in excluded_matches)):
             return None
 
