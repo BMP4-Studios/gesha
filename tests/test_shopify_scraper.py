@@ -842,6 +842,24 @@ def test_cafe_pista_rte_description_supplies_product_facts() -> None:
     assert coffee.tasting_notes == ["apple", "citrus", "caramel"]
 
 
+def test_kohi_tasting_note_heading_falls_back_to_next_line() -> None:
+    """A tasting-note heading should use the next line as the first note entry."""
+    product = {
+        "title": "Royal Cassis",
+        "handle": "royal-cassis",
+        "price": 2800,
+        "available": True,
+        "type": "Coffee",
+        "tags": [],
+        "description": "<p>Profile: FUNKY</p><p>Tasting notes</p><p>Blackcurrant, Bun, Honey</p>",
+        "variants": [{"id": 123, "title": "250g", "price": 2800, "grams": 250, "available": True}],
+    }
+
+    coffee = KohiScraper()._coffee_from_product(product, "https://kohi.ca/en/products/royal-cassis")
+
+    assert coffee.tasting_notes == ["blackcurrant", "bun", "honey"]
+
+
 def test_94_celcius_leading_note_fallbacks_supply_notes() -> None:
     """Short note headings and x-separated note lines are accepted fallbacks."""
     decaf = {

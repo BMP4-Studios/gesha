@@ -623,9 +623,14 @@ class ShopifyScraper(BaseScraper):
             # Some themes put notes in compact leading lines before a roast scale or marketing description.
             # Stop as soon as the text no longer looks like a short note list.
             note_lines: list[str] = []
-            for line in lines:
-                if line.lower() == "tasting notes":
-                    note_lines.append(line+1)
+            for index, line in enumerate(lines):
+                if line.lower().__contains__("tasting notes") or line.lower().__contains__("notes de dégustation"):
+                    next_line = lines[index + 1] if index + 1 < len(lines) else ""
+                    if next_line:
+                        notes = normalize_tasting_notes(next_line)
+                        if notes:
+                            return notes
+
                 # TODO: these are all super weird, are any of them actually useful?
                 if line.lower() == "light" or self.ROAST_SCALE_PATTERN.search(line):
                     break
