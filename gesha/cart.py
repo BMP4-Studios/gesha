@@ -200,8 +200,11 @@ def cart_item_for_coffee(
 ) -> CartItem | None:
     """Build an optimizer item from a coffee's smallest available variant."""
     # Exclusions are checked before includes so a disliked process/producer can remove a coffee even when it also matches a positive keyword.
-    if matched_keywords(coffee, excluded_keywords):
-        return None
+    excluded_matches = matched_keywords(coffee, excluded_keywords)
+    if excluded_matches:
+        is_94_celcius = coffee.roaster.name.casefold() == "94 celcius"
+        if not (is_94_celcius and any(match.casefold() == "espresso" for match in excluded_matches)):
+            return None
 
     # The optimizer only considers coffees that both match preferences and have
     # enough variant data to build a Shopify cart permalink.

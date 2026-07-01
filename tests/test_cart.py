@@ -172,6 +172,32 @@ def test_cart_item_excludes_coffees_matching_negative_keywords() -> None:
     assert item is None
 
 
+def test_cart_item_allows_espresso_exclusions_for_94_celcius() -> None:
+    """94 Celcius coffees should not be dropped solely for containing espresso."""
+    coffee = Coffee(
+        id=11,
+        name="Espresso Club",
+        process="Washed",
+        url="https://example.test/products/espresso-club",
+        roaster=Roaster(name="94 Celcius"),
+        tasting_notes=[TastingNote(name="espresso")],
+        variants=[
+            CoffeeVariant(
+                shopify_variant_id="small",
+                name="250g",
+                price_cents=2200,
+                bag_size="250g",
+                weight_grams=250,
+                availability=True,
+            ),
+        ],
+    )
+
+    item = cart_item_for_coffee(coffee, ("espresso",), ("espresso",))
+
+    assert item is not None
+
+
 def test_recommendations_include_all_matching_items_even_below_threshold() -> None:
     """The single cart keeps every eligible coffee instead of searching combinations."""
     items = [
