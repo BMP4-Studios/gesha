@@ -26,6 +26,8 @@ COMMON_TASTING_NOTE_LABELS = [
     "Cup Notes",
     "Profile",
     "Aroma",
+    "Notes de dégustation",
+    "Notes de degustation",
 ]
 
 PRODUCT_FACT_FIELDS = (

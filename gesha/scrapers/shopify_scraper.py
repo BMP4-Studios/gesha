@@ -43,6 +43,8 @@ class ShopifyScraper(BaseScraper):
     # stores. Source configs can opt out if collection JSON is too incomplete.
     USE_COLLECTION_JSON: bool = True
 
+    USE_TASTING_NOTES: bool = True
+
     # Shopify limits collection JSON pages, so large/archive-heavy stores are
     # paginated until a short or empty page proves the collection is exhausted.
     PRODUCTS_JSON_LIMIT = 250
@@ -575,27 +577,26 @@ class ShopifyScraper(BaseScraper):
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
         # Labeled product-page facts are the highest-confidence notes source.
-        if page_facts and page_facts.get("tasting_notes"):
-            notes = normalize_tasting_notes(page_facts["tasting_notes"])
-            if notes:
-                return notes
+        if self.USE_TASTING_NOTES :
+            if page_facts and page_facts.get("tasting_notes"):
+                notes = normalize_tasting_notes(page_facts["tasting_notes"])
+                if notes:
+                    return notes
 
-        # Shopify descriptions often repeat the same labels without page markup.
-        facts = json_facts if json_facts is not None else self._extract_details(description)
-        value = facts.get("tasting_notes")
-        if value:
-            notes = normalize_tasting_notes(value)
-            if notes:
-                return notes
+            # Shopify descriptions often repeat the same labels without page markup.
+            facts = json_facts if json_facts is not None else self._extract_details(description)
+            value = facts.get("tasting_notes")
+            if value:
+                notes = normalize_tasting_notes(value)
+                if notes:
+                    return notes
 
         # Some themes expose flavor notes outside the product description.
         if html_soup:
-            selected_notes = self._extract_tasting_notes_from_selectors(html_soup)
-            if selected_notes:
+            if selected_notes := self._extract_tasting_notes_from_selectors(html_soup):
                 return selected_notes
 
-            meta_notes = self._extract_tasting_notes_from_meta(html_soup)
-            if meta_notes:
+            if meta_notes := self._extract_tasting_notes_from_meta(html_soup):
                 return meta_notes
 
         # Last chance: only accept very short note-like leading text.
@@ -603,9 +604,8 @@ class ShopifyScraper(BaseScraper):
         if lines:
             first_line = lines[0]
             if first_line.casefold() == "in the cup":
-                # Some themes render "In the cup" as a heading followed by one
-                # short note per line. Stop before the first prose paragraph or
-                # technical table heading.
+                # Some themes render "In the cup" as a heading followed by one short note per line.
+                # Stop before the first prose paragraph or technical table heading.
                 note_lines: list[str] = []
                 for line in lines[1:]:
                     if len(line) > 50 or line.casefold() in {"technical sheet", "details"}:
@@ -620,11 +620,13 @@ class ShopifyScraper(BaseScraper):
             if len(first_line) < 100 and any(separator in first_line for separator in self.NOTE_HINT_SEPARATORS):
                 return normalize_tasting_notes(first_line)
 
-            # Some themes put notes in compact leading lines before a roast
-            # scale or marketing description. Stop as soon as the text no
-            # longer looks like a short note list.
+            # Some themes put notes in compact leading lines before a roast scale or marketing description.
+            # Stop as soon as the text no longer looks like a short note list.
             note_lines: list[str] = []
             for line in lines:
+                if line.lower() == "tasting notes":
+                    note_lines.append(line+1)
+                # TODO: these are all super weird, are any of them actually useful?
                 if line.lower() == "light" or self.ROAST_SCALE_PATTERN.search(line):
                     break
                 if len(line) > 60:
@@ -633,8 +635,7 @@ class ShopifyScraper(BaseScraper):
                 if len(note_lines) >= 7:
                     break
 
-            # Bullet-like separators make this fallback safer than treating any
-            # short prose as tasting notes.
+            # Bullet-like separators make this fallback safer than treating any short prose as tasting notes.
             combined_notes = " ".join(note_lines)
             if len(combined_notes) < 140 and any(
                 separator in combined_notes for separator in self.BULLET_NOTE_SEPARATORS
@@ -1010,8 +1011,14 @@ class KohiScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "carte", "cadeau", "boite", "trio")
     EXCLUDE_TAGS = ("Cadeau", "Boite", "Trio", "Carte")
-    # TASTING_NOTE_SELECTORS = ("p:-soup-contains('Notes de dégustation')",)
-    TASTING_NOTE_SELECTORS = ("Notes de dégustation",)
+    USE_TASTING_NOTES = False
+    HYDRATE_COLLECTION_PRODUCTS = True
+    # PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
+    # TASTING_NOTE_TEXT_SELECTORS = (
+    #     "div.coffee-info-grid span.info-value-tasting-notes",
+    #     "div.product-item__short-desc span.text-color--opacity",
+    #     *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+    # )
 
 
 class SubtextScraper(ShopifyScraper):
