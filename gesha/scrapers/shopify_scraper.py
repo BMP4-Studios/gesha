@@ -599,7 +599,12 @@ class ShopifyScraper(BaseScraper):
         # Some themes expose flavor notes outside the product description.
         if html_soup:
             if selected_notes := self._extract_tasting_notes_from_selectors(html_soup):
-                return selected_notes
+                filtered_notes = [
+                    note
+                    for note in selected_notes
+                    if note.casefold() not in {"espresso", "pourover", "filter"}
+                ]
+                return filtered_notes
 
             if meta_notes := self._extract_tasting_notes_from_meta(html_soup):
                 return meta_notes
