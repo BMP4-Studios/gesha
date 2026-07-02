@@ -17,12 +17,14 @@ from gesha.scrapers.shopify_scraper import (
     MonogramScraper,
     NarvalScraper,
     NektarScraper,
+    NucleusScraper,
     PiratesScraper,
     PorteBleueScraper,
     QuietlyScraper,
     RabbitHoleScraper,
     RogueWaveScraper,
     SeptemberScraper,
+    SipstruckScraper,
     SubtextScraper,
     TrafficScraper,
     ZaAndKloScraper,
@@ -43,6 +45,7 @@ def test_get_scraper_returns_registered_source() -> None:
     assert isinstance(get_scraper("jungle"), JungleScraper)
     assert isinstance(get_scraper("kohi"), KohiScraper)
     assert isinstance(get_scraper("monogram"), MonogramScraper)
+    assert isinstance(get_scraper("nucleus"), NucleusScraper)
     assert isinstance(get_scraper("narval"), NarvalScraper)
     assert isinstance(get_scraper("nektar"), NektarScraper)
     assert isinstance(get_scraper("pirates"), PiratesScraper)
@@ -51,6 +54,7 @@ def test_get_scraper_returns_registered_source() -> None:
     assert isinstance(get_scraper("rabbithole"), RabbitHoleScraper)
     assert isinstance(get_scraper("roguewave"), RogueWaveScraper)
     assert isinstance(get_scraper("september"), SeptemberScraper)
+    assert isinstance(get_scraper("sipstruck"), SipstruckScraper)
     assert isinstance(get_scraper("subtext"), SubtextScraper)
     assert isinstance(get_scraper("traffic"), TrafficScraper)
     assert isinstance(get_scraper("zaandklo"), ZaAndKloScraper)
@@ -74,6 +78,7 @@ def test_get_scrapers_returns_default_sources() -> None:
         JungleScraper,
         KohiScraper,
         MonogramScraper,
+        NucleusScraper,
         NarvalScraper,
         NektarScraper,
         PiratesScraper,
@@ -82,6 +87,7 @@ def test_get_scrapers_returns_default_sources() -> None:
         RabbitHoleScraper,
         RogueWaveScraper,
         SeptemberScraper,
+        SipstruckScraper,
         SubtextScraper,
         TrafficScraper,
         ZaAndKloScraper,

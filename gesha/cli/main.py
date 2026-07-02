@@ -669,6 +669,31 @@ def _print_cart_candidate(
         )
 
 
+def _print_gesha_banner() -> None:
+    """Render the shared TXT banner used as the CLI introduction."""
+    banner = """         .........::::::::-::::::::::...
+       :-----:::::::::::::::::::::::::-=-::..
+      -=-------==-----------=--------------:::.
+     .=:-:::::-#*----=-=---**+::-------:---:::-.
+     -=:::::::::::----::-----------------.:--:--
+     =-::::::::::::----------------------  =--:-.
+    .-::::::::::-----:::----------:::::--  ---:-.
+    :-:------------:::::----::::::::::::-  -:-:-.
+   .---------------::---::::::::::::::::-:-:-:-:
+   .-::::::::::-------:-::::::::::::::::--:----.
+   :-:::::::::::::::::::::::::::::::::::::---:.
+   --:::::::::::::::::::::::---:::::::----::.
+   .:::::::--::-------------------:-----:-:
+       ..:---:::::::::::::--=---:-::::::-::.
+    .:::--:..         ..::::::-::-.     .-:-.
+  .:-:-=-:::....  ..:::::::...::::       :-:-.
+ .-=--:..::::----:---::...   .-.::        :---..
+.=#**-        .-+==:..      .=+==:        .*%%*-:
+.---:.        :*#*-         .----.         :==--.
+              .:--.          ....           ..."""
+    console.print(Align.center(Text(banner, style="bold cyan")))
+
+
 def _format_keyword_matches(keywords: Sequence[str]) -> str:
     """Display matched keywords consistently in cart diagnostics."""
     return ", ".join(keywords) if keywords else NA_LABEL
@@ -943,6 +968,8 @@ def cart(
                 )
             )
         )
+        console.print()
+        _print_gesha_banner()
         console.print(
             f"\n[bold]Destination:[/bold] {destination.province}, Canada"
             + (f" {destination.postal_code}" if destination.postal_code else "")

@@ -1167,14 +1167,38 @@ class CafePistaScraper(ShopifyScraper):
 
 
 class JungleScraper(ShopifyScraper):
-    """Shopify configuration for Jungle Livraison Cafe products."""
+    """Shopify configuration for Jungle products."""
 
     # The requested "les-melanges" collection is already focused on funky coffee
     # bags, and the JSON descriptions carry standard label/value facts.
     BASE_URL = "https://junglelivraisoncafe.com"
     COLLECTION_URL = f"{BASE_URL}/collections/classics"
     SOURCE_NAME = "Jungle"
-    ROASTER_NAME = "Jungle Livraison Cafe"
+    ROASTER_NAME = "Jungle"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
+    SKIP_UNAVAILABLE_PRODUCTS = True
+
+
+class NucleusScraper(ShopifyScraper):
+    """Shopify configuration for Nucleus products."""
+
+    BASE_URL = "https://nucleuscoffee.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/lab-cafe"
+    SOURCE_NAME = "Nucleus"
+    ROASTER_NAME = "Nucleus"
+    INCLUDE_TAGS = ()
+    INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
+    SKIP_UNAVAILABLE_PRODUCTS = True
+
+
+class SipstruckScraper(ShopifyScraper):
+    """Shopify configuration for Sipstruck products."""
+
+    BASE_URL = "https://sipstruck.com"
+    COLLECTION_URL = f"{BASE_URL}/collections/coffee"
+    SOURCE_NAME = "Sipstruck"
+    ROASTER_NAME = "Sipstruck"
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
     SKIP_UNAVAILABLE_PRODUCTS = True
