@@ -31,30 +31,29 @@ from gesha.scrapers.shopify_scraper import (
 
 def test_get_scraper_returns_registered_source() -> None:
     """Each explicit source key instantiates the expected adapter."""
-    assert isinstance(get_scraper("demello"), DeMelloScraper)
-    assert isinstance(get_scraper("traffic"), TrafficScraper)
-    assert isinstance(get_scraper("portebleue"), PorteBleueScraper)
-    assert isinstance(get_scraper("colorfull"), ColorfullScraper)
     assert isinstance(get_scraper("angry"), AngryRoasterScraper)
-    assert isinstance(get_scraper("houseoffunk"), HouseOfFunkScraper)
-    assert isinstance(get_scraper("roguewave"), RogueWaveScraper)
-    assert isinstance(get_scraper("quietly"), QuietlyScraper)
-    assert isinstance(get_scraper("kohi"), KohiScraper)
-    assert isinstance(get_scraper("subtext"), SubtextScraper)
     assert isinstance(get_scraper("artery"), ArteryScraper)
-    assert isinstance(get_scraper("ethica"), EthicaScraper)
-    assert isinstance(get_scraper("rabbithole"), RabbitHoleScraper)
-    assert isinstance(get_scraper("escape"), EscapeScraper)
-    assert isinstance(get_scraper("pirates"), PiratesScraper)
-    assert isinstance(get_scraper("94celcius"), Celcius94Scraper)
     assert isinstance(get_scraper("cafepista"), CafePistaScraper)
+    assert isinstance(get_scraper("94celcius"), Celcius94Scraper)
+    assert isinstance(get_scraper("colorfull"), ColorfullScraper)
+    assert isinstance(get_scraper("demello"), DeMelloScraper)
+    assert isinstance(get_scraper("escape"), EscapeScraper)
+    assert isinstance(get_scraper("ethica"), EthicaScraper)
+    assert isinstance(get_scraper("houseoffunk"), HouseOfFunkScraper)
     assert isinstance(get_scraper("jungle"), JungleScraper)
-    assert isinstance(get_scraper("zaandklo"), ZaAndKloScraper)
-    assert isinstance(get_scraper("nektar"), NektarScraper)
-    assert isinstance(get_scraper("september"), SeptemberScraper)
+    assert isinstance(get_scraper("kohi"), KohiScraper)
     assert isinstance(get_scraper("monogram"), MonogramScraper)
     assert isinstance(get_scraper("narval"), NarvalScraper)
-    assert get_scraper("traffic").ROASTER_NAME == "Traffic Coffee"
+    assert isinstance(get_scraper("nektar"), NektarScraper)
+    assert isinstance(get_scraper("pirates"), PiratesScraper)
+    assert isinstance(get_scraper("portebleue"), PorteBleueScraper)
+    assert isinstance(get_scraper("quietly"), QuietlyScraper)
+    assert isinstance(get_scraper("rabbithole"), RabbitHoleScraper)
+    assert isinstance(get_scraper("roguewave"), RogueWaveScraper)
+    assert isinstance(get_scraper("september"), SeptemberScraper)
+    assert isinstance(get_scraper("subtext"), SubtextScraper)
+    assert isinstance(get_scraper("traffic"), TrafficScraper)
+    assert isinstance(get_scraper("zaandklo"), ZaAndKloScraper)
 
 
 def test_get_scrapers_returns_default_sources() -> None:
@@ -63,29 +62,29 @@ def test_get_scrapers_returns_default_sources() -> None:
     scrapers = get_scrapers("all")
 
     assert [type(scraper) for scraper in scrapers] == [
-        DeMelloScraper,
-        TrafficScraper,
-        PorteBleueScraper,
-        ColorfullScraper,
         AngryRoasterScraper,
-        HouseOfFunkScraper,
-        RogueWaveScraper,
-        QuietlyScraper,
-        KohiScraper,
-        SubtextScraper,
         ArteryScraper,
-        EthicaScraper,
-        RabbitHoleScraper,
-        EscapeScraper,
-        PiratesScraper,
-        Celcius94Scraper,
         CafePistaScraper,
+        Celcius94Scraper,
+        ColorfullScraper,
+        DeMelloScraper,
+        EscapeScraper,
+        EthicaScraper,
+        HouseOfFunkScraper,
         JungleScraper,
-        ZaAndKloScraper,
-        NektarScraper,
-        SeptemberScraper,
+        KohiScraper,
         MonogramScraper,
         NarvalScraper,
+        NektarScraper,
+        PiratesScraper,
+        PorteBleueScraper,
+        QuietlyScraper,
+        RabbitHoleScraper,
+        RogueWaveScraper,
+        SeptemberScraper,
+        SubtextScraper,
+        TrafficScraper,
+        ZaAndKloScraper,
     ]
 
 

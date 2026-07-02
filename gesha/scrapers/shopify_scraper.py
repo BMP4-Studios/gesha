@@ -582,7 +582,7 @@ class ShopifyScraper(BaseScraper):
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
         # Labeled product-page facts are the highest-confidence notes source.
-        if self.USE_TASTING_NOTES :
+        if self.USE_TASTING_NOTES:
             if page_facts and page_facts.get("tasting_notes"):
                 notes = normalize_tasting_notes(page_facts["tasting_notes"])
                 if notes:
@@ -600,9 +600,7 @@ class ShopifyScraper(BaseScraper):
         if html_soup:
             if selected_notes := self._extract_tasting_notes_from_selectors(html_soup):
                 filtered_notes = [
-                    note
-                    for note in selected_notes
-                    if note.casefold() not in {"espresso", "pourover", "filter"}
+                    note for note in selected_notes if note.casefold() not in {"espresso", "pourover", "filter"}
                 ]
                 return filtered_notes
 
@@ -1025,13 +1023,6 @@ class KohiScraper(ShopifyScraper):
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "carte", "cadeau", "boite", "trio")
     EXCLUDE_TAGS = ("Cadeau", "Boite", "Trio", "Carte")
     USE_TASTING_NOTES = False
-    HYDRATE_COLLECTION_PRODUCTS = True
-    # PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
-    # TASTING_NOTE_TEXT_SELECTORS = (
-    #     "div.coffee-info-grid span.info-value-tasting-notes",
-    #     "div.product-item__short-desc span.text-color--opacity",
-    #     *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
-    # )
 
 
 class SubtextScraper(ShopifyScraper):

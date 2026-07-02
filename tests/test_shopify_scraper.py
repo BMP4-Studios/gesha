@@ -145,36 +145,40 @@ def test_shopify_collection_extracts_locale_prefixed_product_urls() -> None:
 def test_pilot_shopify_sources_use_expected_collection_json_urls() -> None:
     """New batch sources should keep their focused Shopify collection feeds."""
     cases = [
-        (
-            HouseOfFunkScraper,
-            "https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1",
-        ),
-        (RogueWaveScraper, "https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1"),
-        (QuietlyScraper, "https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1"),
-        (KohiScraper, "https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1"),
-        (SubtextScraper, "https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1"),
+        (AngryRoasterScraper, "https://theangryroaster.com/collections/coffee/products.json?limit=250&page=1"),
         (
             ArteryScraper,
             "https://thearterycommunityroasters.com/collections/by-the-bag/products.json?limit=250&page=1",
         ),
+        (CafePistaScraper, "https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1"),
+        (Celcius94Scraper, "https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1"),
+        (DeMelloScraper, "https://hellodemello.com/collections/all-coffee/products.json?limit=250&page=1"),
+        (EscapeScraper, "https://escape.cafe/collections/coffees/products.json?limit=250&page=1"),
         (EthicaScraper, "https://ethicaroasters.com/collections/filter-coffee/products.json?limit=250&page=1"),
         (
-            RabbitHoleScraper,
-            "https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1",
+            HouseOfFunkScraper,
+            "https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1",
         ),
-        (EscapeScraper, "https://escape.cafe/collections/coffees/products.json?limit=250&page=1"),
-        (PiratesScraper, "https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1"),
-        (Celcius94Scraper, "https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1"),
-        (CafePistaScraper, "https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1"),
         (
             JungleScraper,
             "https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1",
         ),
-        (ZaAndKloScraper, "https://zaandklo.com/products.json?limit=250&page=1"),
-        (NektarScraper, "https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1"),
-        (SeptemberScraper, "https://september.coffee/collections/coffee/products.json?limit=250&page=1"),
+        (KohiScraper, "https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1"),
         (MonogramScraper, "https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1"),
         (NarvalScraper, "https://narval.cafe/en/collections/340g/products.json?limit=250&page=1"),
+        (NektarScraper, "https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1"),
+        (PiratesScraper, "https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1"),
+        (PorteBleueScraper, "https://portebleue.ca/collections/coffee/products.json?limit=250&page=1"),
+        (QuietlyScraper, "https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1"),
+        (
+            RabbitHoleScraper,
+            "https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1",
+        ),
+        (RogueWaveScraper, "https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1"),
+        (SeptemberScraper, "https://september.coffee/collections/coffee/products.json?limit=250&page=1"),
+        (SubtextScraper, "https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1"),
+        (TrafficScraper, "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"),
+        (ZaAndKloScraper, "https://zaandklo.com/products.json?limit=250&page=1"),
     ]
 
     assert [scraper_class()._collection_products_json_url() for scraper_class, _ in cases] == [
