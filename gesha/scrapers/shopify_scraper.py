@@ -365,7 +365,15 @@ class ShopifyScraper(BaseScraper):
 
         # Some roasters tag coffee reliably; others need product type filters.
         if include_tags or include_types:
-            return bool(tags.intersection(include_tags) or product_type in include_types)
+            if bool(tags.intersection(include_tags) or product_type in include_types):
+                return True
+
+            # TODO: I should reuse this isinstance trick for the one flag I have set true for one roaster, can't remember which one
+            # A few storefronts publish coffee products without a clear explicit
+            # coffee type, but their collection tags still signal the catalog intent.
+            if isinstance(self, NucleusScraper) and tags.intersection({"lab", "filtre", "espresso"}):
+                return True
+            return False
 
         return True
 
@@ -1183,7 +1191,7 @@ class JungleScraper(ShopifyScraper):
 class NucleusScraper(ShopifyScraper):
     """Shopify configuration for Nucleus products."""
 
-    BASE_URL = "https://nucleuscoffee.com"
+    BASE_URL = "https://nucleuscoffee.com/en"
     COLLECTION_URL = f"{BASE_URL}/collections/lab-cafe"
     SOURCE_NAME = "Nucleus"
     ROASTER_NAME = "Nucleus"

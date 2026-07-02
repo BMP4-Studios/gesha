@@ -61,3 +61,12 @@ def test_todo_shipping_policy_uses_50_dollar_fallback_without_refresh() -> None:
     assert threshold is not None
     assert threshold.amount_cents == 5000
     assert threshold.detected_live is False
+
+
+def test_sipstruck_shipping_policy_matches_the_scraper_roaster_name() -> None:
+    """Sipstruck should resolve a shipping policy for cart recommendations."""
+    threshold = resolve_shipping_threshold("Sipstruck", Destination(province="ON"), refresh=False)
+
+    assert threshold is not None
+    assert threshold.amount_cents == 5000
+    assert threshold.detected_live is False

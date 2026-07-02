@@ -104,9 +104,10 @@ def _todo_shipping_policy(roaster_name: str, policy_url: str) -> ShippingPolicy:
     )
 
 
+# TODO: these should be sorted and we should reuse the keys from the scrapers
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
-    # These are known fallbacks plus regexes for refreshing against public
-    # policy pages. Fallbacks keep cart optimization useful when pages change.
+    # These are known fallbacks plus regexes for refreshing against public policy pages.
+    # Fallbacks keep cart optimization useful when pages change.
     "De Mello Coffee": ShippingPolicy(
         roaster_name="De Mello Coffee",
         policy_url="https://hellodemello.com/pages/faq",
@@ -148,10 +149,7 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     "Pirates of Coffee": _todo_shipping_policy("Pirates of Coffee", "https://piratesofcoffee.com/"),
     "94 Celcius": _todo_shipping_policy("94 Celcius", "https://94celcius.com/en"),
     "Cafe Pista": _todo_shipping_policy("Cafe Pista", "https://cafepista.com/en"),
-    "Jungle Livraison Cafe": _todo_shipping_policy(
-        "Jungle Livraison Cafe",
-        "https://junglelivraisoncafe.com/collections/les-melanges",
-    ),
+    "Jungle": _todo_shipping_policy("Jungle", "https://junglelivraisoncafe.com/collections/classics"),
     "Ambros Coffee": _todo_shipping_policy("Ambros Coffee", "https://ambroscoffee.com/"),
     "Za & Klo": _todo_shipping_policy("Za & Klo", "https://zaandklo.com/"),
     "Nektar Cafeologue": _todo_shipping_policy("Nektar Cafeologue", "https://nektar.ca/en"),
@@ -159,6 +157,8 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     "Kohi": _todo_shipping_policy("Kohi", "https://kohi.ca/en/collections/frontpage"),
     "Subtext Coffee": _todo_shipping_policy("Subtext Coffee", "https://www.subtext.coffee/"),
     "Nucleus Coffee": _todo_shipping_policy("Nucleus Coffee", "https://nucleuscoffee.com/"),
+    "Nucleus": _todo_shipping_policy("Nucleus", "https://nucleuscoffee.com/"),
+    "Sipstruck": _todo_shipping_policy("Sipstruck", "https://sipstruck.com/"),
     "The Artery Community Roasters": _todo_shipping_policy(
         "The Artery Community Roasters",
         "https://thearterycommunityroasters.com/",

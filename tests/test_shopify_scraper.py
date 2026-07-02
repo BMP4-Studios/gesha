@@ -108,6 +108,16 @@ def test_shopify_collection_extracts_canonical_product_urls() -> None:
     ]
 
 
+def test_nucleus_accepts_collection_products_without_explicit_coffee_types() -> None:
+    """Nucleus products in the lab-cafe feed should be accepted even when the feed lacks coffee product types."""
+    scraper = NucleusScraper()
+
+    assert scraper._is_coffee_product(
+        {"handle": "finca-adolfo", "product_type": "", "tags": ["Filtre", "Lab", "light", "natural"]}
+    )
+    assert not scraper._is_coffee_product({"handle": "club-lab", "product_type": "Abonnement", "tags": []})
+
+
 def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     """Collection parsing supports theme data attributes and roaster exclusions."""
     html = (

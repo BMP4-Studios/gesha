@@ -66,11 +66,8 @@ Install Gesha in editable mode:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e . # or `python -m pip install -e ".[dev]" for development mode
+python -m pip install -e . # or `python -m pip install -e ".[dev]"` for development mode
 ```
-
-The package and dependency definitions in `pyproject.toml` are authoritative. `requirements.txt` is retained as a
-convenient flat dependency list.
 
 ## Usage
 
@@ -151,30 +148,32 @@ The command examples above cover every CLI command: default `gesha`, `init`, `sc
 Supported scrape keys are:
 
 ```text
-demello
-traffic
-portebleue
-colorfull
+all
 angry
-houseoffunk
-roguewave
-quietly
-kohi
-subtext
 artery
-ethica
-rabbithole
-escape
-pirates
-94celcius
 cafepista
+94celcius
+colorfull
+demello
+escape
+ethica
+houseoffunk
 jungle
-zaandklo
-nektar
-september
+kohi
 monogram
 narval
-all
+nektar
+nucleus
+pirates
+portebleue
+quietly
+rabbithole
+roguewave
+september
+sipstruck
+subtext
+traffic
+zaandklo
 ```
 
 ## Debugging missing tasting notes
