@@ -173,11 +173,11 @@ def test_pilot_shopify_sources_use_expected_collection_json_urls() -> None:
         ),
         (
             JungleScraper,
-            "https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1",
+            "https://junglelivraisoncafe.com/collections/classics/products.json?limit=250&page=1",
         ),
         (KohiScraper, "https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1"),
         (MonogramScraper, "https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1"),
-        (NucleusScraper, "https://nucleuscoffee.com/collections/lab-cafe/products.json?limit=250&page=1"),
+        (NucleusScraper, "https://nucleuscoffee.com/en/collections/lab-cafe/products.json?limit=250&page=1"),
         (NarvalScraper, "https://narval.cafe/en/collections/340g/products.json?limit=250&page=1"),
         (NektarScraper, "https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1"),
         (PiratesScraper, "https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1"),

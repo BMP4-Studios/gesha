@@ -1,7 +1,7 @@
 """Tests for the CLI-facing mapping from source names to scraper classes."""
 
 import pytest
-from gesha.scrapers import get_scraper, get_scrapers, supported_sources
+from gesha.scrapers import DEFAULT_SOURCES, SCRAPER_REGISTRY, get_scraper, get_scrapers, supported_sources
 from gesha.scrapers.shopify_scraper import (
     AngryRoasterScraper,
     ArteryScraper,
@@ -65,66 +65,13 @@ def test_get_scrapers_returns_default_sources() -> None:
     # Order matters because the default source tuple is the user-facing refresh order.
     scrapers = get_scrapers("all")
 
-    assert [type(scraper) for scraper in scrapers] == [
-        AngryRoasterScraper,
-        ArteryScraper,
-        CafePistaScraper,
-        Celcius94Scraper,
-        ColorfullScraper,
-        DeMelloScraper,
-        EscapeScraper,
-        EthicaScraper,
-        HouseOfFunkScraper,
-        JungleScraper,
-        KohiScraper,
-        MonogramScraper,
-        NucleusScraper,
-        NarvalScraper,
-        NektarScraper,
-        PiratesScraper,
-        PorteBleueScraper,
-        QuietlyScraper,
-        RabbitHoleScraper,
-        RogueWaveScraper,
-        SeptemberScraper,
-        SipstruckScraper,
-        SubtextScraper,
-        TrafficScraper,
-        ZaAndKloScraper,
-    ]
+    assert [type(scraper) for scraper in scrapers] == [SCRAPER_REGISTRY[name] for name in DEFAULT_SOURCES]
 
 
 def test_supported_sources_includes_all_alias() -> None:
     """CLI validation presents aggregate and explicit scraper choices."""
     # ``all`` is a synthetic CLI key and should appear beside concrete roasters.
-    assert supported_sources() == [
-        "all",
-        "angry",
-        "artery",
-        "cafepista",
-        "94celcius",
-        "colorfull",
-        "demello",
-        "escape",
-        "ethica",
-        "houseoffunk",
-        "jungle",
-        "kohi",
-        "monogram",
-        "narval",
-        "nektar",
-        "nucleus",
-        "pirates",
-        "portebleue",
-        "quietly",
-        "rabbithole",
-        "roguewave",
-        "september",
-        "sipstruck",
-        "subtext",
-        "traffic",
-        "zaandklo",
-    ]
+    assert supported_sources() == ["all", *DEFAULT_SOURCES]
 
 
 def test_get_scraper_rejects_unknown_source() -> None:

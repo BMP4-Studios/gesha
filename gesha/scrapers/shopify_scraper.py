@@ -1177,8 +1177,6 @@ class CafePistaScraper(ShopifyScraper):
 class JungleScraper(ShopifyScraper):
     """Shopify configuration for Jungle products."""
 
-    # The requested "les-melanges" collection is already focused on funky coffee
-    # bags, and the JSON descriptions carry standard label/value facts.
     BASE_URL = "https://junglelivraisoncafe.com"
     COLLECTION_URL = f"{BASE_URL}/collections/classics"
     SOURCE_NAME = "Jungle"

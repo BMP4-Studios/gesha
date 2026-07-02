@@ -49,9 +49,9 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "jungle": JungleScraper,
     "kohi": KohiScraper,
     "monogram": MonogramScraper,
-    "nucleus": NucleusScraper,
     "narval": NarvalScraper,
     "nektar": NektarScraper,
+    "nucleus": NucleusScraper,
     "pirates": PiratesScraper,
     "portebleue": PorteBleueScraper,
     "quietly": QuietlyScraper,
@@ -64,32 +64,8 @@ SCRAPER_REGISTRY: dict[str, ScraperClass] = {
     "zaandklo": ZaAndKloScraper,
 }
 
-# ``all`` intentionally follows this tuple so default output order is stable.
-DEFAULT_SOURCES = (
-    "demello",
-    "traffic",
-    "portebleue",
-    "colorfull",
-    "angry",
-    "houseoffunk",
-    "roguewave",
-    "quietly",
-    "kohi",
-    "subtext",
-    "artery",
-    "ethica",
-    "rabbithole",
-    "escape",
-    "pirates",
-    "94celcius",
-    "cafepista",
-    "jungle",
-    "zaandklo",
-    "nektar",
-    "september",
-    "monogram",
-    "narval",
-)
+# ``all`` intentionally follows the registry order so default output order is stable.
+DEFAULT_SOURCES = tuple(SCRAPER_REGISTRY.keys())
 
 
 def get_scraper(source: str) -> BaseScraper:
@@ -110,4 +86,4 @@ def get_scrapers(source: str = "all") -> list[BaseScraper]:
 def supported_sources() -> list[str]:
     """Return accepted CLI source keys, including the aggregate ``all`` key."""
     # Typer commands use this for validation and user-facing error messages.
-    return ["all", *SCRAPER_REGISTRY.keys()]
+    return ["all", *DEFAULT_SOURCES]

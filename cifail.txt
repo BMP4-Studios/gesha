@@ -1,0 +1,389 @@
+=================================== FAILURES ===================================
+__________________ test_get_scrapers_returns_default_sources ___________________
+
+    def test_get_scrapers_returns_default_sources() -> None:
+        """The default refresh retains all currently supported core sources."""
+        # Order matters because the default source tuple is the user-facing refresh order.
+        scrapers = get_scrapers("all")
+    
+>       assert [type(scraper) for scraper in scrapers] == [
+            AngryRoasterScraper,
+            ArteryScraper,
+            CafePistaScraper,
+            Celcius94Scraper,
+            ColorfullScraper,
+            DeMelloScraper,
+            EscapeScraper,
+            EthicaScraper,
+            HouseOfFunkScraper,
+            JungleScraper,
+            KohiScraper,
+            MonogramScraper,
+            NucleusScraper,
+            NarvalScraper,
+            NektarScraper,
+            PiratesScraper,
+            PorteBleueScraper,
+            QuietlyScraper,
+            RabbitHoleScraper,
+            RogueWaveScraper,
+            SeptemberScraper,
+            SipstruckScraper,
+            SubtextScraper,
+            TrafficScraper,
+            ZaAndKloScraper,
+        ]
+E       AssertionError: assert [<class 'gesh...craper'>, ...] == [<class 'gesh...craper'>, ...]
+E         
+E         At index 0 diff: <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'> != <class 'gesha.scrapers.shopify_scraper.AngryRoasterScraper'>
+E         Right contains 2 more items, first extra item: <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>
+E         
+E         Full diff:
+E           [
+E         +     <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.PorteBleueScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.ColorfullScraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.AngryRoasterScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.HouseOfFunkScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.RogueWaveScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.QuietlyScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.KohiScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.SubtextScraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.ArteryScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.EthicaScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.RabbitHoleScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.EscapeScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.PiratesScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.Celcius94Scraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.CafePistaScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.Celcius94Scraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.ColorfullScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.EscapeScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.EthicaScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.HouseOfFunkScraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.JungleScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.KohiScraper'>,
+E         ?                                              --
+E         +     <class 'gesha.scrapers.shopify_scraper.ZaAndKloScraper'>,
+E         ?                                            +++++ +
+E         +     <class 'gesha.scrapers.shopify_scraper.NektarScraper'>,
+E         +     <class 'gesha.scrapers.shopify_scraper.SeptemberScraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.MonogramScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.NucleusScraper'>,
+E               <class 'gesha.scrapers.shopify_scraper.NarvalScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.NektarScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.PiratesScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.PorteBleueScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.QuietlyScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.RabbitHoleScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.RogueWaveScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.SeptemberScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.SipstruckScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.SubtextScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>,
+E         -     <class 'gesha.scrapers.shopify_scraper.ZaAndKloScraper'>,
+E           ]
+
+tests/test_scraper_registry.py:68: AssertionError
+__________________ test_supported_sources_includes_all_alias ___________________
+
+    def test_supported_sources_includes_all_alias() -> None:
+        """CLI validation presents aggregate and explicit scraper choices."""
+        # ``all`` is a synthetic CLI key and should appear beside concrete roasters.
+>       assert supported_sources() == [
+            "all",
+            "angry",
+            "artery",
+            "cafepista",
+            "94celcius",
+            "colorfull",
+            "demello",
+            "escape",
+            "ethica",
+            "houseoffunk",
+            "jungle",
+            "kohi",
+            "monogram",
+            "narval",
+            "nektar",
+            "nucleus",
+            "pirates",
+            "portebleue",
+            "quietly",
+            "rabbithole",
+            "roguewave",
+            "september",
+            "sipstruck",
+            "subtext",
+            "traffic",
+            "zaandklo",
+        ]
+E       AssertionError: assert ['all', 'angr...lorfull', ...] == ['all', 'angr...lorfull', ...]
+E         
+E         At index 13 diff: 'nucleus' != 'narval'
+E         
+E         Full diff:
+E           [
+E               'all',
+E               'angry',
+E               'artery',
+E               'cafepista',
+E               '94celcius',
+E               'colorfull',
+E               'demello',
+E               'escape',
+E               'ethica',
+E               'houseoffunk',
+E               'jungle',
+E               'kohi',
+E               'monogram',
+E         +     'nucleus',
+E               'narval',
+E               'nektar',
+E         -     'nucleus',
+E               'pirates',
+E               'portebleue',
+E               'quietly',
+E               'rabbithole',
+E               'roguewave',
+E               'september',
+E               'sipstruck',
+E               'subtext',
+E               'traffic',
+E               'zaandklo',
+E           ]
+
+tests/test_scraper_registry.py:100: AssertionError
+_________ test_pilot_shopify_sources_use_expected_collection_json_urls _________
+
+    def test_pilot_shopify_sources_use_expected_collection_json_urls() -> None:
+        """New batch sources should keep their focused Shopify collection feeds."""
+        cases = [
+            (AngryRoasterScraper, "https://theangryroaster.com/collections/coffee/products.json?limit=250&page=1"),
+            (
+                ArteryScraper,
+                "https://thearterycommunityroasters.com/collections/by-the-bag/products.json?limit=250&page=1",
+            ),
+            (CafePistaScraper, "https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1"),
+            (Celcius94Scraper, "https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1"),
+            (DeMelloScraper, "https://hellodemello.com/collections/all-coffee/products.json?limit=250&page=1"),
+            (EscapeScraper, "https://escape.cafe/collections/coffees/products.json?limit=250&page=1"),
+            (EthicaScraper, "https://ethicaroasters.com/collections/filter-coffee/products.json?limit=250&page=1"),
+            (
+                HouseOfFunkScraper,
+                "https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1",
+            ),
+            (
+                JungleScraper,
+                "https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1",
+            ),
+            (KohiScraper, "https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1"),
+            (MonogramScraper, "https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1"),
+            (NucleusScraper, "https://nucleuscoffee.com/collections/lab-cafe/products.json?limit=250&page=1"),
+            (NarvalScraper, "https://narval.cafe/en/collections/340g/products.json?limit=250&page=1"),
+            (NektarScraper, "https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1"),
+            (PiratesScraper, "https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1"),
+            (PorteBleueScraper, "https://portebleue.ca/collections/coffee/products.json?limit=250&page=1"),
+            (QuietlyScraper, "https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1"),
+            (
+                RabbitHoleScraper,
+                "https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1",
+            ),
+            (RogueWaveScraper, "https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1"),
+            (SeptemberScraper, "https://september.coffee/collections/coffee/products.json?limit=250&page=1"),
+            (SubtextScraper, "https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1"),
+            (SipstruckScraper, "https://sipstruck.com/collections/coffee/products.json?limit=250&page=1"),
+            (TrafficScraper, "https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1"),
+            (ZaAndKloScraper, "https://zaandklo.com/products.json?limit=250&page=1"),
+        ]
+    
+>       assert [scraper_class()._collection_products_json_url() for scraper_class, _ in cases] == [
+            expected_url for _, expected_url in cases
+        ]
+E       AssertionError: assert ['https://the...&page=1', ...] == ['https://the...&page=1', ...]
+E         
+E         At index 8 diff: 'https://junglelivraisoncafe.com/collections/classics/products.json?limit=250&page=1' != 'https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1'
+E         
+E         Full diff:
+E           [
+E               'https://theangryroaster.com/collections/coffee/products.json?limit=250&page=1',
+E               'https://thearterycommunityroasters.com/collections/by-the-bag/products.json?limit=250&page=1',
+E               'https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1',
+E               'https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1',
+E               'https://hellodemello.com/collections/all-coffee/products.json?limit=250&page=1',
+E               'https://escape.cafe/collections/coffees/products.json?limit=250&page=1',
+E               'https://ethicaroasters.com/collections/filter-coffee/products.json?limit=250&page=1',
+E               'https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1',
+E         -     'https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1',
+E         ?                                                  ^^^^^^  ^^^
+E         +     'https://junglelivraisoncafe.com/collections/classics/products.json?limit=250&page=1',
+E         ?                                                  ^  ^^^^
+E               'https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1',
+E               'https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1',
+E         -     'https://nucleuscoffee.com/collections/lab-cafe/products.json?limit=250&page=1',
+E         +     'https://nucleuscoffee.com/en/collections/lab-cafe/products.json?limit=250&page=1',
+E         ?                               +++
+E               'https://narval.cafe/en/collections/340g/products.json?limit=250&page=1',
+E               'https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1',
+E               'https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1',
+E               'https://portebleue.ca/collections/coffee/products.json?limit=250&page=1',
+E               'https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1',
+E               'https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1',
+E               'https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1',
+E               'https://september.coffee/collections/coffee/products.json?limit=250&page=1',
+E               'https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1',
+E               'https://sipstruck.com/collections/coffee/products.json?limit=250&page=1',
+E               'https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1',
+E               'https://zaandklo.com/products.json?limit=250&page=1',
+E           ]
+
+tests/test_shopify_scraper.py:198: AssertionError
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.14.6-final-0 _______________
+
+Name                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------
+gesha/__init__.py                       0      0   100%
+gesha/cart.py                         133      5    96%   114, 122, 226, 336, 341
+gesha/cli/main.py                     550    227    59%   135-153, 159-164, 172, 194-196, 219, 228, 241-249, 276, 279-281, 297-299, 321-325, 337-341, 347, 381-391, 405-406, 439-444, 449, 460-461, 481-485, 489-490, 496-497, 505-506, 525-526, 549-557, 568, 579, 586-613, 621-667, 674-694, 709, 711, 713, 715, 717, 722, 744, 748, 757, 773, 790, 793-795, 823-824, 862-871, 905-1036, 1047-1049, 1058-1059, 1082-1087, 1092-1094, 1112-1115, 1122-1123, 1141, 1163
+gesha/coffee_data.py                   36      0   100%
+gesha/coffee_service.py                60      7    88%   78, 117, 119, 121, 125, 131, 143
+gesha/db/models.py                     59      4    93%   41, 58, 105, 131
+gesha/db/session.py                    13      2    85%   30, 36
+gesha/measurements.py                  24      1    96%   25
+gesha/normalization.py                 27      2    93%   40, 54
+gesha/parsers/common.py               159     18    89%   196, 218, 253, 257-261, 286-292, 306, 314, 322, 344
+gesha/scrapers/__init__.py             15      1    93%   107
+gesha/scrapers/base_scraper.py         79     18    77%   65-66, 68-74, 87-88, 99-108, 114, 171, 177
+gesha/scrapers/shopify_scraper.py     684     34    95%   119, 154, 161, 177, 204-205, 207, 211, 218, 229, 235, 284-285, 290, 313, 339, 387, 410-411, 560-564, 582, 631, 654, 657, 699, 703, 746, 750, 754, 771
+gesha/shipping.py                      81     15    81%   182, 208, 224, 233, 247, 250-267, 272
+-----------------------------------------------------------------
+TOTAL                                1920    334    83%
+Coverage XML written to file coverage.xml
+=========================== short test summary info ============================
+FAILED tests/test_scraper_registry.py::test_get_scrapers_returns_default_sources - AssertionError: assert [<class 'gesh...craper'>, ...] == [<class 'gesh...craper'>, ...]
+  
+  At index 0 diff: <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'> != <class 'gesha.scrapers.shopify_scraper.AngryRoasterScraper'>
+  Right contains 2 more items, first extra item: <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>
+  
+  Full diff:
+    [
+  +     <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.PorteBleueScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.ColorfullScraper'>,
+        <class 'gesha.scrapers.shopify_scraper.AngryRoasterScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.HouseOfFunkScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.RogueWaveScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.QuietlyScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.KohiScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.SubtextScraper'>,
+        <class 'gesha.scrapers.shopify_scraper.ArteryScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.EthicaScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.RabbitHoleScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.EscapeScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.PiratesScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.Celcius94Scraper'>,
+        <class 'gesha.scrapers.shopify_scraper.CafePistaScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.Celcius94Scraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.ColorfullScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.DeMelloScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.EscapeScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.EthicaScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.HouseOfFunkScraper'>,
+        <class 'gesha.scrapers.shopify_scraper.JungleScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.KohiScraper'>,
+  ?                                              --
+  +     <class 'gesha.scrapers.shopify_scraper.ZaAndKloScraper'>,
+  ?                                            +++++ +
+  +     <class 'gesha.scrapers.shopify_scraper.NektarScraper'>,
+  +     <class 'gesha.scrapers.shopify_scraper.SeptemberScraper'>,
+        <class 'gesha.scrapers.shopify_scraper.MonogramScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.NucleusScraper'>,
+        <class 'gesha.scrapers.shopify_scraper.NarvalScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.NektarScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.PiratesScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.PorteBleueScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.QuietlyScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.RabbitHoleScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.RogueWaveScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.SeptemberScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.SipstruckScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.SubtextScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.TrafficScraper'>,
+  -     <class 'gesha.scrapers.shopify_scraper.ZaAndKloScraper'>,
+    ]
+FAILED tests/test_scraper_registry.py::test_supported_sources_includes_all_alias - AssertionError: assert ['all', 'angr...lorfull', ...] == ['all', 'angr...lorfull', ...]
+  
+  At index 13 diff: 'nucleus' != 'narval'
+  
+  Full diff:
+    [
+        'all',
+        'angry',
+        'artery',
+        'cafepista',
+        '94celcius',
+        'colorfull',
+        'demello',
+        'escape',
+        'ethica',
+        'houseoffunk',
+        'jungle',
+        'kohi',
+        'monogram',
+  +     'nucleus',
+        'narval',
+        'nektar',
+  -     'nucleus',
+        'pirates',
+        'portebleue',
+        'quietly',
+        'rabbithole',
+        'roguewave',
+        'september',
+        'sipstruck',
+        'subtext',
+        'traffic',
+        'zaandklo',
+    ]
+FAILED tests/test_shopify_scraper.py::test_pilot_shopify_sources_use_expected_collection_json_urls - AssertionError: assert ['https://the...&page=1', ...] == ['https://the...&page=1', ...]
+  
+  At index 8 diff: 'https://junglelivraisoncafe.com/collections/classics/products.json?limit=250&page=1' != 'https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1'
+  
+  Full diff:
+    [
+        'https://theangryroaster.com/collections/coffee/products.json?limit=250&page=1',
+        'https://thearterycommunityroasters.com/collections/by-the-bag/products.json?limit=250&page=1',
+        'https://cafepista.com/en/collections/sacs/products.json?limit=250&page=1',
+        'https://94celcius.com/en/collections/cafes/products.json?limit=250&page=1',
+        'https://hellodemello.com/collections/all-coffee/products.json?limit=250&page=1',
+        'https://escape.cafe/collections/coffees/products.json?limit=250&page=1',
+        'https://ethicaroasters.com/collections/filter-coffee/products.json?limit=250&page=1',
+        'https://www.houseoffunkbrewing.com/collections/coffee/products.json?limit=250&page=1',
+  -     'https://junglelivraisoncafe.com/collections/les-melanges/products.json?limit=250&page=1',
+  ?                                                  ^^^^^^  ^^^
+  +     'https://junglelivraisoncafe.com/collections/classics/products.json?limit=250&page=1',
+  ?                                                  ^  ^^^^
+        'https://kohi.ca/en/collections/frontpage/products.json?limit=250&page=1',
+        'https://monogramcoffee.com/collections/all-coffees/products.json?limit=250&page=1',
+  -     'https://nucleuscoffee.com/collections/lab-cafe/products.json?limit=250&page=1',
+  +     'https://nucleuscoffee.com/en/collections/lab-cafe/products.json?limit=250&page=1',
+  ?                               +++
+        'https://narval.cafe/en/collections/340g/products.json?limit=250&page=1',
+        'https://nektar.ca/en/collections/tous-les-cafes/products.json?limit=250&page=1',
+        'https://piratesofcoffee.com/collections/all-coffee/products.json?limit=250&page=1',
+        'https://portebleue.ca/collections/coffee/products.json?limit=250&page=1',
+        'https://www.quietlycoffee.com/collections/our-coffee/products.json?limit=250&page=1',
+        'https://www.rabbitholeroasters.com/collections/all-coffee/products.json?limit=250&page=1',
+        'https://roguewavecoffee.ca/collections/coffee/products.json?limit=250&page=1',
+        'https://september.coffee/collections/coffee/products.json?limit=250&page=1',
+        'https://www.subtext.coffee/collections/filter-coffee-beans/products.json?limit=250&page=1',
+        'https://sipstruck.com/collections/coffee/products.json?limit=250&page=1',
+        'https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1',
+        'https://zaandklo.com/products.json?limit=250&page=1',
+    ]
+========================= 3 failed, 86 passed in 2.07s =========================
+Error: Process completed with exit code 1.
