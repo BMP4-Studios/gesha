@@ -34,16 +34,12 @@
 - [x] nektar: cart not returning anything, not sure why
 
 # Issues
-
-- [ ] zaandklo: missing process
-
+- [ ] nucleus: no tasting notes
+- [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
 
 
 # Still to implement
 - [ ] [ambros](https://ambroscoffee.com/): Shopify, but product metadata is still too inconsistent for a clean shared parser config.
-- [ ] nucleus: Shopify, but the useful coffee catalog spans multiple collections and needs a multi-collection plan
-    - actually let's just use https://nucleuscoffee.com/collections/lab-cafe
-- [ ] [sipstruck](https://sipstruck.com/): Shopify, but title/notes parsing needs a source-specific shape before it is safe to list.
 
 following the pattern add shopify scrapers for:
 nucleus: https://nucleuscoffee.com/collections/lab-cafe
