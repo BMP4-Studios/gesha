@@ -104,9 +104,6 @@ gesha rebuild --no-scrape
 # List previously scraped coffees without making network requests
 gesha list
 
-# Same cached listing command under its older alias
-gesha cache
-
 # Filter the cached catalog
 gesha list --process washed
 gesha list --flavour berry

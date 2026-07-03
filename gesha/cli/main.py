@@ -557,26 +557,21 @@ def _query_cached_coffees(
         _print_coffees(coffees)
 
 
-@app.command(name="cache")
-def cache_coffees_command(
-    process: str | None = typer_option(None, help="Filter by coffee process."),
-    flavour: str | None = typer_option(None, help="Filter by tasting note."),
-    roaster: str | None = typer_option(None, help="Filter by roaster name."),
-    available: bool | None = typer_option(None, help="Show only available coffees."),
-) -> None:
-    """Relist previously scraped coffees without contacting roaster websites."""
-    _query_cached_coffees(process, flavour, roaster, available)
-
-
 @app.command(name="list")
 def list_coffees_command(
+    # because this first one is a typer_argument, it is a positional argument and will be filled first if the user provides an argument without a flag
+    roaster_pos: str | None = typer_argument(None, metavar="ROASTER", help="Filter by roaster name (positional)."),
     process: str | None = typer_option(None, help="Filter by coffee process."),
     flavour: str | None = typer_option(None, help="Filter by tasting note."),
-    roaster: str | None = typer_option(None, help="Filter by roaster name."),
+    roaster: str | None = typer_option(None, "--roaster", help="Filter by roaster name."),
     available: bool | None = typer_option(None, help="Show only available coffees."),
 ) -> None:
-    """List and filter cached coffees; equivalent to ``gesha cache``."""
-    _query_cached_coffees(process, flavour, roaster, available)
+    """List and filter cached coffees."""
+    if roaster_pos and roaster and roaster_pos != roaster:
+        raise typer.BadParameter("Specify roaster either positionally or with --roaster, not both.")
+
+    final_roaster = roaster_pos or roaster
+    _query_cached_coffees(process, flavour, final_roaster, available)
 
 
 @app.command()
