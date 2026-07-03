@@ -126,33 +126,30 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     ),
 }
 
-# TODO: need to double check all of these
 # Hard-coded free-shipping fallback amounts for roaster names without a published shipping policy
 HARD_CODED_SHIPPING_FALLBACK_CENTS: Final[dict[str, int]] = {
+    "94 Celcius": 3500,
+    "Ambros Coffee": 5000,
+    "Cafe Pista": 4900,
+    "Escape Coffee Roasters": 5000,
+    "Ethica Coffee Roasters": 5000,
+    "House of Funk": 7500,
+    "Jungle": 5000,
+    "Kohi": 6000,
+    "Monogram Coffee": 5000,
+    "Narval": 5500,
+    "Nektar Cafeologue": 4500,
+    "Nucleus": 3000, # free shipping actually starts at 2 bags
+    "Pirates of Coffee": 7500,
+    "Quietly Coffee": 6500,
+    "Rabbit Hole Roasters": 5900,
+    "Rogue Wave Coffee": 4000,
+    "September Coffee": 6500,
+    "Sips Truck Coffee Roasters": 6000,
+    "Subtext Coffee": 6000,
+    "The Artery Community Roasters": 6000,
     "Za & Klo": 7500,
     "zaandklo": 7500,
-    # "House of Funk": 5000,
-    # "Rogue Wave Coffee": 5000,
-    # "Quietly Coffee": 5000,
-    # "Escape Coffee Roasters": 5000,
-    # "Pirates of Coffee": 5000,
-    # "94 Celcius": 5000,
-    # "Cafe Pista": 5000,
-    # "Jungle": 5000,
-    # "Ambros Coffee": 5000,
-    # "Nektar Cafeologue": 5000,
-    # "September Coffee": 5000,
-    # "Kohi": 5000,
-    "Subtext Coffee": 6000,
-    # "Nucleus Coffee": 5000,
-    # "Nucleus": 5000,
-    # "Sipstruck": 5000,
-    # "The Artery Community Roasters": 5000,
-    # "Sips Truck Coffee Roasters": 5000,
-    # "Monogram Coffee": 5000,
-    # "Ethica Coffee Roasters": 5000,
-    # "Rabbit Hole Roasters": 5000,
-    # "Narval": 5000,
 }
 
 
