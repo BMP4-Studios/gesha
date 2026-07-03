@@ -740,6 +740,7 @@ def _print_cart_eligibility_debug(coffee_id: int, coffee: Coffee, preference_con
     warnings: list[str] = []
     if not coffee.availability:
         reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
+    # TODO: this logic is duplicated in ``cart_item_for_coffee``; refactor to avoid drift -- and it currently has drifted
     if exclude_matches:
         reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
     if not include_matches:

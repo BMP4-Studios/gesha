@@ -36,7 +36,7 @@
 # Issues
 - [ ] nucleus: no tasting notes
 - [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
-
+- [ ] no tasting notes for quietly
 
 # Still to implement
 - [ ] [ambros](https://ambroscoffee.com/): Shopify, but product metadata is still too inconsistent for a clean shared parser config.

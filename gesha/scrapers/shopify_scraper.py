@@ -43,8 +43,6 @@ class ShopifyScraper(BaseScraper):
     # stores. Source configs can opt out if collection JSON is too incomplete.
     USE_COLLECTION_JSON: bool = True
 
-    USE_TASTING_NOTES: bool = True
-
     # Shopify limits collection JSON pages, so large/archive-heavy stores are
     # paginated until a short or empty page proves the collection is exhausted.
     PRODUCTS_JSON_LIMIT = 250
@@ -368,7 +366,6 @@ class ShopifyScraper(BaseScraper):
             if bool(tags.intersection(include_tags) or product_type in include_types):
                 return True
 
-            # TODO: I should reuse this isinstance trick for the one flag I have set true for one roaster, can't remember which one
             # A few storefronts publish coffee products without a clear explicit
             # coffee type, but their collection tags still signal the catalog intent.
             if isinstance(self, NucleusScraper) and tags.intersection({"lab", "filtre", "espresso"}):
@@ -590,7 +587,7 @@ class ShopifyScraper(BaseScraper):
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
         # Labeled product-page facts are the highest-confidence notes source.
-        if self.USE_TASTING_NOTES:
+        if isinstance(self, KohiScraper):
             if page_facts and page_facts.get("tasting_notes"):
                 notes = normalize_tasting_notes(page_facts["tasting_notes"])
                 if notes:
@@ -1030,7 +1027,6 @@ class KohiScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "carte", "cadeau", "boite", "trio")
     EXCLUDE_TAGS = ("Cadeau", "Boite", "Trio", "Carte")
-    USE_TASTING_NOTES = False
 
 
 class SubtextScraper(ShopifyScraper):
@@ -1196,6 +1192,8 @@ class NucleusScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
     SKIP_UNAVAILABLE_PRODUCTS = True
+    # HYDRATE_COLLECTION_PRODUCTS = True
+    USE_COLLECTION_JSON = False
 
 
 class SipstruckScraper(ShopifyScraper):
