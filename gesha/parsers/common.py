@@ -64,6 +64,7 @@ DEFAULT_PRODUCT_FACT_STOP_LABELS = (
     "Partner Importer",
     "Export Partner",
     "Best After",
+    "INFORMATION",
 )
 
 

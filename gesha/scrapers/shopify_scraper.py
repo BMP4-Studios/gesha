@@ -500,7 +500,6 @@ class ShopifyScraper(BaseScraper):
         """Read labeled facts from configured HTML blocks only."""
         selected_facts: dict[str, str] = {}
 
-        # NOW HERE WITH NUCLEUS -- NEED TO SET PRODUCT FACT SELECTORS TO SOMETHING (I THINK)
         # Source configs can point directly at known metadata blocks. This is safer than page-wide parsing for themes with long story sections.
         for selector in self.PRODUCT_FACT_SELECTORS:
             blocks = html_soup.select(selector)

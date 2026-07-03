@@ -69,6 +69,16 @@ class DeMelloScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     EXCLUDE_HANDLE_KEYWORDS = (*ShopifyScraper.EXCLUDE_HANDLE_KEYWORDS, "starter-kit", "instant-coffee")
     PRODUCT_FACT_SELECTORS = ("div.metafield-rich_text_field",)
+    #this is where to find the information
+    #</div><div class="column__content"><h2 class="column__heading heading-small">
+    #                            Information
+    #                             </h2><div class="column__text rte body-medium">
+    #                               <div class="metafield-rich_text_field"><p>Country : Brazil<br />
+    # Region : Machado, Minas Gerais<br />
+    # Producer : Group of Sitios<br />
+    # Variety : Yellow Catuai<br />
+    # Altitude : 1200 masl<br />
+    # Process : Natural</p></div>
 
 
 class HouseOfFunkScraper(ShopifyScraper):
