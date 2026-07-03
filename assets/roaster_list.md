@@ -1,6 +1,6 @@
 # MVP
 - [ ] the math for the per 100g doesn't work if there's less than 100g
-- [ ] the free shipping line says "Estimated free-shipping threshold: $60.00 (live policy page)" -- it should clearly say whether it's estimated or fetched lol, not both
+- [ ] need to fill out hardcoded defaults for shipping policies
 
 # NICE TO HAVE
 - [ ] pretty sure the shipping policy is fetched when we call cart -- this should be done when we scrape and stored in the DB
