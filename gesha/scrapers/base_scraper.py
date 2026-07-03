@@ -77,8 +77,7 @@ class BaseScraper(ABC):
         product_urls = self.extract_product_urls(response.text)
         coffees: list[CoffeeData] = []
 
-        # Scrape product URLs independently so one bad product does not cancel
-        # the rest of the roaster catalog.
+        # Scrape product URLs independently so one bad product does not cancel the rest of the roaster catalog.
         for product_url in product_urls:
             try:
                 coffee = self.scrape_product(product_url)

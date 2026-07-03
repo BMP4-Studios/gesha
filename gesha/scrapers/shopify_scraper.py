@@ -272,8 +272,7 @@ class ShopifyScraper(BaseScraper):
         """Fetch Shopify HTML first, then JSON support data for one product."""
         html_soup, html_facts = self._product_page_html_facts(url)
 
-        # Shopify JSON is still the reliable source for title, variants, price,
-        # availability, tags, and description fallbacks.
+        # Shopify JSON is still the reliable source for title, variants, price, availability, tags, and description fallbacks.
         session = cast(Any, self.session)
         headers = session.headers.copy()
         headers["Referer"] = url
@@ -370,7 +369,6 @@ class ShopifyScraper(BaseScraper):
 
             # A few storefronts publish coffee products without a clear explicit
             # coffee type, but their collection tags still signal the catalog intent.
-            # if isinstance(self, NucleusScraper) and tags.intersection({"lab", "filtre", "espresso"}):
             if self.USE_EXTRA_COFFEE_PRODUCT_DESCRIPTORS and tags.intersection({"lab", "filtre", "espresso"}):
                 return True
             return False
@@ -481,10 +479,8 @@ class ShopifyScraper(BaseScraper):
         if raw_html.strip():
             raw_soup = BeautifulSoup(raw_html, "html.parser")
 
-            # JSON descriptions can contain the same theme-specific fact blocks
-            # as product pages, so selector configs should scope both paths.
-            selected_facts = self._extract_selected_html_product_facts(raw_soup)
-            if selected_facts:
+            # JSON descriptions can contain the same theme-specific fact blocks as product pages, so selector configs should scope both paths.
+            if selected_facts := self._extract_selected_html_product_facts(raw_soup):
                 return selected_facts
 
             # Row-aware HTML parsing keeps labels scoped to their paragraph/list
@@ -504,8 +500,8 @@ class ShopifyScraper(BaseScraper):
         """Read labeled facts from configured HTML blocks only."""
         selected_facts: dict[str, str] = {}
 
-        # Source configs can point directly at known metadata blocks. This is
-        # safer than page-wide parsing for themes with long story sections.
+        # NOW HERE WITH NUCLEUS -- NEED TO SET PRODUCT FACT SELECTORS TO SOMETHING (I THINK)
+        # Source configs can point directly at known metadata blocks. This is safer than page-wide parsing for themes with long story sections.
         for selector in self.PRODUCT_FACT_SELECTORS:
             blocks = html_soup.select(selector)
 
@@ -525,8 +521,8 @@ class ShopifyScraper(BaseScraper):
 
     def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
         """Read product-page label/value sections before JSON fallbacks."""
-        selected_facts = self._extract_selected_html_product_facts(html_soup)
-        if selected_facts:
+
+        if selected_facts := self._extract_selected_html_product_facts(html_soup):
             return selected_facts
 
         # If no selector is configured or populated, scan the whole product page.
