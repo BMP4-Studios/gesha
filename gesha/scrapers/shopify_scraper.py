@@ -788,9 +788,9 @@ class ShopifyScraper(BaseScraper):
         weight = variant.get("weight")
         unit = variant.get("weight_unit")
         if isinstance(weight, int | float) and isinstance(unit, str):
-            converted = weight_to_grams(weight, unit)
-            if converted is not None:
+            if converted := weight_to_grams(weight, unit):
                 return converted
+
         if isinstance(weight, int | float) and weight > 0:
             # Some product ``.js`` payloads omit ``weight_unit`` but still store
             # the variant weight in grams, as Shopify's storefront JSON commonly does.
@@ -800,8 +800,7 @@ class ShopifyScraper(BaseScraper):
         for field in ("title", "public_title", "option1", "sku", "name"):
             raw_value = variant.get(field)
             if isinstance(raw_value, str):
-                parsed = parse_weight_grams(raw_value)
-                if parsed is not None:
+                if parsed := parse_weight_grams(raw_value):
                     return parsed
         return None
 

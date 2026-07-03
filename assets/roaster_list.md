@@ -1,15 +1,11 @@
-# MVP
-- [ ] the math for the per 100g doesn't work if there's less than 100g
-- [ ] need to fill out hardcoded defaults for shipping policies
-
 # NICE TO HAVE
+- [ ] in _extract_variants, `weight_grams` and `bag_size` can have wildly different values just from the roaster. 
+      We need tests to catch these and figure out which one is valid
 - [ ] pretty sure the shipping policy is fetched when we call cart -- this should be done when we scrape and stored in the DB
 - [ ] would be useful to have the opposite of gesha cart, like gesha non-cart lol, where it lists the coffees that were excluded and the reason why
       and/or, when you go "gesha cart roaster", it should show both a cart of coffees included and those excluded, so run both commands
 - [ ] gesha roaster should run the scrape, the list, and the cart
-- [ ] would be cool to either hardcode some keywords to avoid for specific roasters, e.g., roguewave cannot exclude espresso because all coffees have it,
-      and also be able to do something like `gesha cart roguewave +espresso`
-- [ ] there's a mismatch between commands where you can do `gesha cart 94celcius` but can't do `gesha list --roaster 94celcius`, you have to do `gesha list --roaster 94`
+- [ ] Some roasters, e.g., roguewave, have espresso for pretty much all coffees, so we need a way for these to allow the disallowed keywords
 - [ ] zaandklo: roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
 
 ---

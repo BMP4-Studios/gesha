@@ -139,7 +139,7 @@ HARD_CODED_SHIPPING_FALLBACK_CENTS: Final[dict[str, int]] = {
     "Monogram Coffee": 5000,
     "Narval": 5500,
     "Nektar Cafeologue": 4500,
-    "Nucleus": 3000, # free shipping actually starts at 2 bags
+    "Nucleus": 3000,  # free shipping actually starts at 2 bags
     "Pirates of Coffee": 7500,
     "Quietly Coffee": 6500,
     "Rabbit Hole Roasters": 5900,

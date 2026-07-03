@@ -7,8 +7,8 @@
       "request": "launch",
       "module": "gesha.cli.main",
       "python": "${workspaceFolder}/.venv/bin/python",
-      "args": ["cart", "subtext"], // <== CHANGE ROASTER HERE
-      // "args": ["cart", "94celcius"], // <== CHANGE ROASTER HERE
+      // "args": ["list", "sipstruck"], // <== CHANGE ROASTER HERE
+       "args": ["scrape", "sipstruck"], // <== CHANGE ROASTER HERE
       // "args": ["debug", "11"], // <== CHANGE ROASTER HERE
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",

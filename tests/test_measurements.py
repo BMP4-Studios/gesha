@@ -23,6 +23,7 @@ def test_price_per_100g_uses_integer_cents() -> None:
     """Unit prices remain stable and currency-safe for CLI comparison."""
     # Results are rounded cents because the CLI displays currency, not floats.
     assert price_per_100g_cents(2600, 300) == 867
+    assert price_per_100g_cents(10000, 20) == 50000
     assert price_per_100g_cents(2500, 250) == 1000
     assert price_per_100g_cents(2500, None) is None
 
