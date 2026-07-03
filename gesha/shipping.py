@@ -86,25 +86,6 @@ class ShippingThreshold:
     source: str
 
 
-TODO_SHIPPING_FALLBACK_CENTS: Final[int] = 5000
-TODO_SHIPPING_DETECTION_PATTERNS: Final[tuple[str, ...]] = (
-    r"free shipping.*?\$?(\d+(?:\.\d{1,2})?)",
-    r"orders?\s+(?:above|over)\s+\$?(\d+(?:\.\d{1,2})?)",
-)
-
-
-def _todo_shipping_policy(roaster_name: str, policy_url: str) -> ShippingPolicy:
-    """Create an explicitly temporary shipping policy for newly batched roasters."""
-    # TODO: Replace this $50 fallback with each roaster's verified threshold and
-    # policy-page regex before treating the policy data as final.
-    return ShippingPolicy(
-        roaster_name=roaster_name,
-        policy_url=policy_url,
-        fallback_cents={"CA": TODO_SHIPPING_FALLBACK_CENTS},
-        detection_patterns={"CA": TODO_SHIPPING_DETECTION_PATTERNS},
-    )
-
-
 # TODO: I'm not sure any of these are working
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     # These are known fallbacks plus regexes for refreshing against public policy pages.
