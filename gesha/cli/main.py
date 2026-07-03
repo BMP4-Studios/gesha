@@ -991,7 +991,14 @@ def cart(
                     console.print(f"\n[yellow]{roaster_name}: no Canadian shipping policy is configured.[/yellow]")
                     continue
                 threshold_cents = shipping_threshold.amount_cents
-                threshold_source = "actual policy shipping" if shipping_threshold.detected_live else "default fallback"
+                #threshold_source = "actual policy shipping" if shipping_threshold.detected_live else "default fallback"
+                threshold_source = (
+                    "actual policy shipping"
+                    if shipping_threshold.detected_live
+                    else "configured fallback"
+                    if shipping_threshold.source == "policy"
+                    else "hardcoded fallback"
+                )
                 policy_url = shipping_threshold.policy_url
 
             # Convert cached coffees into optimizer items. Coffees with no

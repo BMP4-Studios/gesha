@@ -61,6 +61,7 @@ def test_todo_shipping_policy_uses_50_dollar_fallback_without_refresh() -> None:
     assert threshold is not None
     assert threshold.amount_cents == 5000
     assert threshold.detected_live is False
+    assert threshold.source == "policy"
 
 
 def test_sipstruck_shipping_policy_matches_the_scraper_roaster_name() -> None:
@@ -70,3 +71,14 @@ def test_sipstruck_shipping_policy_matches_the_scraper_roaster_name() -> None:
     assert threshold is not None
     assert threshold.amount_cents == 5000
     assert threshold.detected_live is False
+
+
+def test_hardcoded_shipping_fallback_uses_manual_roaster_lookup() -> None:
+    """A hard-coded roaster fallback is used when no policy object exists."""
+    threshold = resolve_shipping_threshold("zaandklo", Destination(province="ON"), refresh=False)
+
+    assert threshold is not None
+    assert threshold.amount_cents == 7500
+    assert threshold.detected_live is False
+    assert threshold.source == "hardcoded"
+    assert threshold.policy_url == ""

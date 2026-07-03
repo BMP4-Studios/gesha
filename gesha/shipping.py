@@ -83,6 +83,7 @@ class ShippingThreshold:
     amount_cents: int
     policy_url: str
     detected_live: bool
+    source: str
 
 
 TODO_SHIPPING_FALLBACK_CENTS: Final[int] = 5000
@@ -104,7 +105,7 @@ def _todo_shipping_policy(roaster_name: str, policy_url: str) -> ShippingPolicy:
     )
 
 
-# TODO: these should be sorted and we should reuse the keys from the scrapers
+# TODO: I'm not sure any of these are working
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
     # These are known fallbacks plus regexes for refreshing against public policy pages.
     # Fallbacks keep cart optimization useful when pages change.
@@ -142,35 +143,35 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
         fallback_cents={"CA": 6500},
         detection_patterns={"CA": (r"free shipping\s+(?:for\s+)?orders\s+(?:above|over)\s+\$?(\d+(?:\.\d{1,2})?)",)},
     ),
-    "House of Funk": _todo_shipping_policy("House of Funk", "https://www.houseoffunkbrewing.com/"),
-    "Rogue Wave Coffee": _todo_shipping_policy("Rogue Wave Coffee", "https://roguewavecoffee.ca/"),
-    "Quietly Coffee": _todo_shipping_policy("Quietly Coffee", "https://www.quietlycoffee.com/"),
-    "Escape Coffee Roasters": _todo_shipping_policy("Escape Coffee Roasters", "https://escape.cafe/"),
-    "Pirates of Coffee": _todo_shipping_policy("Pirates of Coffee", "https://piratesofcoffee.com/"),
-    "94 Celcius": _todo_shipping_policy("94 Celcius", "https://94celcius.com/en"),
-    "Cafe Pista": _todo_shipping_policy("Cafe Pista", "https://cafepista.com/en"),
-    "Jungle": _todo_shipping_policy("Jungle", "https://junglelivraisoncafe.com/collections/classics"),
-    "Ambros Coffee": _todo_shipping_policy("Ambros Coffee", "https://ambroscoffee.com/"),
-    "Za & Klo": _todo_shipping_policy("Za & Klo", "https://zaandklo.com/"),
-    "Nektar Cafeologue": _todo_shipping_policy("Nektar Cafeologue", "https://nektar.ca/en"),
-    "September Coffee": _todo_shipping_policy("September Coffee", "https://september.coffee/"),
-    "Kohi": _todo_shipping_policy("Kohi", "https://kohi.ca/en/collections/frontpage"),
-    "Subtext Coffee": _todo_shipping_policy("Subtext Coffee", "https://www.subtext.coffee/"),
-    "Nucleus Coffee": _todo_shipping_policy("Nucleus Coffee", "https://nucleuscoffee.com/"),
-    "Nucleus": _todo_shipping_policy("Nucleus", "https://nucleuscoffee.com/"),
-    "Sipstruck": _todo_shipping_policy("Sipstruck", "https://sipstruck.com/"),
-    "The Artery Community Roasters": _todo_shipping_policy(
-        "The Artery Community Roasters",
-        "https://thearterycommunityroasters.com/",
-    ),
-    "Sips Truck Coffee Roasters": _todo_shipping_policy("Sips Truck Coffee Roasters", "https://sipstruck.com/"),
-    "Monogram Coffee": _todo_shipping_policy("Monogram Coffee", "https://monogramcoffee.com/"),
-    "Ethica Coffee Roasters": _todo_shipping_policy("Ethica Coffee Roasters", "https://ethicaroasters.com/"),
-    "Rabbit Hole Roasters": _todo_shipping_policy(
-        "Rabbit Hole Roasters",
-        "https://www.rabbitholeroasters.com/",
-    ),
-    "Narval": _todo_shipping_policy("Narval", "https://narval.cafe/en"),
+}
+
+# TODO: need to double check all of these
+# Hard-coded free-shipping fallback amounts for roaster names without a published shipping policy
+HARD_CODED_SHIPPING_FALLBACK_CENTS: Final[dict[str, int]] = {
+    "Za & Klo": 7500,
+    "zaandklo": 7500,
+    # "House of Funk": 5000,
+    # "Rogue Wave Coffee": 5000,
+    # "Quietly Coffee": 5000,
+    # "Escape Coffee Roasters": 5000,
+    # "Pirates of Coffee": 5000,
+    # "94 Celcius": 5000,
+    # "Cafe Pista": 5000,
+    # "Jungle": 5000,
+    # "Ambros Coffee": 5000,
+    # "Nektar Cafeologue": 5000,
+    # "September Coffee": 5000,
+    # "Kohi": 5000,
+    "Subtext Coffee": 6000,
+    # "Nucleus Coffee": 5000,
+    # "Nucleus": 5000,
+    # "Sipstruck": 5000,
+    # "The Artery Community Roasters": 5000,
+    # "Sips Truck Coffee Roasters": 5000,
+    # "Monogram Coffee": 5000,
+    # "Ethica Coffee Roasters": 5000,
+    # "Rabbit Hole Roasters": 5000,
+    # "Narval": 5000,
 }
 
 
@@ -243,10 +244,8 @@ def resolve_shipping_threshold(
     """Refresh a published threshold when possible, then use the known fallback."""
     # Unknown roasters simply cannot produce free-shipping recommendations.
     policy = SHIPPING_POLICIES.get(roaster_name)
-    if policy is None:
-        return None
 
-    if refresh:
+    if policy is not None and refresh:
         try:
             # Policy pages are ordinary web pages, not Shopify APIs.
             response = requests.get(
@@ -260,14 +259,28 @@ def resolve_shipping_threshold(
             text = BeautifulSoup(response.text, "html.parser").get_text(" ", strip=True)
             detected = _detected_threshold_cents(policy, text, destination)
             if detected is not None:
-                return ShippingThreshold(detected, policy.policy_url, detected_live=True)
+                return ShippingThreshold(
+                    detected,
+                    policy.policy_url,
+                    detected_live=True,
+                    source="policy",
+                )
         except requests.RequestException:
             # Network failures should not prevent cart recommendations when a
             # configured fallback is available.
             pass
 
     # Fallbacks are marked as not live so the CLI can be honest about provenance.
-    fallback = policy.threshold_for(destination.province)
+    fallback = HARD_CODED_SHIPPING_FALLBACK_CENTS.get(roaster_name)
+    fallback_source = "hardcoded"
+    if policy is not None:
+        fallback = policy.threshold_for(destination.province)
+        fallback_source = "policy"
+    if fallback is not None:
+        fallback_source = "hardcoded"
     if fallback is None:
-        return None
-    return ShippingThreshold(fallback, policy.policy_url, detected_live=False)
+        fallback = 5000
+        fallback_source = "default"
+
+    policy_url = policy.policy_url if fallback_source == "policy" else ""
+    return ShippingThreshold(fallback, policy_url, detected_live=False, source=fallback_source)
