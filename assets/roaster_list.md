@@ -1,5 +1,4 @@
 # MVP
-- [ ] nucleus: missing process and origin
 - [ ] demello: missing process and origin
 - [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
 
@@ -31,7 +30,7 @@
 - [x] monogram
 - [x] narval
 - [x] nektar
-- [ ] nucleus
+- [x] nucleus
 - [x] pirates
 - [x] portebleue
 - [x] quietly

@@ -1,5 +1,7 @@
 """ShopifyScraper subclasses for sources that require special treatment, which is all of them?"""
 
+from bs4 import BeautifulSoup
+
 from gesha.scrapers.shopify_scraper import DEFAULT_PRODUCT_FACT_STOP_LABELS, ShopifyScraper
 
 
@@ -309,6 +311,41 @@ class NucleusScraper(ShopifyScraper):
     USE_COLLECTION_JSON = False
     # and in the debug file I see "<div class="notes"> \n<span class="note">Pêche sucrée</span> ...", and this is how you get them
     TASTING_NOTE_SELECTORS = ("div.notes span.note",)
+    PRODUCT_FACT_SELECTORS = ("div.specs",)
+
+    def _extract_html_product_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
+        facts = super()._extract_html_product_facts(html_soup)
+        icon_facts = self._extract_spec_icon_facts(html_soup)
+        if icon_facts:
+            for field, value in facts.items():
+                icon_facts.setdefault(field, value)
+            return icon_facts
+        return facts
+
+    def _extract_spec_icon_facts(self, html_soup: BeautifulSoup) -> dict[str, str]:
+        mapping = {
+            "iconoir-ecology-book": "varietal",
+            "iconoir-flask": "process",
+            "iconoir-globe": "origin",
+            "iconoir-upload": "altitude",
+        }
+        facts: dict[str, str] = {}
+        for spec in html_soup.select("div.specs span.spec"):
+            icon = spec.select_one("i")
+            if icon is None:
+                continue
+            classes = icon.get("class")
+            if isinstance(classes, str):
+                classes = classes.split()
+            for cls in classes or []:
+                field = mapping.get(cls)
+                if field is None or field in facts:
+                    continue
+                text = spec.get_text(" ", strip=True)
+                if text:
+                    facts[field] = text
+                    break
+        return facts
 
 
 class SipstruckScraper(ShopifyScraper):

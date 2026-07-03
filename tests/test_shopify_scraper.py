@@ -118,6 +118,48 @@ def test_nucleus_accepts_collection_products_without_explicit_coffee_types() -> 
     assert not scraper._is_coffee_product({"handle": "club-lab", "product_type": "Abonnement", "tags": []})
 
 
+def test_nucleus_product_page_spec_icon_facts_supply_metadata() -> None:
+    """Nucleus product pages use icon-labelled spec rows for varietal/process/origin/altitude."""
+    product = {
+        "title": "Finca Adolfo",
+        "handle": "finca-adolfo",
+        "price": 2500,
+        "available": True,
+        "type": "Coffee",
+        "tags": ["coffee"],
+        "description": "",
+        "variants": [{"id": 123, "title": "250g", "price": 2500, "grams": 250, "available": True}],
+    }
+    html = """
+    <div class="content">
+      <div class="specs">
+        <span class="spec"><i class="iconoir-ecology-book"></i>Catuai</span>
+        <span class="spec"><i class="iconoir-flask"></i>Naturel</span>
+        <span class="spec"><i class="iconoir-globe"></i>Honduras</span>
+        <span class="spec"><i class="iconoir-upload"></i>1500m</span>
+      </div>
+      <div class="notes">
+        <span class="note">Sweet peach</span>
+        <span class="note">Lemon</span>
+        <span class="note">Lavender</span>
+        <span class="note">Precise</span>
+      </div>
+    </div>
+    """
+
+    coffee = NucleusScraper()._coffee_from_product(
+        product,
+        "https://nucleuscoffee.com/en/products/finca-adolfo",
+        html_soup=BeautifulSoup(html, "html.parser"),
+    )
+
+    assert coffee.varietal == "catuai"
+    assert coffee.process == "naturel"
+    assert coffee.origin == "honduras"
+    assert coffee.altitude == "1500m"
+    assert coffee.tasting_notes == ["sweet peach", "lemon", "lavender", "precise"]
+
+
 def test_shopify_collection_extracts_data_urls_and_filters_handles() -> None:
     """Collection parsing supports theme data attributes and roaster exclusions."""
     html = (

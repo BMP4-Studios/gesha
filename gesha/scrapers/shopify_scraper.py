@@ -505,9 +505,8 @@ class ShopifyScraper(BaseScraper):
         for selector in self.PRODUCT_FACT_SELECTORS:
             blocks = html_soup.select(selector)
 
-            # Themes sometimes nest the compact spec sheet inside a broader
-            # story wrapper that also matches the selector. Parse deepest blocks
-            # first so specific facts win, then let ancestors fill missing fields.
+            # Themes sometimes nest the compact spec sheet inside a broader story wrapper that also matches the selector.
+            # Parse deepest blocks first so specific facts win, then let ancestors fill missing fields.
             blocks.sort(key=lambda block: len(list(block.parents)), reverse=True)
             for block in blocks:
                 block_facts = extract_labeled_product_facts_from_html(
