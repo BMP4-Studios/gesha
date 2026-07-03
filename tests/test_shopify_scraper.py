@@ -3,7 +3,7 @@
 import logging
 
 from bs4 import BeautifulSoup
-from gesha.scrapers.shopify_scraper import (
+from gesha.scrapers.shopify_children_scrapers import (
     AngryRoasterScraper,
     ArteryScraper,
     CafePistaScraper,

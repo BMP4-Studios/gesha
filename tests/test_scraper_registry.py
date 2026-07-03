@@ -2,7 +2,7 @@
 
 import pytest
 from gesha.scrapers import DEFAULT_SOURCES, SCRAPER_REGISTRY, get_scraper, get_scrapers, supported_sources
-from gesha.scrapers.shopify_scraper import (
+from gesha.scrapers.shopify_children_scrapers import (
     AngryRoasterScraper,
     ArteryScraper,
     CafePistaScraper,

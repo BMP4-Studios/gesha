@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import gesha.cli.main as cli_main
 import pytest
 from gesha.db.models import Coffee, CoffeeVariant, Roaster, TastingNote
-from gesha.scrapers.shopify_scraper import TrafficScraper
+from gesha.scrapers.shopify_children_scrapers import TrafficScraper
 
 
 class FakeCollectionResponse:
