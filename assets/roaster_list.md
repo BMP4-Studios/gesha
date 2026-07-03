@@ -34,9 +34,8 @@
 - [x] nektar: cart not returning anything, not sure why
 
 # Issues
-- [ ] nucleus: no tasting notes
+- [ ] nucleus: missing process and origin
 - [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
-- [ ] no tasting notes for quietly
 
 # Still to implement
 - [ ] [ambros](https://ambroscoffee.com/): Shopify, but product metadata is still too inconsistent for a clean shared parser config.

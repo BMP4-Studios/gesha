@@ -587,7 +587,7 @@ class ShopifyScraper(BaseScraper):
     ) -> list[str]:
         """Extract source-ordered notes from labeled facts before loose fallbacks."""
         # Labeled product-page facts are the highest-confidence notes source.
-        if isinstance(self, KohiScraper):
+        if not isinstance(self, KohiScraper):
             if page_facts and page_facts.get("tasting_notes"):
                 notes = normalize_tasting_notes(page_facts["tasting_notes"])
                 if notes:
@@ -1192,8 +1192,10 @@ class NucleusScraper(ShopifyScraper):
     INCLUDE_TAGS = ()
     INCLUDE_PRODUCT_TYPES = ("Café", "Coffee")
     SKIP_UNAVAILABLE_PRODUCTS = True
-    # HYDRATE_COLLECTION_PRODUCTS = True
+    # ok so here, the collection JSON returned nothing, so turning that off
     USE_COLLECTION_JSON = False
+    # and in the debug file I see "<div class="notes"> \n<span class="note">Pêche sucrée</span> ...", and this is how you get them
+    TASTING_NOTE_SELECTORS = ("div.notes span.note",)
 
 
 class SipstruckScraper(ShopifyScraper):
