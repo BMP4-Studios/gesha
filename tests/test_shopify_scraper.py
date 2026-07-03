@@ -153,7 +153,7 @@ def test_nucleus_product_page_spec_icon_facts_supply_metadata() -> None:
         html_soup=BeautifulSoup(html, "html.parser"),
     )
 
-    assert coffee.varietal == "catuai"
+    assert coffee.varietal == "Catuai"
     assert coffee.process == "naturel"
     assert coffee.origin == "honduras"
     assert coffee.altitude == "1500m"

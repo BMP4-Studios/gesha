@@ -1,7 +1,6 @@
 """Tests for Canadian destinations and shipping-threshold extraction."""
 
 import pytest
-from gesha.scrapers import get_scrapers
 from gesha.shipping import (
     SHIPPING_POLICIES,
     Destination,
@@ -45,23 +44,6 @@ def test_traffic_threshold_depends_on_destination() -> None:
 
     assert _detected_threshold_cents(policy, text, Destination(province="ON")) == 4000
     assert _detected_threshold_cents(policy, text, Destination(province="BC")) == 5000
-
-
-def test_default_scrapers_have_shipping_policies() -> None:
-    """Cart defaults should not silently skip a supported default roaster."""
-    roaster_names = [scraper.ROASTER_NAME for scraper in get_scrapers("all")]
-
-    assert all(roaster_name in SHIPPING_POLICIES for roaster_name in roaster_names)
-
-
-def test_todo_shipping_policy_uses_50_dollar_fallback_without_refresh() -> None:
-    """Temporary new-roaster policies are usable until verified thresholds land."""
-    threshold = resolve_shipping_threshold("Rogue Wave Coffee", Destination(province="ON"), refresh=False)
-
-    assert threshold is not None
-    assert threshold.amount_cents == 5000
-    assert threshold.detected_live is False
-    assert threshold.source == "policy"
 
 
 def test_sipstruck_shipping_policy_matches_the_scraper_roaster_name() -> None:

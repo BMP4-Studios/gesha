@@ -282,5 +282,5 @@ def resolve_shipping_threshold(
         fallback = 5000
         fallback_source = "default"
 
-    policy_url = policy.policy_url if fallback_source == "policy" else ""
+    policy_url = policy.policy_url if policy is not None and fallback_source == "policy" else ""
     return ShippingThreshold(fallback, policy_url, detected_live=False, source=fallback_source)
