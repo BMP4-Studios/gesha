@@ -1,8 +1,10 @@
 # MVP
+- [ ] nucleus: missing process and origin
+- [ ] demello: missing process and origin
+- [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
+
 - [ ] the math for the per 100g doesn't work if there's less than 100g
 - [ ] the free shipping line says "Estimated free-shipping threshold: $60.00 (live policy page)" -- it should clearly say whether it's estimated or fetched lol, not both
-- [ ] nucleus: missing process and origin
-- [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
 
 # NICE TO HAVE
 - [ ] would be useful to have the opposite of gesha cart, like gesha non-cart lol, where it lists the coffees that were excluded and the reason why
