@@ -1,7 +1,4 @@
 # MVP
-- [ ] demello: missing process and origin
-- [ ] zaandklo: missing process; and roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
-
 - [ ] the math for the per 100g doesn't work if there's less than 100g
 - [ ] the free shipping line says "Estimated free-shipping threshold: $60.00 (live policy page)" -- it should clearly say whether it's estimated or fetched lol, not both
 
@@ -12,6 +9,7 @@
 - [ ] would be cool to either hardcode some keywords to avoid for specific roasters, e.g., roguewave cannot exclude espresso because all coffees have it,
       and also be able to do something like `gesha cart roguewave +espresso`
 - [ ] there's a mismatch between commands where you can do `gesha cart 94celcius` but can't do `gesha list --roaster 94celcius`, you have to do `gesha list --roaster 94`
+- [ ] zaandklo: roaster name is confusing to use, zaandklo doesn't work for "gesha list --roaster zaandklo"
 
 ---
 
@@ -40,4 +38,4 @@
 - [x] sipstruck
 - [x] subtext
 - [x] traffic
-- [ ] zaandklo
+- [x] zaandklo (process and origin are only in an image so can't parse)
