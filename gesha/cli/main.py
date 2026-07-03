@@ -921,8 +921,7 @@ def cart(
         console.print("[red]Error: Add at least one preference keyword.[/red]")
         raise typer.Exit(code=1)
 
-    # Resolve through the scraper registry so cart all includes every supported
-    # roaster, even before a shipping policy has been configured for it.
+    # Resolve through the scraper registry so cart all includes every supported roaster, even before a shipping policy has been configured for it.
     selected_roasters = _selected_cart_roaster_names(source)
     override_cents = round(threshold * 100) if threshold is not None else None
 
@@ -932,8 +931,8 @@ def cart(
         coffees = service.list_coffees(available=True)
         shipping_thresholds = {}
 
-        # Shipping lookups are independent per roaster, so run them concurrently
-        # without mixing them into the database session work.
+        # TODO: getting the shipping policy needs to be done when we scrape, not when we build the cart
+        # Shipping lookups are independent per roaster, so run them concurrently without mixing them into the database session work.
         if override_cents is None:
             roasters_with_coffee = {
                 roaster_name
@@ -954,8 +953,7 @@ def cart(
                     roaster_name: future.result() for roaster_name, future in threshold_futures.items()
                 }
 
-        # Print the fixed header before per-roaster sections so empty roasters
-        # still make it clear which destination/preferences were used.
+        # Print the fixed header before per-roaster sections so empty roasters still make it clear which destination/preferences were used.
         console.print(
             Align.center(
                 Text(
@@ -993,7 +991,7 @@ def cart(
                     console.print(f"\n[yellow]{roaster_name}: no Canadian shipping policy is configured.[/yellow]")
                     continue
                 threshold_cents = shipping_threshold.amount_cents
-                threshold_source = "live policy page" if shipping_threshold.detected_live else "configured fallback"
+                threshold_source = "actual policy shipping" if shipping_threshold.detected_live else "default fallback"
                 policy_url = shipping_threshold.policy_url
 
             # Convert cached coffees into optimizer items. Coffees with no
@@ -1018,7 +1016,7 @@ def cart(
             )
 
             console.print(f"\n[bold cyan]{roaster_name}[/bold cyan]")
-            console.print(f"Estimated free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
+            console.print(f"Free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
             if policy_url:
                 console.print(f"Policy: [link={policy_url}]{policy_url}[/link]")
 

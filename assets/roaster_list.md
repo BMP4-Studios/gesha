@@ -3,6 +3,7 @@
 - [ ] the free shipping line says "Estimated free-shipping threshold: $60.00 (live policy page)" -- it should clearly say whether it's estimated or fetched lol, not both
 
 # NICE TO HAVE
+- [ ] pretty sure the shipping policy is fetched when we call cart -- this should be done when we scrape and stored in the DB
 - [ ] would be useful to have the opposite of gesha cart, like gesha non-cart lol, where it lists the coffees that were excluded and the reason why
       and/or, when you go "gesha cart roaster", it should show both a cart of coffees included and those excluded, so run both commands
 - [ ] gesha roaster should run the scrape, the list, and the cart
