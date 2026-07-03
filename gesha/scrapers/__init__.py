@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from gesha.scrapers.base_scraper import BaseScraper
-from gesha.scrapers.shopify_scraper import (
+from gesha.scrapers.shopify_children_scrapers import (
     AngryRoasterScraper,
     ArteryScraper,
     CafePistaScraper,
