@@ -1058,7 +1058,7 @@ def debug(
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
-        # The public debug command combines the old cart eligibility diagnostic
+        # The public debug command combines the cart eligibility diagnostic
         # with the raw JSON/HTML capture so one ID answers both common questions.
         _print_cart_eligibility_debug(coffee_id, coffee, preference_config)
         output_path = _write_raw_debug_data(coffee_id, coffee)
@@ -1075,9 +1075,24 @@ def fix_tasting_notes(
     search: str = tasting_notes_debug_search_option,
     limit: int = tasting_notes_debug_limit_option,
 ) -> None:
-    """Collect raw artifacts for cached coffees missing tasting notes."""
-    # This command gathers evidence for a scraper fix; it does not edit parser
-    # code or the database because tasting-note extraction needs source-specific review.
+    """Collect raw artifacts for cached coffees missing tasting notes.
+
+    The fix_tasting_notes command is a diagnostic tool for identifying why tasting notes are missing from cached coffees. 
+
+    Here's what it does:
+    - Validates input: Requires a specific roaster (not "all") and compiles a search regex pattern
+    - Downloads Shopify JSON: Fetches the roaster's collection JSON feed to look for tasting note data
+    - Searches collection JSON: Uses the regex pattern to find matching lines that might contain tasting notes
+    - Queries local DB for cached coffees: Retrieves all coffees from that roaster that are missing tasting notes
+    - Fetches raw product pages: Downloads the raw JSON and HTML for up to --limit products
+    - Searches product pages: Uses the same regex to find lines containing potential tasting note info
+
+    The purpose is to help debug extraction issues. If a regex match appears in the raw product data but not in the
+    parsed cached output, it suggests the tasting note parser needs improvement or isn't reaching that part of the
+    page structure. It's essentially a troubleshooting tool for the data extraction pipeline.
+
+    """
+    # Get outta here if we're trying to debug everything or an unknown roaster
     if source == "all" or source not in supported_sources():
         valid_sources = sorted([name for name in supported_sources() if name != "all"])
         console.print(f"[red]Error: '{source}' is not a supported single roaster for tasting-note debugging.[/red]")
@@ -1086,28 +1101,27 @@ def fix_tasting_notes(
             console.print(f" - {valid_source}")
         raise typer.Exit(code=1)
 
+    # Compile once before network/database work so an invalid regex fails fast.
     try:
-        # Compile once before network/database work so an invalid regex fails fast.
         pattern = re.compile(search, flags=re.IGNORECASE)
     except re.error as exc:
         console.print(f"[red]Error: invalid --search regex: {exc}[/red]")
         raise typer.Exit(code=1) from exc
 
-    # First capture the batch feed, because missing notes often start there.
+    # First look in the collection json
     collection_json(source, output_dir=DEBUG_DIR)
     collection_path = DEBUG_DIR / f"{source}.json"
     if collection_path.exists():
         _print_debug_matches(collection_path, pattern)
 
+    # then look in the cached coffees for this roaster
     scraper = get_scraper(source)
     init_db()
     with get_session() as session:
         service = CoffeeService(session)
 
-        # Use the display roaster name from the scraper so source aliases and
-        # cached database rows stay aligned.
+        # get all cached coffees from the db for this roaster
         coffees = service.list_coffees(roaster_name=scraper.ROASTER_NAME)
-
         if not coffees:
             console.print(
                 f"[yellow]No cached coffees found for {scraper.ROASTER_NAME}. Run `gesha scrape {source}` first.[/yellow]"

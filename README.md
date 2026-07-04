@@ -2,13 +2,11 @@
 
 <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
-Gesha is a local-first specialty coffee discovery and cart optimization CLI. It scrapes product metadata from supported Canadian roasters (see roaster_list.md), stores the catalog in a local SQLite database, and recommends preference-matched carts that reach each roaster's advertised free-shipping threshold.
-
-## Current scope
+Gesha is a local-first specialty coffee discovery and cart optimization CLI. It scrapes product metadata from supported Canadian roasters (see the [roaster list](assets/roaster_list.md)), stores the catalog in a local SQLite database, and recommends preference-matched carts that reach each roaster's advertised free-shipping threshold.
 
 Gesha currently:
 
-- Scrapes coffee listings from the roaster_list.md
+- Scrapes coffee listings from the [roaster list](assets/roaster_list.md).
 - Extracts metadata such as origin, producer, process, varietal, altitude, tasting notes, roast style, price, bag
   size, availability, and product URL when the source provides it
 - Updates existing products and removes stale products after a successful scrape
@@ -17,22 +15,6 @@ Gesha currently:
 - Stores Shopify variants and defaults to the smallest available bag
 - Compares coffee prices by calculating the cost per 100 grams
 - Builds preference-matched cart recommendations with ordered include keywords, exclusion keywords, and Shopify cart links
-
-## Data cleanup
-
-The scraper keeps source data recognizable rather than trying to impose a comprehensive coffee taxonomy.
-Currently, cleanup is deliberately limited:
-
-- Product titles, origins, and processes are lowercased, Unicode-normalized, stripped of decorative characters,
-  and have repeated whitespace collapsed
-- Tasting-note strings are split on common separators, trimmed, lowercased, and kept in source order
-- Structured fields are extracted from labeled product-page data when available, with Shopify descriptions, tags,
-  variants, and limited title parsing used as fallbacks
-- Other values, such as producer, varietal, altitude, roast style, and bag size, are generally stored as supplied by
-  the roaster
-
-Missing metadata remains empty and is displayed as `NONE`; Gesha does not infer facts that the source does not
-provide.
 
 ## Requirements
 
@@ -66,8 +48,11 @@ python -m pip install --upgrade pip
 python -m pip install -e . # or `python -m pip install -e ".[dev]"` for development mode
 ```
 
-## Common Commands
+## Usage
 
+Here are a few common CLI commands; run `gesha --help` or `gesha <command> --help` for all CLI options.
+
+### Scraping and Listing
 ```bash
 # Refresh every supported roaster and displays the refreshed catalog
 gesha
@@ -84,148 +69,29 @@ gesha rebuild
 # List previously scraped coffees without making network requests
 gesha list
 
-# Filter the cached catalog
+# List previously scraped coffees from a specific roaster
+gesha list traffic
+
+# Filter the cached catalog (gesha list --help for all options)
 gesha list --process washed
-gesha list --flavour berry
-gesha list --roaster traffic
-gesha list --available
 
-# Show all stored fields for one catalog ID
-gesha show 1
+# Show all stored fields for one coffee with catalog ID 123
+gesha show 123
+```
 
+### Getting Shopping Cart Recommendations
+
+```bash
 # Recommend carts for every supported roaster
 gesha cart
 
-# Optimize one roaster and prefill a Canadian checkout destination
-gesha cart traffic --postal-code "M5V 3A8"
-
-# Override the published free-shipping threshold
-gesha cart demello --threshold 50
-
-# Use configured fallback shipping thresholds without visiting policy pages
-gesha cart monogram --no-refresh-shipping
-
-# Download a roaster's raw Shopify collection JSON to debug/<roaster>.json
-gesha json traffic
-
-# Explain cart eligibility and save raw product HTML/JSON for parser debugging
-gesha debug 1
-
-# Gather collection and product debug files for coffees missing tasting notes
-gesha fix-tasting-notes roguewave --search "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting"
-
-# Run the test suite through the current Python environment
-gesha test
+# Optimize cart for one roaster
+gesha cart traffic
 ```
- Run `gesha --help` or `gesha <command> --help` for all CLI options.
-
-Supported scrape keys are:
-
-```text
-all
-angry
-artery
-cafepista
-94celcius
-colorfull
-demello
-escape
-ethica
-houseoffunk
-jungle
-kohi
-monogram
-narval
-nektar
-nucleus
-pirates
-portebleue
-quietly
-rabbithole
-roguewave
-september
-sipstruck
-subtext
-traffic
-zaandklo
-```
-
-## Debugging missing tasting notes
-
-Missing tasting notes usually mean the fast Shopify collection JSON does not contain the same rich copy that appears on
-the product page. Use `gesha json` to inspect the collection feed and `gesha debug` to inspect one cached product's cart
-eligibility, page HTML, and product JSON.
-
-Start with a cached product that is missing notes:
-
-```bash
-gesha scrape roguewave
-gesha list --roaster roguewave
-gesha show 95
-```
-
-Dump the product's raw data:
-
-```bash
-gesha debug 95
-```
-
-Open the URL printed at the top of `debug/debug_95.txt`, copy one visible tasting note from the webpage, then search the
-debug file for that exact note:
-
-```bash
-grep -nEi "Peach" debug/debug_95.txt
-```
-
-If that finds surrounding HTML, copy the smallest useful snippet into the issue or prompt. For example, Rogue Wave notes
-appeared as:
-
-```html
-<ul class="product-taste-list">
-  <li class="peach">Peach</li>
-  <li class="milk-chocolate">Milk Chocolate</li>
-</ul>
-```
-
-That snippet tells the scraper fix to hydrate the product page and read notes with a selector such as
-`ul.product-taste-list li`. If notes are absent from `debug/debug_<id>.txt`, inspect the collection feed too:
-
-```bash
-gesha json roguewave
-grep -nEi "Peach|Milk Chocolate|Apple|Almond|Tangerine|notes|tasting" debug/roguewave.json
-```
-
-Most Shopify tasting-note fixes should be declarative once the HTML snippet is found:
-
-```python
-# Use this when each matched element is one note, such as <li>Peach</li>.
-HYDRATE_COLLECTION_PRODUCTS = True
-TASTING_NOTE_SELECTORS = ("ul.product-taste-list li",)
-
-# Use this when one matched element contains the note text, such as a short description span.
-HYDRATE_COLLECTION_PRODUCTS = True
-TASTING_NOTE_TEXT_SELECTORS = (
-    "div.product-item__short-desc span.text-color--opacity",
-    *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
-)
-
-# Use this when a stable product-page block contains repeated product facts.
-PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
-```
-
-To automate that evidence-gathering loop for cached products missing notes, use:
-
-```bash
-gesha fix-tasting-notes roguewave --search "Peach|Milk Chocolate|Apple|Almond|Tangerine|notes|tasting"
-```
-
-This writes `debug/roguewave.json`, dumps up to five cached Rogue Wave products with no tasting notes to
-`debug/debug_<id>.txt`, and prints matching lines from each file. Increase `--limit` to inspect more products.
 
 ## Cart preferences
 
-Edit `cart_preferences.txt` to describe the coffees you want. Add one case-insensitive include keyword per line,
-ordered from most important to least important:
+Edit `cart_preferences.txt` to describe the coffees you want. Add one case-insensitive include keyword per line, ordered from most important to least important:
 
 ```text
 natural
@@ -238,48 +104,82 @@ wilton benitez
 ! dark roast
 ```
 
-Include keywords are matched against the coffee name, origin, producer, process, varietal, altitude, roast style, and
-tasting notes. A coffee is eligible when it matches at least one include keyword and no exclusion keyword. Prefix a
-keyword with `!` to exclude coffees that match it, such as `! decaf` or `! dark roast`. Blank lines and lines beginning
-with `#` are ignored. If the file is missing or has no include keywords, Gesha uses its built-in fruity/natural
-include list.
+Include keywords are matched against the coffee name, origin, producer, process, varietal, altitude, roast style, and tasting notes. A coffee is eligible when it matches at least one include keyword and no exclusion keyword. Prefix a keyword with `!` to exclude coffees that match it, such as `! decaf` or `! dark roast`. Blank lines and lines beginning with `#` are ignored. If the file is missing or has no include keywords, Gesha uses its built-in fruity/natural include list.
 
-The include keyword order is also the optimizer's preference order. A cart that covers a higher-listed keyword ranks
-ahead of carts that only cover lower-listed keywords; after that, Gesha uses cost and coverage tie-breakers.
+The include keyword order is also the optimizer's preference order. A cart that covers a higher-listed keyword ranks ahead of carts that only cover lower-listed keywords; after that, Gesha uses cost and coverage tie-breakers.
 
-The same file can set a Canadian destination:
+The same file can set a Canadian destination (default is Ontario, Canada):
 
 ```text
 @province ON
 @postal-code M5V 3A8
 ```
 
-Command-line `--province` and `--postal-code` values override the file. A Canadian postal code is validated,
-normalized, and used to infer its province when no province is supplied. Ontario, Canada is the default destination.
-
 For each roaster, Gesha:
 
 1. Removes coffees that match any `!` exclusion keyword.
-2. Selects the smallest available retail variant of each coffee that matches at least one include keyword, capped at
-   roughly 1 lb / 454 g.
+2. Selects the smallest available retail variant of each coffee that matches at least one include keyword, capped at 500g.
 3. Adds all matching coffees to one roaster-specific cart.
 4. Orders the coffees inside that cart by how strongly they match the include keywords.
-5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a
-   pre-filled Shopify cart link.
-
-Gesha checks each roaster's public shipping page and falls back to a configured threshold if the page cannot be
-read or its wording is not recognized. Shipping eligibility remains an estimate because discounts, destination
-restrictions, and checkout rules can change; confirm the final shipping rate at checkout. Use
-`--no-refresh-shipping` for an offline recommendation or `--threshold` to supply a known amount.
+5. Displays the destination, include/exclude keyword lists, bag prices, price per 100 grams, matched keywords, and a pre-filled Shopify cart link.
 
 Run `gesha cart --help` for controls such as `--threshold`, `--no-refresh-shipping`, and an alternate `--preferences` file.
 
-## Development
+## Debugging, Tests, and Tooling
 
-Install the development dependencies, then run every CI check from VS Code with
-`Tasks: Run Task` > `Run tooling`.
+You can use the following CLI command to explain the cart eligibility for coffee ID 123 and save raw product HTML/JSON for parser debugging:
 
-The equivalent terminal commands are:
+```bash
+gesha debug 123
+```
+
+### Debugging missing tasting notes
+
+Missing tasting notes usually mean the fast Shopify collection JSON does not contain the same rich copy that appears on the product page, so we need to parse the actual webpage HTML.
+
+A quick way to debug missing tasting notes is the `fix-tasting-notes` command, which will look for the tasting notes you give it as arguments in the collection json, cached database, and raw product pages:
+
+```bash
+gesha fix-tasting-notes roguewave --search "Apricot|Chocolate|Vanilla|Orange|Hazelnut|notes|tasting"
+```
+
+If that finds surrounding HTML, copy the smallest useful snippet into the issue or prompt. For example, Rogue Wave notes appeared as:
+
+```html
+<ul class="product-taste-list">
+  <li class="peach">Peach</li>
+  <li class="milk-chocolate">Milk Chocolate</li>
+</ul>
+```
+
+Depending on how the tasting notes are found, we need to tell the scraper to hydrate the collection and to either:
+
+- fetch one tasting note per element:
+
+```python
+# Use this when each matched element is one note, such as <li>Peach</li>.
+HYDRATE_COLLECTION_PRODUCTS = True
+TASTING_NOTE_SELECTORS = ("ul.product-taste-list li",)
+```
+
+- use the `TASTING_NOTE_TEXT_SELECTORS` if one element contains multiple tasting notes, such as a short description span:
+
+```python
+HYDRATE_COLLECTION_PRODUCTS = True
+TASTING_NOTE_TEXT_SELECTORS = (
+    "div.product-item__short-desc span.text-color--opacity",
+    *ShopifyScraper.TASTING_NOTE_TEXT_SELECTORS,
+)
+```
+
+- or Use this when a stable product-page block contains repeated product facts.
+```python
+PRODUCT_FACT_SELECTORS = ("div.coffee-info-grid",)
+```
+
+## Tests and Tooling
+
+Install the development dependencies, then run every CI check from VS Code with `Tasks: Run Task` > `Run tooling`, which will run all these
 
 ```bash
 python -m ruff format --check .
@@ -288,13 +188,6 @@ python -m pyright
 python -m pip_audit --cache-dir .pip-audit-cache --skip-editable
 python -m pytest --cov=gesha --cov-report=term-missing --cov-report=xml
 python -m build
-```
-
-Run only the tests with either:
-
-```bash
-python -m pytest
-gesha test
 ```
 
 Tooling overview:
@@ -306,6 +199,11 @@ Tooling overview:
 - build verifies that Gesha can produce source and wheel distributions
 
 GitHub Actions runs these checks on Python 3.14 across Linux, macOS, and Windows for pushes and pull requests.
+
+You can also run the pytest suite through the current Python environment with 
+```bash
+gesha test
+```
 
 ## License
 

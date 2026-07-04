@@ -49,14 +49,12 @@ class CoffeeService:
             self.session.add(roaster)
             self.session.flush()
 
-        # Prefer canonical product URLs as identity; fall back for sources that
-        # do not expose one consistently.
+        # Prefer canonical product URLs as identity; fall back for sources that do not expose one consistently.
         coffee = None
         if data.url:
             coffee = self.session.scalar(select(Coffee).where(Coffee.url == data.url))
 
-        # Name + roaster is the fallback identity for rows imported before a URL
-        # existed or for future scrapers that cannot provide one.
+        # Name + roaster is the fallback identity for rows imported before a URL existed or for future scrapers that cannot provide one.
         if coffee is None:
             coffee = self.session.scalar(
                 select(Coffee).where(Coffee.name == data.name).where(Coffee.roaster_id == roaster.id)
@@ -120,8 +118,7 @@ class CoffeeService:
         if available is not None:
             query = query.where(Coffee.availability == available)
         if flavour:
-            # Joining notes can duplicate coffees with multiple matching notes;
-            # distinct keeps the table output one row per coffee.
+            # Joining notes can duplicate coffees with multiple matching notes; distinct keeps the table output one row per coffee.
             query = query.join(Coffee.tasting_notes).where(TastingNote.name.ilike(f"%{flavour}%")).distinct()
 
         return list(self.session.scalars(query).all())
