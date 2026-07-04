@@ -107,7 +107,7 @@ class CoffeeService:
         roaster_name: str | None = None,
         available: bool | None = None,
     ) -> list[Coffee]:
-        """Query cached coffees for ``list``/``cache`` output and refresh output."""
+        """Query cached coffees for ``list`` output and refresh output."""
         # Start from coffees joined to roasters because most CLI output needs both.
         query = select(Coffee).join(Roaster)
 

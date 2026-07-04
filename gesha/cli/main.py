@@ -175,7 +175,7 @@ def _read_preferences_for_command(preferences: Path) -> PreferenceConfig:
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
     """Render queried ORM coffee records as the shared CLI catalog table."""
-    # Build the stable table shape used by scrape, cache, and list output.
+    # Build the stable table shape used by scrape and list output.
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
@@ -188,7 +188,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table.add_column("$/100g")
     table.add_column("Notes")
 
-    # Keep scrape output and cache/list output visually identical by rendering
+    # Keep scrape output and list output visually identical by rendering
     # records only after they have been stored and reloaded from the database.
     for coffee in coffees:
         notes = ", ".join(note.name for note in coffee.tasting_notes)
@@ -419,7 +419,6 @@ def scrape(
 
     This command fetches product data, normalizes it, updates existing records,
     and deletes coffees that are no longer available on the roaster's site.
-    It is also the network-backed counterpart to the read-only ``cache`` command.
     """
     # All scrape orchestration lives in one helper so the no-argument callback
     # and explicit ``gesha scrape`` command behave the same way.
@@ -538,13 +537,14 @@ def _print_debug_matches(path: Path, pattern: re.Pattern[str]) -> None:
         console.print(f" - {line_number}: {line}")
 
 
+# TODO: this is only used once so could be just moved to list_coffees_command
 def _query_cached_coffees(
     process: str | None,
     flavour: str | None,
     roaster: str | None,
     available: bool | None,
 ) -> None:
-    """Print cached rows for the read-only ``list`` and ``cache`` commands."""
+    """Print cached rows for the read-only ``list`` command."""
     # Open a short read session so cached queries do not depend on scrape state.
     with get_session() as session:
         service = CoffeeService(session)

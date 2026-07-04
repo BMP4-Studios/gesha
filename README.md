@@ -2,16 +2,13 @@
 
 <img src="assets/logo.png" alt="Gesha Logo" width="300">
 
-Gesha is a local-first specialty coffee discovery and cart optimization CLI. It scrapes product metadata from
-supported Canadian roasters, stores the catalog in a local SQLite database, and recommends preference-matched carts
-that reach each roaster's advertised free-shipping threshold.
+Gesha is a local-first specialty coffee discovery and cart optimization CLI. It scrapes product metadata from supported Canadian roasters (see roaster_list.md), stores the catalog in a local SQLite database, and recommends preference-matched carts that reach each roaster's advertised free-shipping threshold.
 
 ## Current scope
 
 Gesha currently:
 
-- Scrapes coffee listings from De Mello, Traffic, Porte Bleue, Colorfull Coffee, The Angry Roaster, and the first
-  expanded Shopify cohort
+- Scrapes coffee listings from the roaster_list.md
 - Extracts metadata such as origin, producer, process, varietal, altitude, tasting notes, roast style, price, bag
   size, availability, and product URL when the source provides it
 - Updates existing products and removes stale products after a successful scrape
@@ -42,7 +39,7 @@ provide.
 - Python 3.14
 - Internet access for scraping roaster websites
 
-The cached `list`, `cache`, and `show` commands do not require internet access once data has been scraped.
+The cached `list` and `show` commands do not require internet access once data has been scraped.
 
 ## Installation
 
@@ -69,37 +66,20 @@ python -m pip install --upgrade pip
 python -m pip install -e . # or `python -m pip install -e ".[dev]"` for development mode
 ```
 
-## Usage
-
-Running `gesha` without a subcommand refreshes every supported roaster and displays the refreshed catalog:
+## Common Commands
 
 ```bash
+# Refresh every supported roaster and displays the refreshed catalog
 gesha
-```
 
-Common commands:
-
-```bash
-# Create the local database without scraping
-gesha init
-
-# Refresh every supported roaster
+# Refresh every supported roaster (exact same as gesha without args)
 gesha scrape
-
-# Refresh every supported roaster one at a time, which is gentler on storefronts
-gesha scrape --serial
-
-# Limit scrape concurrency explicitly
-gesha scrape --workers 2
 
 # Refresh one roaster
 gesha scrape traffic
 
 # Back up gesha.db, wipe the cache, recreate tables, and scrape every roaster
 gesha rebuild
-
-# Recreate the database without scraping, useful before controlled manual refreshes
-gesha rebuild --no-scrape
 
 # List previously scraped coffees without making network requests
 gesha list
@@ -137,10 +117,7 @@ gesha fix-tasting-notes roguewave --search "Apricot|Chocolate|Vanilla|Orange|Haz
 # Run the test suite through the current Python environment
 gesha test
 ```
-
-The command examples above cover every CLI command: default `gesha`, `init`, `scrape`, `rebuild`, `list`, `cache`,
-`show`, `cart`, `json`, `debug`, `fix-tasting-notes`, and `test`. Run `gesha --help` or
-`gesha <command> --help` for all options.
+ Run `gesha --help` or `gesha <command> --help` for all CLI options.
 
 Supported scrape keys are:
 
