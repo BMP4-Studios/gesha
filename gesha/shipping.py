@@ -248,14 +248,15 @@ def resolve_shipping_threshold(
             # configured fallback is available.
             pass
 
-    # Fallbacks are marked as not live so the CLI can be honest about provenance.
-    fallback = HARD_CODED_SHIPPING_FALLBACK_CENTS.get(roaster_name)
     fallback_source = "hardcoded"
+    fallback = HARD_CODED_SHIPPING_FALLBACK_CENTS.get(roaster_name)
+
     if policy is not None:
-        fallback = policy.threshold_for(destination.province)
-        fallback_source = "policy"
-    if fallback is not None:
-        fallback_source = "hardcoded"
+        policy_value = policy.threshold_for(destination.province)
+        if policy_value is not None:
+            fallback = policy_value
+            fallback_source = "policy"
+
     if fallback is None:
         fallback = 5000
         fallback_source = "default"
