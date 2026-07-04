@@ -5,33 +5,67 @@ from __future__ import annotations
 from typing import TypeAlias
 
 from gesha.scrapers.base_scraper import BaseScraper
-from gesha.scrapers.shopify_scraper import (
+from gesha.scrapers.shopify_children_scrapers import (
     AngryRoasterScraper,
+    ArteryScraper,
+    CafePistaScraper,
+    Celcius94Scraper,
     ColorfullScraper,
     DeMelloScraper,
+    EscapeScraper,
+    EthicaScraper,
+    HouseOfFunkScraper,
+    JungleScraper,
+    KohiScraper,
+    MonogramScraper,
+    NarvalScraper,
+    NektarScraper,
+    NucleusScraper,
+    PiratesScraper,
     PorteBleueScraper,
+    QuietlyScraper,
+    RabbitHoleScraper,
+    RogueWaveScraper,
+    SeptemberScraper,
+    SipstruckScraper,
+    SubtextScraper,
     TrafficScraper,
+    ZaAndKloScraper,
 )
 
 ScraperClass: TypeAlias = type[BaseScraper]
 
 # Source keys are the public CLI contract for ``gesha scrape <source>``.
 SCRAPER_REGISTRY: dict[str, ScraperClass] = {
-    "demello": DeMelloScraper,
-    "traffic": TrafficScraper,
-    "portebleue": PorteBleueScraper,
-    "colorfull": ColorfullScraper,
     "angry": AngryRoasterScraper,
+    "artery": ArteryScraper,
+    "cafepista": CafePistaScraper,
+    "94celcius": Celcius94Scraper,  # storing the key as "94celcius" instead of "celcius94" to match the CLI command
+    "colorfull": ColorfullScraper,
+    "demello": DeMelloScraper,
+    "escape": EscapeScraper,
+    "ethica": EthicaScraper,
+    "houseoffunk": HouseOfFunkScraper,
+    "jungle": JungleScraper,
+    "kohi": KohiScraper,
+    "monogram": MonogramScraper,
+    "narval": NarvalScraper,
+    "nektar": NektarScraper,
+    "nucleus": NucleusScraper,
+    "pirates": PiratesScraper,
+    "portebleue": PorteBleueScraper,
+    "quietly": QuietlyScraper,
+    "rabbithole": RabbitHoleScraper,
+    "roguewave": RogueWaveScraper,
+    "september": SeptemberScraper,
+    "sipstruck": SipstruckScraper,
+    "subtext": SubtextScraper,
+    "traffic": TrafficScraper,
+    "zaandklo": ZaAndKloScraper,
 }
 
-# ``all`` intentionally follows this tuple so default output order is stable.
-DEFAULT_SOURCES = (
-    "demello",
-    "traffic",
-    "portebleue",
-    "colorfull",
-    "angry",
-)
+# ``all`` intentionally follows the registry order so default output order is stable.
+DEFAULT_SOURCES = tuple(SCRAPER_REGISTRY.keys())
 
 
 def get_scraper(source: str) -> BaseScraper:
@@ -52,4 +86,4 @@ def get_scrapers(source: str = "all") -> list[BaseScraper]:
 def supported_sources() -> list[str]:
     """Return accepted CLI source keys, including the aggregate ``all`` key."""
     # Typer commands use this for validation and user-facing error messages.
-    return ["all", *SCRAPER_REGISTRY.keys()]
+    return ["all", *DEFAULT_SOURCES]

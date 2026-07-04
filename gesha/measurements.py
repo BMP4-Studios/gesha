@@ -39,8 +39,7 @@ def parse_weight_grams(value: str | None) -> int | None:
 
 def price_per_100g_cents(price_cents: int | None, weight_grams: int | None) -> int | None:
     """Return a rounded integer-cent price per 100 grams."""
-    # Missing or invalid inputs keep the UI honest by displaying NONE instead of
-    # pretending a unit price can be computed.
+    # Display NONE if we have missing or invalid inputs
     if price_cents is None or weight_grams is None or weight_grams <= 0:
         return None
     return round(price_cents * 100 / weight_grams)

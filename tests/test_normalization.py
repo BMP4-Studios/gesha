@@ -16,6 +16,13 @@ def test_normalize_tasting_notes_from_string() -> None:
     assert normalize_tasting_notes("Maple, spice") == ["maple", "spice"]
     assert normalize_tasting_notes("Apricot • Honey • Orange") == ["apricot", "honey", "orange"]
     assert normalize_tasting_notes("Honey. Caramel. Chocolate.") == ["honey", "caramel", "chocolate"]
+    assert normalize_tasting_notes("Chocolate – Almond - Cherry") == ["chocolate", "almond", "cherry"]
+    assert normalize_tasting_notes("Banana Bread x Apple x Dark Chocolate") == [
+        "banana bread",
+        "apple",
+        "dark chocolate",
+    ]
+    assert normalize_tasting_notes("🍊 Fresh Tangerine") == ["fresh tangerine"]
 
 
 def test_normalize_search_text() -> None:

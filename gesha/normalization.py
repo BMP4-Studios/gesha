@@ -41,7 +41,7 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
     if isinstance(values, str):
         # Support common note-list separators without reordering source values.
         values = re.split(
-            r"[,;/+|]|&|\s+and\s+|\s+-\s+|[\u00e2\u20ac\u00a2\u00c2\u00b7\u2022\u00b7]|\.\s+",
+            r"[,;/+|]|&|\s+and\s+|\s+x\s+|\s+[-\u2012\u2013\u2014\u2212]\s+|[\u00e2\u20ac\u00a2\u00c2\u00b7\u2022\u00b7]|\.\s+",
             values,
             flags=re.IGNORECASE,
         )
@@ -53,6 +53,9 @@ def normalize_tasting_notes(values: Iterable[str] | str | None) -> list[str]:
         if not isinstance(note, str):
             continue
         candidate = re.sub(r"\s+", " ", note).strip().strip(" .")
+        # Emoji bullets and decorative icons sometimes prefix one-note-per-line
+        # Shopify descriptions; remove them without touching accented words.
+        candidate = re.sub(r"^[^\w#]+", "", candidate).strip()
         if candidate:
             notes.append(candidate.lower())
     return notes

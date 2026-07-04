@@ -42,3 +42,27 @@ def test_extract_labeled_product_facts_from_traffic_paragraph_section() -> None:
     assert facts["varietal"] == "AA Batian & Ruiru"
     assert facts["roast_style"] == "Superlight"
     assert facts["tasting_notes"] == "tangerine, blackberry jam, raspberry"
+
+
+def test_extract_labeled_product_facts_from_adjacent_div_grid() -> None:
+    """Bare label/value grids map exact labels to catalog fields."""
+    # House of Funk uses sibling divs without punctuation, so the shared parser
+    # pairs exact known labels with the next visible sibling value.
+    html = """
+    <div class="coffee-info-grid">
+      <div class="info-label">Origin</div>   <div class="info-value">Quindio,&nbsp;Colombia</div>
+      <div class="info-label">Process</div>  <div class="info-value">Co-ferment Blend</div>
+      <div class="info-label">Farm</div>     <div class="info-value">Multiple</div>
+      <div class="info-label">Varietal</div> <div class="info-value">Variedad Colombia &amp; Castillo</div>
+      <div class="info-label">Producer</div> <div class="info-value">Jairo Arcila &amp; Leonid Ramirez</div>
+      <div class="info-label">Elevation</div><div class="info-value">1500-1800 masl</div>
+    </div>
+    """
+
+    facts = extract_labeled_product_facts_from_html(BeautifulSoup(html, "html.parser"))
+
+    assert facts["origin"] == "Quindio, Colombia"
+    assert facts["process"] == "Co-ferment Blend"
+    assert facts["producer"] == "Jairo Arcila & Leonid Ramirez"
+    assert facts["varietal"] == "Variedad Colombia & Castillo"
+    assert facts["altitude"] == "1500-1800 masl"

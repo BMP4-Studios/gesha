@@ -6,11 +6,16 @@
       "type": "debugpy",
       "request": "launch",
       "module": "gesha.cli.main",
-      "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-      "args": ["scrape", "colorfull"], // <-- REPLACE ME
+      "python": "${workspaceFolder}/.venv/bin/python",
+      // "args": ["list", "sipstruck"],
+       "args": ["scrape", "sipstruck"],
+      // "args": ["debug", "11"],
       "cwd": "${workspaceFolder}",
       "console": "internalConsole",
-      "justMyCode": true
+      "justMyCode": true,
+      "windows": {
+        "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      }
     }
   ]
 }

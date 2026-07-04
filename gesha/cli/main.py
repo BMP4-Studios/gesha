@@ -9,6 +9,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import re
 import sqlite3
 import subprocess
 import sys
@@ -59,6 +60,14 @@ console = Console()
 DEFAULT_PREFERENCES_PATH = Path("cart_preferences.txt")
 LOG_PATH = Path("gesha.log")
 
+# Raw scraper artifacts live under one ignored directory so repeated debugging
+# does not scatter large JSON/HTML files through the repo root.
+DEBUG_DIR = Path("debug")
+
+# The default pattern is intentionally broad; callers can pass exact visible
+# notes when tracking a specific missing-note bug from a product page.
+DEFAULT_TASTING_NOTES_DEBUG_PATTERN = r"notes?|tasting|flavou?r|profile|cup"
+
 # Typer's type stubs are stricter than its runtime API. These aliases keep
 # command signatures readable while avoiding noisy type-checking false positives.
 TyperParamFactory = Callable[..., Any]
@@ -73,9 +82,24 @@ preferences_file_option = typer_option(
     help="Text file containing include/exclude preference keywords and optional destination settings.",
 )
 collection_json_output_dir_option = typer_option(
-    Path("."),
+    DEBUG_DIR,
     "--output-dir",
-    help="Directory where <roaster>.json should be written; defaults to the current repo directory.",
+    help="Directory where <roaster>.json should be written; defaults to debug/.",
+)
+
+# These options are shared by the tasting-note diagnostic command so its defaults
+# stay visible near the rest of the CLI's reusable option definitions.
+tasting_notes_debug_search_option = typer_option(
+    DEFAULT_TASTING_NOTES_DEBUG_PATTERN,
+    "--search",
+    "-s",
+    help="Case-insensitive regex used to print matching lines from downloaded debug files.",
+)
+tasting_notes_debug_limit_option = typer_option(
+    5,
+    "--limit",
+    min=1,
+    help="Maximum number of cached coffees missing tasting notes to dump with gesha debug.",
 )
 rebuild_yes_option = typer_option(
     False,
@@ -92,6 +116,17 @@ rebuild_no_scrape_option = typer_option(
     False,
     "--no-scrape",
     help="Back up and recreate an empty database without scraping roaster websites.",
+)
+scrape_workers_option = typer_option(
+    None,
+    "--workers",
+    min=1,
+    help="Maximum roasters to scrape concurrently; use 1 for a gentler serial refresh.",
+)
+scrape_serial_option = typer_option(
+    False,
+    "--serial",
+    help="Scrape roasters one at a time. Equivalent to --workers 1.",
 )
 
 
@@ -140,7 +175,7 @@ def _read_preferences_for_command(preferences: Path) -> PreferenceConfig:
 
 def _print_coffees(coffees: Sequence[Coffee]) -> None:
     """Render queried ORM coffee records as the shared CLI catalog table."""
-    # Build the stable table shape used by scrape, cache, and list output.
+    # Build the stable table shape used by scrape and list output.
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("ID", style="dim", justify="right")
     table.add_column("Roaster")
@@ -153,7 +188,7 @@ def _print_coffees(coffees: Sequence[Coffee]) -> None:
     table.add_column("$/100g")
     table.add_column("Notes")
 
-    # Keep scrape output and cache/list output visually identical by rendering
+    # Keep scrape output and list output visually identical by rendering
     # records only after they have been stored and reloaded from the database.
     for coffee in coffees:
         notes = ", ".join(note.name for note in coffee.tasting_notes)
@@ -193,7 +228,7 @@ def _selected_cart_roaster_names(source: str) -> list[str]:
     return [get_scraper(source).ROASTER_NAME]
 
 
-def _refresh_catalog(source: str) -> None:
+def _refresh_catalog(source: str, workers: int | None = None) -> None:
     """Scrape one or all sources, persist results, and print refreshed records."""
     # Create the database on first execution so a refresh is immediately usable.
     init_db()
@@ -215,48 +250,67 @@ def _refresh_catalog(source: str) -> None:
 
         scrapers = get_scrapers(source)
         refreshed_roaster_names: list[str] = []
+        worker_count = min(workers or len(scrapers), len(scrapers))
 
         def run_scraper(scraper: BaseScraper) -> tuple[str, str, list[CoffeeData]]:
             """Run a network scraper in a worker and retain source identity."""
             console.print(f"[blue]Scraping {scraper.SOURCE_NAME}...[/blue]")
             return scraper.SOURCE_NAME, scraper.ROASTER_NAME, scraper.scrape()
 
-        # Each roaster is independent, so fetch sources concurrently while
-        # serializing database writes in the owning command/session thread.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(scrapers)) as executor:
-            future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
-            for future in concurrent.futures.as_completed(future_to_scraper):
-                scraper = future_to_scraper[future]
+        def log_scrape_failure(scraper: BaseScraper, exc: Exception) -> None:
+            """Report one scraper failure without aborting the whole refresh."""
+            # Keep full exception details in the log file while letting the
+            # other roasters finish normally.
+            logging.getLogger(__name__).debug(
+                "Scraper failed for %s",
+                scraper.SOURCE_NAME,
+                exc_info=True,
+            )
+            console.print(f"[red]Failed {scraper.SOURCE_NAME}: {exc}[/red]")
+
+        def persist_scrape_result(source_name: str, roaster_name: str, scraped_coffees: list[CoffeeData]) -> None:
+            """Write one scraper result after network work has completed."""
+            # Upsert current products before trimming rows no longer found on
+            # this successfully returned roaster listing.
+            for coffee in scraped_coffees:
+                service.create_or_update_coffee(coffee)
+
+            if scraped_coffees:
+                refreshed_roaster_names.append(roaster_name)
+                current_urls = [coffee.url for coffee in scraped_coffees if coffee.url]
+                removed_count = service.delete_stale_coffees(roaster_name, current_urls)
+            else:
+                removed_count = 0
+                console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
+
+            console.print(
+                f"[green]Finished {source_name}: {len(scraped_coffees)} imported, "
+                f"{removed_count} stale removed.[/green]"
+            )
+
+        if worker_count == 1:
+            # Serial mode is gentler on storefronts because only one roaster is
+            # contacted at a time. Database writes already happen in this thread.
+            for scraper in scrapers:
                 try:
-                    source_name, roaster_name, scraped_coffees = future.result()
+                    source_name, roaster_name, scraped_coffees = run_scraper(scraper)
                 except Exception as exc:
-                    # Keep full exception details in the log file while letting
-                    # the other roasters finish normally.
-                    logging.getLogger(__name__).debug(
-                        "Scraper failed for %s",
-                        scraper.SOURCE_NAME,
-                        exc_info=True,
-                    )
-                    console.print(f"[red]Failed {scraper.SOURCE_NAME}: {exc}[/red]")
+                    log_scrape_failure(scraper, exc)
                     continue
-
-                # Upsert current products before trimming rows no longer found
-                # on this successfully returned roaster listing.
-                for coffee in scraped_coffees:
-                    service.create_or_update_coffee(coffee)
-
-                if scraped_coffees:
-                    refreshed_roaster_names.append(roaster_name)
-                    current_urls = [coffee.url for coffee in scraped_coffees if coffee.url]
-                    removed_count = service.delete_stale_coffees(roaster_name, current_urls)
-                else:
-                    removed_count = 0
-                    console.print(f"[yellow]No coffees returned for {roaster_name}.[/yellow]")
-
-                console.print(
-                    f"[green]Finished {source_name}: {len(scraped_coffees)} imported, "
-                    f"{removed_count} stale removed.[/green]"
-                )
+                persist_scrape_result(source_name, roaster_name, scraped_coffees)
+        else:
+            # Each roaster is independent, so fetch sources concurrently while
+            # serializing database writes in the owning command/session thread.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
+                future_to_scraper = {executor.submit(run_scraper, s): s for s in scrapers}
+                for future in concurrent.futures.as_completed(future_to_scraper):
+                    scraper = future_to_scraper[future]
+                    try:
+                        source_name, roaster_name, scraped_coffees = future.result()
+                    except Exception as exc:
+                        log_scrape_failure(scraper, exc)
+                        continue
+                    persist_scrape_result(source_name, roaster_name, scraped_coffees)
 
         console.print("[blue]Listing cleaned coffees...[/blue]")
         # An all-source refresh displays only successfully returned roasters;
@@ -358,16 +412,17 @@ def scrape(
         "all",
         help="The specific roaster to scrape (e.g., 'traffic') or 'all' to refresh the entire catalog.",
     ),
+    workers: int | None = scrape_workers_option,
+    serial: bool = scrape_serial_option,
 ) -> None:
     """Refresh the local database by scraping roaster websites.
 
     This command fetches product data, normalizes it, updates existing records,
     and deletes coffees that are no longer available on the roaster's site.
-    It is also the network-backed counterpart to the read-only ``cache`` command.
     """
     # All scrape orchestration lives in one helper so the no-argument callback
     # and explicit ``gesha scrape`` command behave the same way.
-    _refresh_catalog(source)
+    _refresh_catalog(source, workers=1 if serial else workers)
 
 
 @app.command()
@@ -458,13 +513,38 @@ def collection_json(
     console.print(f"[green]Collection JSON saved to {output_path}[/green]")
 
 
+def _matching_debug_lines(path: Path, pattern: re.Pattern[str], limit: int = 10) -> list[tuple[int, str]]:
+    """Return bounded regex matches from a debug artifact."""
+    matches: list[tuple[int, str]] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
+        if pattern.search(line):
+            # Keep terminal diagnostics readable even when Shopify embeds huge HTML fields.
+            matches.append((line_number, line[:300]))
+            if len(matches) >= limit:
+                break
+    return matches
+
+
+def _print_debug_matches(path: Path, pattern: re.Pattern[str]) -> None:
+    """Show high-signal lines from one generated debug file."""
+    matches = _matching_debug_lines(path, pattern)
+    if not matches:
+        console.print(f"[yellow]No matches for /{pattern.pattern}/ in {path}.[/yellow]")
+        return
+
+    console.print(f"[green]Matches in {path}:[/green]")
+    for line_number, line in matches:
+        console.print(f" - {line_number}: {line}")
+
+
+# TODO: this is only used once so could be just moved to list_coffees_command
 def _query_cached_coffees(
     process: str | None,
     flavour: str | None,
     roaster: str | None,
     available: bool | None,
 ) -> None:
-    """Print cached rows for the read-only ``list`` and ``cache`` commands."""
+    """Print cached rows for the read-only ``list`` command."""
     # Open a short read session so cached queries do not depend on scrape state.
     with get_session() as session:
         service = CoffeeService(session)
@@ -477,26 +557,21 @@ def _query_cached_coffees(
         _print_coffees(coffees)
 
 
-@app.command(name="cache")
-def cache_coffees_command(
-    process: str | None = typer_option(None, help="Filter by coffee process."),
-    flavour: str | None = typer_option(None, help="Filter by tasting note."),
-    roaster: str | None = typer_option(None, help="Filter by roaster name."),
-    available: bool | None = typer_option(None, help="Show only available coffees."),
-) -> None:
-    """Relist previously scraped coffees without contacting roaster websites."""
-    _query_cached_coffees(process, flavour, roaster, available)
-
-
 @app.command(name="list")
 def list_coffees_command(
+    # because this first one is a typer_argument, it is a positional argument and will be filled first if the user provides an argument without a flag
+    roaster_pos: str | None = typer_argument(None, metavar="ROASTER", help="Filter by roaster name (positional)."),
     process: str | None = typer_option(None, help="Filter by coffee process."),
     flavour: str | None = typer_option(None, help="Filter by tasting note."),
-    roaster: str | None = typer_option(None, help="Filter by roaster name."),
+    roaster: str | None = typer_option(None, "--roaster", help="Filter by roaster name."),
     available: bool | None = typer_option(None, help="Show only available coffees."),
 ) -> None:
-    """List and filter cached coffees; equivalent to ``gesha cache``."""
-    _query_cached_coffees(process, flavour, roaster, available)
+    """List and filter cached coffees."""
+    if roaster_pos and roaster and roaster_pos != roaster:
+        raise typer.BadParameter("Specify roaster either positionally or with --roaster, not both.")
+
+    final_roaster = roaster_pos or roaster
+    _query_cached_coffees(process, flavour, final_roaster, available)
 
 
 @app.command()
@@ -589,6 +664,31 @@ def _print_cart_candidate(
         )
 
 
+def _print_gesha_banner() -> None:
+    """Render the shared TXT banner used as the CLI introduction."""
+    banner = """         .........::::::::-::::::::::...
+       :-----:::::::::::::::::::::::::-=-::..
+      -=-------==-----------=--------------:::.
+     .=:-:::::-#*----=-=---**+::-------:---:::-.
+     -=:::::::::::----::-----------------.:--:--
+     =-::::::::::::----------------------  =--:-.
+    .-::::::::::-----:::----------:::::--  ---:-.
+    :-:------------:::::----::::::::::::-  -:-:-.
+   .---------------::---::::::::::::::::-:-:-:-:
+   .-::::::::::-------:-::::::::::::::::--:----.
+   :-:::::::::::::::::::::::::::::::::::::---:.
+   --:::::::::::::::::::::::---:::::::----::.
+   .:::::::--::-------------------:-----:-:
+       ..:---:::::::::::::--=---:-::::::-::.
+    .:::--:..         ..::::::-::-.     .-:-.
+  .:-:-=-:::....  ..:::::::...::::       :-:-.
+ .-=--:..::::----:---::...   .-.::        :---..
+.=#**-        .-+==:..      .=+==:        .*%%*-:
+.---:.        :*#*-         .----.         :==--.
+              .:--.          ....           ..."""
+    console.print(Align.center(Text(banner, style="bold cyan")))
+
+
 def _format_keyword_matches(keywords: Sequence[str]) -> str:
     """Display matched keywords consistently in cart diagnostics."""
     return ", ".join(keywords) if keywords else NA_LABEL
@@ -596,7 +696,7 @@ def _format_keyword_matches(keywords: Sequence[str]) -> str:
 
 def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     """Explain whether one variant can be selected for cart recommendations."""
-    # Collect every blocker so cart-debug can explain the whole decision at once.
+    # Collect every blocker so debug can explain the whole decision at once.
     reasons: list[str] = []
     if not variant.availability:
         reasons.append("unavailable")
@@ -617,119 +717,154 @@ def _variant_cart_usability(variant: CoffeeVariant) -> tuple[bool, str]:
     return True, "usable"
 
 
-@app.command(name="cart-debug")
-def cart_debug(
-    coffee_id: int,
-    preferences: Path = preferences_file_option,
-) -> None:
+def _print_cart_eligibility_debug(coffee_id: int, coffee: Coffee, preference_config: PreferenceConfig) -> None:
     """Explain why one cached coffee is or is not eligible for cart output."""
-    # Start with the same preference parsing as ``gesha cart`` so diagnostics
-    # describe the real cart command behavior.
-    try:
-        preference_config = _read_preferences_for_command(preferences)
-    except ValueError as exc:
-        console.print(f"[red]Error: {exc}[/red]")
-        raise typer.Exit(code=1) from exc
+    # Gather the same matching and variant-selection evidence used by carts.
+    include_matches = matched_keywords(coffee, preference_config.keywords)
+    exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
+    selected_variant = smallest_available_variant(coffee)
+    cart_item = cart_item_for_coffee(
+        coffee,
+        preference_config.keywords,
+        preference_config.excluded_keywords,
+    )
 
-    # The database may not exist on a fresh checkout; initialize it before lookup.
-    init_db()
+    # Reasons explain hard skips; warnings explain usable recommendations
+    # that may still be missing a pre-filled Shopify cart URL.
+    reasons: list[str] = []
+    warnings: list[str] = []
+    if not coffee.availability:
+        reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
+    # TODO: this logic is duplicated in ``cart_item_for_coffee``; refactor to avoid drift -- and it currently has drifted
+    if exclude_matches:
+        reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
+    if not include_matches:
+        reasons.append("Coffee does not match any include keyword.")
+    if coffee.url is None:
+        reasons.append("Coffee has no product URL.")
+    if not coffee.variants:
+        reasons.append("Coffee has no cached Shopify variants.")
+    elif selected_variant is None:
+        reasons.append(
+            "No variant is available that is retail-sized, priced, weighted, and within the "
+            f"{MAX_CART_BAG_WEIGHT_GRAMS}g bag cap."
+        )
+    if cart_item is not None and cart_item.variant_id is None:
+        warnings.append("Selected variant has no Shopify variant ID, so a pre-filled cart link cannot be built.")
+
+    is_cart_eligible = coffee.availability and cart_item is not None
+    result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
+
+    # The summary table mirrors the high-level cart eligibility decision.
+    console.print(f"[bold cyan]Cart eligibility for coffee #{coffee_id}[/bold cyan]")
+    summary = Table(show_header=False)
+    summary.add_row("Result", result)
+    summary.add_row("Roaster", coffee.roaster.name)
+    summary.add_row("Name", coffee.name)
+    summary.add_row("Availability", "yes" if coffee.availability else "no")
+    summary.add_row("Include matches", _format_keyword_matches(include_matches))
+    summary.add_row("Exclude matches", _format_keyword_matches(exclude_matches))
+    summary.add_row("URL", coffee.url or NA_LABEL)
+    if selected_variant is not None:
+        summary.add_row(
+            "Selected variant",
+            (
+                f"{selected_variant.name} / {selected_variant.bag_size or NA_LABEL} / "
+                f"{price_display(selected_variant.price_cents)} / {selected_variant.weight_grams}g"
+            ),
+        )
+    else:
+        summary.add_row("Selected variant", NA_LABEL)
+    console.print(summary)
+
+    # Keep skip explanations separate from the data table for quick scanning.
+    if reasons:
+        console.print("[bold]Skip reason(s):[/bold]")
+        for reason in reasons:
+            console.print(f" - {reason}")
+    else:
+        console.print("[green]No skip reasons found.[/green]")
+
+    if warnings:
+        console.print("[bold yellow]Warning(s):[/bold yellow]")
+        for warning in warnings:
+            console.print(f" - {warning}")
+
+    # Variant-by-variant diagnostics show why the selected variant won, or why
+    # no variant was eligible.
+    variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
+    variants.add_column("Selected")
+    variants.add_column("Variant")
+    variants.add_column("Available")
+    variants.add_column("Weight", justify="right")
+    variants.add_column("Price", justify="right")
+    variants.add_column("Cart status")
+    for variant in coffee.variants:
+        _, status = _variant_cart_usability(variant)
+        variants.add_row(
+            "yes" if selected_variant is variant else "",
+            variant.name,
+            "yes" if variant.availability else "no",
+            f"{variant.weight_grams}g" if variant.weight_grams is not None else NA_LABEL,
+            price_display(variant.price_cents),
+            status,
+        )
+    console.print(variants)
+
+
+def _write_raw_debug_data(coffee_id: int, coffee: Coffee) -> Path:
+    """Fetch and write raw source responses for one cached coffee."""
+    # Older rows or manual fixtures can lack URLs, which makes raw capture impossible.
+    if not coffee.url:
+        console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
+        raise typer.Exit(code=1)
+
+    # One debug file contains both JSON and HTML so parser fixtures can be
+    # derived from a single capture when a roaster changes its page shape.
+    output_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
+    output_path.parent.mkdir(exist_ok=True)
+    output: list[str] = [f"=== PRODUCT URL ===\n{coffee.url}\n\n"]
+    scraper = _scraper_for_roaster_name(coffee.roaster.name)
+    transport = cast(Any, scraper.session if scraper is not None else requests)
+
+    # Capture a Shopify-style JSON response when supported; a missing JSON
+    # endpoint is tolerated because non-Shopify records are also debuggable.
+    json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
+    json_headers = None
+    if scraper is not None:
+        json_headers = transport.headers.copy()
+        json_headers["Referer"] = coffee.url
+    res_json = transport.get(json_url, headers=json_headers, timeout=15)
+    if res_json.status_code == 200:
+        output.append("=== RAW JSON DATA ===\n")
+        output.append(res_json.text)
+        output.append("\n\n")
+
+    # The HTML response is always included because each parser may depend on
+    # selectors or embedded page payloads not represented in JSON.
+    res_html = transport.get(coffee.url, timeout=15)
+    res_html.raise_for_status()
+    output.append("=== RAW HTML DATA ===\n")
+    output.append(res_html.text)
+
+    output_path.write_text("".join(output), encoding="utf-8")
+    return output_path
+
+
+def _write_cached_raw_debug_data(coffee_id: int) -> Path:
+    """Load one cached coffee and write its raw debug artifact."""
+    # Keep this separate from the public debug command so batch diagnostics can
+    # gather raw files without also printing cart eligibility tables each time.
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
+
+        # Fail before making network requests if there is no cached target.
         if coffee is None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
-        # Gather the same matching and variant-selection evidence used by carts.
-        include_matches = matched_keywords(coffee, preference_config.keywords)
-        exclude_matches = matched_keywords(coffee, preference_config.excluded_keywords)
-        selected_variant = smallest_available_variant(coffee)
-        cart_item = cart_item_for_coffee(
-            coffee,
-            preference_config.keywords,
-            preference_config.excluded_keywords,
-        )
-
-        # Reasons explain hard skips; warnings explain usable recommendations
-        # that may still be missing a pre-filled Shopify cart URL.
-        reasons: list[str] = []
-        warnings: list[str] = []
-        if not coffee.availability:
-            reasons.append("Coffee is marked unavailable; `gesha cart` only loads available coffees.")
-        if exclude_matches:
-            reasons.append(f"Coffee matches excluded keyword(s): {_format_keyword_matches(exclude_matches)}.")
-        if not include_matches:
-            reasons.append("Coffee does not match any include keyword.")
-        if coffee.url is None:
-            reasons.append("Coffee has no product URL.")
-        if not coffee.variants:
-            reasons.append("Coffee has no cached Shopify variants.")
-        elif selected_variant is None:
-            reasons.append(
-                "No variant is available, retail-sized, priced, weighted, and within the "
-                f"{MAX_CART_BAG_WEIGHT_GRAMS}g bag cap."
-            )
-        if cart_item is not None and cart_item.variant_id is None:
-            warnings.append("Selected variant has no Shopify variant ID, so a pre-filled cart link cannot be built.")
-
-        is_cart_eligible = coffee.availability and cart_item is not None
-        result = "[green]Included in cart recommendations[/green]" if is_cart_eligible else "[red]Skipped[/red]"
-
-        # The summary table mirrors the high-level cart eligibility decision.
-        console.print(f"[bold cyan]Cart debug for coffee #{coffee_id}[/bold cyan]")
-        summary = Table(show_header=False)
-        summary.add_row("Result", result)
-        summary.add_row("Roaster", coffee.roaster.name)
-        summary.add_row("Name", coffee.name)
-        summary.add_row("Availability", "yes" if coffee.availability else "no")
-        summary.add_row("Include matches", _format_keyword_matches(include_matches))
-        summary.add_row("Exclude matches", _format_keyword_matches(exclude_matches))
-        summary.add_row("URL", coffee.url or NA_LABEL)
-        if selected_variant is not None:
-            summary.add_row(
-                "Selected variant",
-                (
-                    f"{selected_variant.name} / {selected_variant.bag_size or NA_LABEL} / "
-                    f"{price_display(selected_variant.price_cents)} / {selected_variant.weight_grams}g"
-                ),
-            )
-        else:
-            summary.add_row("Selected variant", NA_LABEL)
-        console.print(summary)
-
-        # Keep skip explanations separate from the data table for quick scanning.
-        if reasons:
-            console.print("[bold]Skip reason(s):[/bold]")
-            for reason in reasons:
-                console.print(f" - {reason}")
-        else:
-            console.print("[green]No skip reasons found.[/green]")
-
-        if warnings:
-            console.print("[bold yellow]Warning(s):[/bold yellow]")
-            for warning in warnings:
-                console.print(f" - {warning}")
-
-        # Variant-by-variant diagnostics show why the selected variant won, or
-        # why no variant was eligible.
-        variants = Table(title="Cached variants", show_header=True, header_style="bold magenta")
-        variants.add_column("Selected")
-        variants.add_column("Variant")
-        variants.add_column("Available")
-        variants.add_column("Weight", justify="right")
-        variants.add_column("Price", justify="right")
-        variants.add_column("Cart status")
-        for variant in coffee.variants:
-            _, status = _variant_cart_usability(variant)
-            variants.add_row(
-                "yes" if selected_variant is variant else "",
-                variant.name,
-                "yes" if variant.availability else "no",
-                f"{variant.weight_grams}g" if variant.weight_grams is not None else NA_LABEL,
-                price_display(variant.price_cents),
-                status,
-            )
-        console.print(variants)
+        return _write_raw_debug_data(coffee_id, coffee)
 
 
 @app.command()
@@ -786,8 +921,7 @@ def cart(
         console.print("[red]Error: Add at least one preference keyword.[/red]")
         raise typer.Exit(code=1)
 
-    # Resolve through the scraper registry so cart all includes every supported
-    # roaster, even before a shipping policy has been configured for it.
+    # Resolve through the scraper registry so cart all includes every supported roaster, even before a shipping policy has been configured for it.
     selected_roasters = _selected_cart_roaster_names(source)
     override_cents = round(threshold * 100) if threshold is not None else None
 
@@ -797,8 +931,8 @@ def cart(
         coffees = service.list_coffees(available=True)
         shipping_thresholds = {}
 
-        # Shipping lookups are independent per roaster, so run them concurrently
-        # without mixing them into the database session work.
+        # TODO #18: getting the shipping policy needs to be done when we scrape, not when we build the cart
+        # Shipping lookups are independent per roaster, so run them concurrently without mixing them into the database session work.
         if override_cents is None:
             roasters_with_coffee = {
                 roaster_name
@@ -819,8 +953,7 @@ def cart(
                     roaster_name: future.result() for roaster_name, future in threshold_futures.items()
                 }
 
-        # Print the fixed header before per-roaster sections so empty roasters
-        # still make it clear which destination/preferences were used.
+        # Print the fixed header before per-roaster sections so empty roasters still make it clear which destination/preferences were used.
         console.print(
             Align.center(
                 Text(
@@ -829,6 +962,8 @@ def cart(
                 )
             )
         )
+        console.print()
+        _print_gesha_banner()
         console.print(
             f"\n[bold]Destination:[/bold] {destination.province}, Canada"
             + (f" {destination.postal_code}" if destination.postal_code else "")
@@ -856,7 +991,13 @@ def cart(
                     console.print(f"\n[yellow]{roaster_name}: no Canadian shipping policy is configured.[/yellow]")
                     continue
                 threshold_cents = shipping_threshold.amount_cents
-                threshold_source = "live policy page" if shipping_threshold.detected_live else "configured fallback"
+                threshold_source = (
+                    "actual policy shipping"
+                    if shipping_threshold.detected_live
+                    else "configured fallback"
+                    if shipping_threshold.source == "policy"
+                    else "hardcoded fallback"
+                )
                 policy_url = shipping_threshold.policy_url
 
             # Convert cached coffees into optimizer items. Coffees with no
@@ -881,7 +1022,7 @@ def cart(
             )
 
             console.print(f"\n[bold cyan]{roaster_name}[/bold cyan]")
-            console.print(f"Estimated free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
+            console.print(f"Free-shipping threshold: {price_display(threshold_cents)} ({threshold_source})")
             if policy_url:
                 console.print(f"Policy: [link={policy_url}]{policy_url}[/link]")
 
@@ -896,10 +1037,18 @@ def cart(
 
 
 @app.command()
-def debug(coffee_id: int) -> None:
-    """Fetch raw source responses for a cached coffee to help parser debugging."""
+def debug(
+    coffee_id: int,
+    preferences: Path = preferences_file_option,
+) -> None:
+    """Explain cart eligibility and fetch raw source responses for one cached coffee."""
+    try:
+        preference_config = _read_preferences_for_command(preferences)
+    except ValueError as exc:
+        console.print(f"[red]Error: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
 
-    # The cached row gives us the canonical URL that the scraper stored.
+    init_db()
     with get_session() as session:
         service = CoffeeService(session)
         coffee = service.get_coffee_by_id(coffee_id)
@@ -909,42 +1058,109 @@ def debug(coffee_id: int) -> None:
             console.print(f"[red]Coffee with ID {coffee_id} not found.[/red]")
             raise typer.Exit(code=1)
 
-        # Older rows or manual fixtures can lack URLs, which makes raw capture impossible.
-        if not coffee.url:
-            console.print(f"[red]Coffee with ID {coffee_id} has no URL to debug.[/red]")
-            raise typer.Exit(code=1)
-
-        # One debug file contains both JSON and HTML so parser fixtures can be
-        # derived from a single capture when a roaster changes its page shape.
-        output_path = Path("debug") / f"debug_{coffee_id}.txt"
-        output_path.parent.mkdir(exist_ok=True)
-        output: list[str] = []
-        scraper = _scraper_for_roaster_name(coffee.roaster.name)
-        transport = cast(Any, scraper.session if scraper is not None else requests)
-
-        # Capture a Shopify-style JSON response when supported; a missing JSON
-        # endpoint is tolerated because non-Shopify records are also debuggable.
-        json_url = f"{coffee.url}.js" if not coffee.url.endswith(".js") else coffee.url
-        json_headers = None
-        if scraper is not None:
-            json_headers = transport.headers.copy()
-            json_headers["Referer"] = coffee.url
-        res_json = transport.get(json_url, headers=json_headers, timeout=15)
-        if res_json.status_code == 200:
-            output.append("=== RAW JSON DATA ===\n")
-            output.append(res_json.text)
-            output.append("\n\n")
-
-        # The HTML response is always included because each parser may depend
-        # on selectors or embedded page payloads not represented in JSON.
-        res_html = transport.get(coffee.url, timeout=15)
-        res_html.raise_for_status()
-        output.append("=== RAW HTML DATA ===\n")
-        output.append(res_html.text)
-
-        output_path.write_text("".join(output), encoding="utf-8")
+        # The public debug command combines the cart eligibility diagnostic
+        # with the raw JSON/HTML capture so one ID answers both common questions.
+        _print_cart_eligibility_debug(coffee_id, coffee, preference_config)
+        output_path = _write_raw_debug_data(coffee_id, coffee)
 
         console.print(f"[green]Full raw data dumped to {output_path}[/green]")
+
+
+@app.command(name="fix-tasting-notes")
+def fix_tasting_notes(
+    source: str = typer_argument(
+        ...,
+        help="The roaster whose missing tasting notes should be diagnosed.",
+    ),
+    search: str = tasting_notes_debug_search_option,
+    limit: int = tasting_notes_debug_limit_option,
+) -> None:
+    """Collect raw artifacts for cached coffees missing tasting notes.
+
+    The fix_tasting_notes command is a diagnostic tool for identifying why tasting notes are missing from cached coffees.
+
+    Here's what it does:
+    - Validates input: Requires a specific roaster (not "all") and compiles a search regex pattern
+    - Downloads Shopify JSON: Fetches the roaster's collection JSON feed to look for tasting note data
+    - Searches collection JSON: Uses the regex pattern to find matching lines that might contain tasting notes
+    - Queries local DB for cached coffees: Retrieves all coffees from that roaster that are missing tasting notes
+    - Fetches raw product pages: Downloads the raw JSON and HTML for up to --limit products
+    - Searches product pages: Uses the same regex to find lines containing potential tasting note info
+
+    The purpose is to help debug extraction issues. If a regex match appears in the raw product data but not in the
+    parsed cached output, it suggests the tasting note parser needs improvement or isn't reaching that part of the
+    page structure. It's essentially a troubleshooting tool for the data extraction pipeline.
+
+    """
+    # Get outta here if we're trying to debug everything or an unknown roaster
+    if source == "all" or source not in supported_sources():
+        valid_sources = sorted([name for name in supported_sources() if name != "all"])
+        console.print(f"[red]Error: '{source}' is not a supported single roaster for tasting-note debugging.[/red]")
+        console.print("\n[bold]Available roasters:[/bold]")
+        for valid_source in valid_sources:
+            console.print(f" - {valid_source}")
+        raise typer.Exit(code=1)
+
+    # Compile once before network/database work so an invalid regex fails fast.
+    try:
+        pattern = re.compile(search, flags=re.IGNORECASE)
+    except re.error as exc:
+        console.print(f"[red]Error: invalid --search regex: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    # First look in the collection json
+    collection_json(source, output_dir=DEBUG_DIR)
+    collection_path = DEBUG_DIR / f"{source}.json"
+    if collection_path.exists():
+        _print_debug_matches(collection_path, pattern)
+
+    # then look in the cached coffees for this roaster
+    scraper = get_scraper(source)
+    init_db()
+    with get_session() as session:
+        service = CoffeeService(session)
+
+        # get all cached coffees from the db for this roaster
+        coffees = service.list_coffees(roaster_name=scraper.ROASTER_NAME)
+        if not coffees:
+            console.print(
+                f"[yellow]No cached coffees found for {scraper.ROASTER_NAME}. Run `gesha scrape {source}` first.[/yellow]"
+            )
+            return
+
+        # Only products with no notes and a URL can help diagnose extraction gaps.
+        missing_notes = [
+            coffee for coffee in coffees if coffee.id is not None and coffee.url and not coffee.tasting_notes
+        ]
+        if not missing_notes:
+            console.print(f"[green]No cached {scraper.ROASTER_NAME} coffees are missing tasting notes.[/green]")
+            return
+
+        console.print(
+            f"[yellow]{len(missing_notes)} cached {scraper.ROASTER_NAME} coffees are missing tasting notes.[/yellow]"
+        )
+        # Copy IDs out of the session before writing raw artifacts, because the
+        # helper opens its own short read session for each selected product.
+        debug_ids = [coffee.id for coffee in missing_notes[:limit] if coffee.id is not None]
+
+    for coffee_id in debug_ids:
+        # Product debug files include both Shopify .js and rendered HTML; the
+        # HTML side is usually where theme-specific note selectors are discovered.
+        _write_cached_raw_debug_data(coffee_id)
+        product_debug_path = DEBUG_DIR / f"debug_{coffee_id}.txt"
+        if product_debug_path.exists():
+            _print_debug_matches(product_debug_path, pattern)
+
+    if len(debug_ids) < len(missing_notes):
+        console.print(
+            f"[yellow]Stopped after {len(debug_ids)} product dumps because --limit is {limit}. "
+            "Increase --limit to inspect more cached products.[/yellow]"
+        )
+
+    console.print(
+        "[blue]If matches appear in product debug files but not in parsed output, add product-page hydration "
+        "or a source-specific tasting-note parser for this roaster.[/blue]"
+    )
 
 
 @app.command(name="test")

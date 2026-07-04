@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import closing
+from pathlib import Path
 from types import SimpleNamespace
 
 import gesha.cli.main as cli_main
 import pytest
 from gesha.db.models import Coffee, CoffeeVariant, Roaster, TastingNote
-from gesha.scrapers.shopify_scraper import TrafficScraper
+from gesha.scrapers.shopify_children_scrapers import TrafficScraper
 
 
 class FakeCollectionResponse:
@@ -123,6 +124,76 @@ def test_collection_json_command_writes_roaster_json(
     )
 
 
+def test_fix_tasting_notes_downloads_collection_and_missing_product_debug(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    """The tasting-note diagnostic command gathers the usual debug artifacts."""
+    scraper = TrafficScraper()
+    fake_session = FakeCollectionSession()
+    roaster = Roaster(name="Traffic Coffee")
+    missing_notes = Coffee(
+        id=7,
+        name="Missing Notes",
+        url="https://example.test/products/missing-notes",
+        roaster=roaster,
+    )
+    parsed_notes = Coffee(
+        id=8,
+        name="Parsed Notes",
+        url="https://example.test/products/parsed-notes",
+        roaster=roaster,
+    )
+    parsed_notes.tasting_notes.append(TastingNote(name="peach"))
+    debug_calls: list[int] = []
+
+    class FakeCoffeeService:
+        """Return cached coffees without touching a real database."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def list_coffees(
+            self,
+            process: str | None = None,
+            flavour: str | None = None,
+            roaster_name: str | None = None,
+            available: bool | None = None,
+        ) -> list[Coffee]:
+            """Return one coffee missing notes and one already parsed coffee."""
+            assert roaster_name == "Traffic Coffee"
+            return [missing_notes, parsed_notes]
+
+    def fake_write_cached_raw_debug_data(coffee_id: int) -> Path:
+        """Write the product debug file that the diagnostic command should scan."""
+        debug_calls.append(coffee_id)
+        cli_main.DEBUG_DIR.mkdir(exist_ok=True)
+        debug_path = cli_main.DEBUG_DIR / f"debug_{coffee_id}.txt"
+        debug_path.write_text(
+            "=== RAW HTML DATA ===\nDebug Coffee tasting notes: Peach",
+            encoding="utf-8",
+        )
+        return debug_path
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(scraper, "session", fake_session)
+    monkeypatch.setattr(cli_main, "get_scraper", lambda source: scraper)
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "_write_cached_raw_debug_data", fake_write_cached_raw_debug_data)
+
+    cli_main.fix_tasting_notes("traffic", search="Debug Coffee|tasting", limit=2)
+
+    assert fake_session.calls == [
+        ("https://www.trafficcoffee.com/collections/coffee/products.json?limit=250&page=1", 15)
+    ]
+    assert (tmp_path / "debug" / "traffic.json").exists()
+    assert (tmp_path / "debug" / "debug_7.txt").exists()
+    assert debug_calls == [7]
+
+
 def test_rebuild_backs_up_resets_and_scrapes(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
@@ -162,13 +233,13 @@ def test_rebuild_backs_up_resets_and_scrapes(
     assert marker_count == 1
 
 
-def test_cart_debug_explains_unavailable_keyword_match(
+def test_debug_explains_unavailable_keyword_match(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A matching coffee can still be skipped when availability/variants fail."""
-    # Preferences include both matches and exclusions so cart-debug prints each path.
+    # Preferences include both matches and exclusions so debug prints each path.
     preferences = tmp_path / "preferences.txt"
     preferences.write_text("gesha\ncoferment\n! decaf\n", encoding="utf-8")
 
@@ -192,6 +263,7 @@ def test_cart_debug_explains_unavailable_keyword_match(
             )
         ],
     )
+    transport = FakeDebugTransport()
 
     class FakeCoffeeService:
         """Return the fixture coffee without touching a real database."""
@@ -205,17 +277,24 @@ def test_cart_debug_explains_unavailable_keyword_match(
             return coffee if coffee_id == 25 else None
 
     # Replace database access with the fixture service while keeping command code intact.
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(
+        cli_main,
+        "get_scrapers",
+        lambda source: [SimpleNamespace(ROASTER_NAME="Test Roaster", session=transport)],
+    )
 
-    cli_main.cart_debug(25, preferences=preferences)
+    cli_main.debug(25, preferences=preferences)
 
     output = capsys.readouterr().out
     assert "Skipped" in output
     assert "gesha" in output
     assert "Coffee is marked unavailable" in output
     assert "unavailable" in output
+    assert (tmp_path / "debug" / "debug_25.txt").exists()
 
 
 def test_refresh_catalog_continues_when_one_scraper_raises(
@@ -276,6 +355,79 @@ def test_refresh_catalog_continues_when_one_scraper_raises(
     assert "Finished Good" in output
 
 
+def test_scrape_serial_option_forces_one_worker(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The public --serial flag maps to the same worker count as --workers 1."""
+    calls: list[tuple[str, int | None]] = []
+
+    def fake_refresh_catalog(source: str, workers: int | None = None) -> None:
+        """Capture scrape orchestration arguments without network work."""
+        calls.append((source, workers))
+
+    monkeypatch.setattr(cli_main, "_refresh_catalog", fake_refresh_catalog)
+
+    cli_main.scrape(source="all", workers=4, serial=True)
+
+    assert calls == [("all", 1)]
+
+
+def test_refresh_catalog_workers_one_runs_scrapers_in_source_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Serial refresh contacts one roaster at a time in registry order."""
+    events: list[str] = []
+
+    class FirstScraper:
+        """First fixture scraper in source order."""
+
+        SOURCE_NAME = "First"
+        ROASTER_NAME = "First Roaster"
+
+        def scrape(self) -> list[object]:
+            """Record the serial execution order."""
+            events.append("first")
+            return []
+
+    class SecondScraper:
+        """Second fixture scraper in source order."""
+
+        SOURCE_NAME = "Second"
+        ROASTER_NAME = "Second Roaster"
+
+        def scrape(self) -> list[object]:
+            """Record the serial execution order."""
+            events.append("second")
+            return []
+
+    class FakeCoffeeService:
+        """Minimal service used by _refresh_catalog."""
+
+        def __init__(self, session: FakeSession) -> None:
+            """Accept the fake session for API compatibility."""
+            self.session = session
+
+        def list_coffees(self, *args: object, **kwargs: object) -> list[object]:
+            """Return no cached coffees for final rendering."""
+            return []
+
+        def create_or_update_coffee(self, coffee: object) -> None:
+            """Record no-op imports."""
+            return None
+
+        def delete_stale_coffees(self, roaster_name: str, current_urls: list[str]) -> int:
+            """Return no stale deletions."""
+            return 0
+
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
+    monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
+    monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
+    monkeypatch.setattr(cli_main, "supported_sources", lambda: ["all", "first", "second"])
+    monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [FirstScraper(), SecondScraper()])
+
+    cli_main._refresh_catalog("all", workers=1)
+
+    assert events == ["first", "second"]
+
+
 def test_cart_all_roasters_come_from_scraper_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     """cart all follows supported scrapers, not the shipping policy keys."""
     monkeypatch.setattr(
@@ -324,12 +476,13 @@ def test_debug_uses_scraper_transport(
         raise AssertionError("plain requests should not be used")
 
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli_main, "init_db", lambda: None)
     monkeypatch.setattr(cli_main, "get_session", lambda: FakeSession())
     monkeypatch.setattr(cli_main, "CoffeeService", FakeCoffeeService)
     monkeypatch.setattr(cli_main, "get_scrapers", lambda source: [fake_scraper])
     monkeypatch.setattr(cli_main.requests, "get", fail_plain_requests)
 
-    cli_main.debug(7)
+    cli_main.debug(7, preferences=cli_main.DEFAULT_PREFERENCES_PATH)
 
     assert transport.calls == [
         (
@@ -343,5 +496,7 @@ def test_debug_uses_scraper_transport(
         ("https://example.test/products/debug-coffee", None, 15),
     ]
     assert (tmp_path / "debug" / "debug_7.txt").read_text(encoding="utf-8") == (
+        "=== PRODUCT URL ===\n"
+        "https://example.test/products/debug-coffee\n\n"
         '=== RAW JSON DATA ===\n{"title":"Debug Coffee"}\n\n=== RAW HTML DATA ===\n<html>Debug Coffee</html>'
     )

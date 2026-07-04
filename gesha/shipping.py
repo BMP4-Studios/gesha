@@ -83,11 +83,13 @@ class ShippingThreshold:
     amount_cents: int
     policy_url: str
     detected_live: bool
+    source: str
 
 
+# TODO: I'm not sure any of these are working
 SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
-    # These are known fallbacks plus regexes for refreshing against public
-    # policy pages. Fallbacks keep cart optimization useful when pages change.
+    # These are known fallbacks plus regexes for refreshing against public policy pages.
+    # Fallbacks keep cart optimization useful when pages change.
     "De Mello Coffee": ShippingPolicy(
         roaster_name="De Mello Coffee",
         policy_url="https://hellodemello.com/pages/faq",
@@ -122,6 +124,32 @@ SHIPPING_POLICIES: Final[dict[str, ShippingPolicy]] = {
         fallback_cents={"CA": 6500},
         detection_patterns={"CA": (r"free shipping\s+(?:for\s+)?orders\s+(?:above|over)\s+\$?(\d+(?:\.\d{1,2})?)",)},
     ),
+}
+
+# Hard-coded free-shipping fallback amounts for roaster names without a published shipping policy
+HARD_CODED_SHIPPING_FALLBACK_CENTS: Final[dict[str, int]] = {
+    "94 Celcius": 3500,
+    "Ambros Coffee": 5000,
+    "Cafe Pista": 4900,
+    "Escape Coffee Roasters": 5000,
+    "Ethica Coffee Roasters": 5000,
+    "House of Funk": 7500,
+    "Jungle": 5000,
+    "Kohi": 6000,
+    "Monogram Coffee": 5000,
+    "Narval": 5500,
+    "Nektar Cafeologue": 4500,
+    "Nucleus": 3000,  # free shipping actually starts at 2 bags
+    "Pirates of Coffee": 7500,
+    "Quietly Coffee": 6500,
+    "Rabbit Hole Roasters": 5900,
+    "Rogue Wave Coffee": 4000,
+    "September Coffee": 6500,
+    "Sips Truck Coffee Roasters": 6000,
+    "Subtext Coffee": 6000,
+    "The Artery Community Roasters": 6000,
+    "Za & Klo": 7500,
+    "zaandklo": 7500,
 }
 
 
@@ -194,10 +222,8 @@ def resolve_shipping_threshold(
     """Refresh a published threshold when possible, then use the known fallback."""
     # Unknown roasters simply cannot produce free-shipping recommendations.
     policy = SHIPPING_POLICIES.get(roaster_name)
-    if policy is None:
-        return None
 
-    if refresh:
+    if policy is not None and refresh:
         try:
             # Policy pages are ordinary web pages, not Shopify APIs.
             response = requests.get(
@@ -211,14 +237,29 @@ def resolve_shipping_threshold(
             text = BeautifulSoup(response.text, "html.parser").get_text(" ", strip=True)
             detected = _detected_threshold_cents(policy, text, destination)
             if detected is not None:
-                return ShippingThreshold(detected, policy.policy_url, detected_live=True)
+                return ShippingThreshold(
+                    detected,
+                    policy.policy_url,
+                    detected_live=True,
+                    source="policy",
+                )
         except requests.RequestException:
             # Network failures should not prevent cart recommendations when a
             # configured fallback is available.
             pass
 
-    # Fallbacks are marked as not live so the CLI can be honest about provenance.
-    fallback = policy.threshold_for(destination.province)
+    fallback_source = "hardcoded"
+    fallback = HARD_CODED_SHIPPING_FALLBACK_CENTS.get(roaster_name)
+
+    if policy is not None:
+        policy_value = policy.threshold_for(destination.province)
+        if policy_value is not None:
+            fallback = policy_value
+            fallback_source = "policy"
+
     if fallback is None:
-        return None
-    return ShippingThreshold(fallback, policy.policy_url, detected_live=False)
+        fallback = 5000
+        fallback_source = "default"
+
+    policy_url = policy.policy_url if policy is not None and fallback_source == "policy" else ""
+    return ShippingThreshold(fallback, policy_url, detected_live=False, source=fallback_source)
