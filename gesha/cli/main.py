@@ -931,7 +931,7 @@ def cart(
         coffees = service.list_coffees(available=True)
         shipping_thresholds = {}
 
-        # TODO: getting the shipping policy needs to be done when we scrape, not when we build the cart
+        # TODO #18: getting the shipping policy needs to be done when we scrape, not when we build the cart
         # Shipping lookups are independent per roaster, so run them concurrently without mixing them into the database session work.
         if override_cents is None:
             roasters_with_coffee = {
@@ -1077,7 +1077,7 @@ def fix_tasting_notes(
 ) -> None:
     """Collect raw artifacts for cached coffees missing tasting notes.
 
-    The fix_tasting_notes command is a diagnostic tool for identifying why tasting notes are missing from cached coffees. 
+    The fix_tasting_notes command is a diagnostic tool for identifying why tasting notes are missing from cached coffees.
 
     Here's what it does:
     - Validates input: Requires a specific roaster (not "all") and compiles a search regex pattern
