@@ -11,7 +11,7 @@
 
 anniversary
 special
-natural
+# natural
 unique
 gesha
 geisha
@@ -35,8 +35,15 @@ strawberry
 blackberry
 tangerine
 lime
-fruit
+grapefruit
+orange
+clementine
+berry
+coconut
+passion fruit
+# fruit
 
 ! decaf
 ! dark roast
 ! espresso
+! tassés 
